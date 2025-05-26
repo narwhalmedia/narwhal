@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package stream.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/stream/v1;streamv1";
+
+// Stream service manages media streaming and playback
+service StreamService {
+  // Stream operations
+  rpc GetStreamInfo(GetStreamInfoRequest) returns (StreamInfo) {
+    option (google.api.http) = {
+      get: "/v1/streams/{id}/info"
+    };
+  }
+  rpc GetStreamURL(GetStreamURLRequest) returns (StreamURL) {
+    option (google.api.http) = {
+      get: "/v1/streams/{id}/url"
+    };
+  }
+  rpc GetStreamManifest(GetStreamManifestRequest) returns (StreamManifest) {
+    option (google.api.http) = {
+      get: "/v1/streams/{id}/manifest"
+    };
+  }
+  rpc GetStreamSegment(GetStreamSegmentRequest) returns (StreamSegment) {
+    option (google.api.http) = {
+      get: "/v1/streams/{id}/segments/{segment_number}"
+    };
+  }
+
+  // Playback operations
+  rpc StartPlayback(StartPlaybackRequest) returns (PlaybackSession) {
+    option (google.api.http) = {
+      post: "/v1/playback"
+      body: "*"
+    };
+  }
+  rpc GetPlaybackStatus(GetPlaybackStatusRequest) returns (PlaybackStatus) {
+    option (google.api.http) = {
+      get: "/v1/playback/{session_id}/status"
+    };
+  }
+  rpc UpdatePlaybackPosition(UpdatePlaybackPositionRequest) returns (PlaybackStatus) {
+    option (google.api.http) = {
+      put: "/v1/playback/{session_id}/position"
+      body: "*"
+    };
+  }
+  rpc EndPlayback(EndPlaybackRequest) returns (EndPlaybackResponse) {
+    option (google.api.http) = {
+      post: "/v1/playback/{session_id}/end"
+    };
+  }
+}
+
+// Common message types
+message StreamInfo {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string media_id = 2 [(validate.rules).string.uuid = true];
+  StreamType type = 3;
+  repeated StreamQuality qualities = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp expires_at = 6;
+}
+
+message StreamQuality {
+  string name = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 bitrate = 4;
+  string codec = 5;
+  string profile = 6;
+  string level = 7;
+}
+
+message StreamURL {
+  string url = 1 [(validate.rules).string.uri = true];
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message StreamManifest {
+  string manifest_url = 1 [(validate.rules).string.uri = true];
+  repeated StreamQuality qualities = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message StreamSegment {
+  bytes data = 1;
+  int32 segment_number = 2;
+  string quality = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message PlaybackSession {
+  string session_id = 1 [(validate.rules).string.uuid = true];
+  string media_id = 2 [(validate.rules).string.uuid = true];
+  string user_id = 3 [(validate.rules).string.uuid = true];
+  PlaybackStatus status = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp last_activity_at = 6;
+}
+
+message PlaybackStatus {
+  string session_id = 1 [(validate.rules).string.uuid = true];
+  float position = 2; // Position in seconds
+  float duration = 3; // Total duration in seconds
+  PlaybackState state = 4;
+  string quality = 5;
+  float buffer_level = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+enum StreamType {
+  STREAM_TYPE_UNSPECIFIED = 0;
+  STREAM_TYPE_DIRECT = 1;
+  STREAM_TYPE_HLS = 2;
+  STREAM_TYPE_DASH = 3;
+}
+
+enum PlaybackState {
+  PLAYBACK_STATE_UNSPECIFIED = 0;
+  PLAYBACK_STATE_PLAYING = 1;
+  PLAYBACK_STATE_PAUSED = 2;
+  PLAYBACK_STATE_BUFFERING = 3;
+  PLAYBACK_STATE_ENDED = 4;
+  PLAYBACK_STATE_ERROR = 5;
+}
+
+// Stream request/response messages
+message GetStreamInfoRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetStreamURLRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string quality = 2;
+}
+
+message GetStreamManifestRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetStreamSegmentRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+  int32 segment_number = 2 [(validate.rules).int32.gt = 0];
+  string quality = 3;
+}
+
+// Playback request/response messages
+message StartPlaybackRequest {
+  string media_id = 1 [(validate.rules).string.uuid = true];
+  string user_id = 2 [(validate.rules).string.uuid = true];
+  string quality = 3;
+}
+
+message GetPlaybackStatusRequest {
+  string session_id = 1 [(validate.rules).string.uuid = true];
+}
+
+message UpdatePlaybackPositionRequest {
+  string session_id = 1 [(validate.rules).string.uuid = true];
+  float position = 2 [(validate.rules).float.gte = 0];
+  PlaybackState state = 3;
+  string quality = 4;
+  float buffer_level = 5;
+}
+
+message EndPlaybackRequest {
+  string session_id = 1 [(validate.rules).string.uuid = true];
+}
+
+message EndPlaybackResponse {} 

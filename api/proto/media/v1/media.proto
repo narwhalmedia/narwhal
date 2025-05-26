@@ -1,0 +1,295 @@
+syntax = "proto3";
+
+package media.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/media/v1;mediav1";
+
+// Media service manages the media library including series, episodes, and movies
+service MediaService {
+  // Series operations
+  rpc CreateSeries(CreateSeriesRequest) returns (Series) {
+    option (google.api.http) = {
+      post: "/v1/series"
+      body: "*"
+    };
+  }
+  rpc GetSeries(GetSeriesRequest) returns (Series) {
+    option (google.api.http) = {
+      get: "/v1/series/{id}"
+    };
+  }
+  rpc GetSeriesByTitle(GetSeriesByTitleRequest) returns (Series) {
+    option (google.api.http) = {
+      get: "/v1/series/title/{title}"
+    };
+  }
+  rpc ListSeries(ListSeriesRequest) returns (ListSeriesResponse) {
+    option (google.api.http) = {
+      get: "/v1/series"
+    };
+  }
+  rpc UpdateSeries(UpdateSeriesRequest) returns (Series) {
+    option (google.api.http) = {
+      put: "/v1/series/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteSeries(DeleteSeriesRequest) returns (DeleteSeriesResponse) {
+    option (google.api.http) = {
+      delete: "/v1/series/{id}"
+    };
+  }
+
+  // Episode operations
+  rpc AddEpisode(AddEpisodeRequest) returns (Episode) {
+    option (google.api.http) = {
+      post: "/v1/series/{series_id}/episodes"
+      body: "*"
+    };
+  }
+  rpc GetEpisode(GetEpisodeRequest) returns (Episode) {
+    option (google.api.http) = {
+      get: "/v1/episodes/{id}"
+    };
+  }
+  rpc ListEpisodes(ListEpisodesRequest) returns (ListEpisodesResponse) {
+    option (google.api.http) = {
+      get: "/v1/series/{series_id}/episodes"
+    };
+  }
+  rpc UpdateEpisode(UpdateEpisodeRequest) returns (Episode) {
+    option (google.api.http) = {
+      put: "/v1/episodes/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteEpisode(DeleteEpisodeRequest) returns (DeleteEpisodeResponse) {
+    option (google.api.http) = {
+      delete: "/v1/episodes/{id}"
+    };
+  }
+
+  // Movie operations
+  rpc CreateMovie(CreateMovieRequest) returns (Movie) {
+    option (google.api.http) = {
+      post: "/v1/movies"
+      body: "*"
+    };
+  }
+  rpc GetMovie(GetMovieRequest) returns (Movie) {
+    option (google.api.http) = {
+      get: "/v1/movies/{id}"
+    };
+  }
+  rpc GetMovieByTitle(GetMovieByTitleRequest) returns (Movie) {
+    option (google.api.http) = {
+      get: "/v1/movies/title/{title}"
+    };
+  }
+  rpc ListMovies(ListMoviesRequest) returns (ListMoviesResponse) {
+    option (google.api.http) = {
+      get: "/v1/movies"
+    };
+  }
+  rpc UpdateMovie(UpdateMovieRequest) returns (Movie) {
+    option (google.api.http) = {
+      put: "/v1/movies/{id}"
+      body: "*"
+    };
+  }
+  rpc DeleteMovie(DeleteMovieRequest) returns (DeleteMovieResponse) {
+    option (google.api.http) = {
+      delete: "/v1/movies/{id}"
+    };
+  }
+}
+
+// Common message types
+message Series {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  MediaStatus status = 4;
+  repeated Episode episodes = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message Episode {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string series_id = 2 [(validate.rules).string.uuid = true];
+  string title = 3 [(validate.rules).string.min_len = 1];
+  string description = 4;
+  int32 season_number = 5 [(validate.rules).int32.gt = 0];
+  int32 episode_number = 6 [(validate.rules).int32.gt = 0];
+  google.protobuf.Timestamp air_date = 7;
+  int32 duration = 8; // Duration in seconds
+  MediaStatus status = 9;
+  string file_path = 10;
+  string thumbnail_path = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message Movie {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  google.protobuf.Timestamp release_date = 4;
+  int32 duration = 5; // Duration in seconds
+  MediaStatus status = 6;
+  string file_path = 7;
+  string thumbnail_path = 8;
+  repeated string genres = 9;
+  string director = 10;
+  repeated string cast = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+enum MediaStatus {
+  MEDIA_STATUS_UNSPECIFIED = 0;
+  MEDIA_STATUS_PENDING = 1;
+  MEDIA_STATUS_DOWNLOADING = 2;
+  MEDIA_STATUS_TRANSCODING = 3;
+  MEDIA_STATUS_READY = 4;
+  MEDIA_STATUS_ERROR = 5;
+}
+
+// Series request/response messages
+message CreateSeriesRequest {
+  string title = 1 [(validate.rules).string.min_len = 1];
+  string description = 2;
+}
+
+message GetSeriesRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetSeriesByTitleRequest {
+  string title = 1 [(validate.rules).string.min_len = 1];
+}
+
+message ListSeriesRequest {
+  int32 page_size = 1 [(validate.rules).int32.gt = 0];
+  string page_token = 2;
+  MediaStatus status = 3;
+}
+
+message ListSeriesResponse {
+  repeated Series series = 1;
+  string next_page_token = 2;
+}
+
+message UpdateSeriesRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  MediaStatus status = 4;
+}
+
+message DeleteSeriesRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message DeleteSeriesResponse {}
+
+// Episode request/response messages
+message AddEpisodeRequest {
+  string series_id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  int32 season_number = 4 [(validate.rules).int32.gt = 0];
+  int32 episode_number = 5 [(validate.rules).int32.gt = 0];
+  google.protobuf.Timestamp air_date = 6;
+}
+
+message GetEpisodeRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message ListEpisodesRequest {
+  string series_id = 1 [(validate.rules).string.uuid = true];
+  int32 page_size = 2 [(validate.rules).int32.gt = 0];
+  string page_token = 3;
+  MediaStatus status = 4;
+}
+
+message ListEpisodesResponse {
+  repeated Episode episodes = 1;
+  string next_page_token = 2;
+}
+
+message UpdateEpisodeRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  int32 season_number = 4 [(validate.rules).int32.gt = 0];
+  int32 episode_number = 5 [(validate.rules).int32.gt = 0];
+  google.protobuf.Timestamp air_date = 6;
+  MediaStatus status = 7;
+  string file_path = 8;
+  string thumbnail_path = 9;
+  int32 duration = 10;
+}
+
+message DeleteEpisodeRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message DeleteEpisodeResponse {}
+
+// Movie request/response messages
+message CreateMovieRequest {
+  string title = 1 [(validate.rules).string.min_len = 1];
+  string description = 2;
+  google.protobuf.Timestamp release_date = 3;
+  repeated string genres = 4;
+  string director = 5;
+  repeated string cast = 6;
+}
+
+message GetMovieRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message GetMovieByTitleRequest {
+  string title = 1 [(validate.rules).string.min_len = 1];
+}
+
+message ListMoviesRequest {
+  int32 page_size = 1 [(validate.rules).int32.gt = 0];
+  string page_token = 2;
+  MediaStatus status = 3;
+  repeated string genres = 4;
+  string director = 5;
+}
+
+message ListMoviesResponse {
+  repeated Movie movies = 1;
+  string next_page_token = 2;
+}
+
+message UpdateMovieRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+  string title = 2 [(validate.rules).string.min_len = 1];
+  string description = 3;
+  google.protobuf.Timestamp release_date = 4;
+  MediaStatus status = 5;
+  string file_path = 6;
+  string thumbnail_path = 7;
+  repeated string genres = 8;
+  string director = 9;
+  repeated string cast = 10;
+  int32 duration = 11;
+}
+
+message DeleteMovieRequest {
+  string id = 1 [(validate.rules).string.uuid = true];
+}
+
+message DeleteMovieResponse {} 
