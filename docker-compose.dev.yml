@@ -45,7 +45,7 @@ services:
       - narwhal
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     environment:
       - POSTGRES_USER=narwhal
       - POSTGRES_PASSWORD=narwhal_dev
