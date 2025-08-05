@@ -3,7 +3,6 @@ syntax = "proto3";
 package narwhal.auth.v1;
 
 import "common/v1/common.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -13,145 +12,266 @@ option go_package = "github.com/narwhalmedia/narwhal/api/proto/auth/v1;authpb";
 service AuthService {
   // Authentication
   rpc Login(LoginRequest) returns (LoginResponse);
-  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  // Logout
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  // Refresh Token
   rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // Validate Token
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
 
   // User management
-  rpc CreateUser(CreateUserRequest) returns (User);
-  rpc GetUser(GetUserRequest) returns (User);
-  rpc GetCurrentUser(google.protobuf.Empty) returns (User);
-  rpc UpdateUser(UpdateUserRequest) returns (User);
-  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
-  rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  // Retrieves a user
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // Retrieves a current user
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse);
+  // Updates an existing user
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // Deletes a user
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // Change Password
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 
   // Authorization
   rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+  // Retrieves a user permissions
   rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
 }
 
 // User represents a user account
 message User {
+  // Unique identifier
   string id = 1;
+  // Username
   string username = 2;
+  // Email
   string email = 3;
   narwhal.common.v1.UserRole role = 4;
+  // Active
   bool active = 5;
+  // Preferences
   UserPreferences preferences = 6;
   google.protobuf.Timestamp created = 7;
   google.protobuf.Timestamp updated = 8;
   google.protobuf.Timestamp last_login = 9;
 }
 
+// Response message for Create User
+message CreateUserResponse {
+  // The user
+  User user = 1;
+}
+
+// Response message for Update User
+message UpdateUserResponse {
+  // The user
+  User user = 1;
+}
+
+// Response message for Get Current User
+message GetCurrentUserResponse {
+  // The user
+  User user = 1;
+}
+
+// Response message for Get User
+message GetUserResponse {
+  // The user
+  User user = 1;
+}
+
+// Response message for Logout
+message LogoutResponse {
+  // Empty response
+}
+
+// Request message for Get Current User
+message GetCurrentUserRequest {
+  // Empty request
+}
+
+// Response message for Delete User
+message DeleteUserResponse {
+  // Empty response
+}
+
+// Response message for Change Password
+message ChangePasswordResponse {
+  // Empty response
+}
+
 // UserPreferences contains user preferences
 message UserPreferences {
+  // Language
   string language = 1;
+  // Theme
   string theme = 2;
+  // Default Quality
   string default_quality = 3;
+  // Subtitle Language
   string subtitle_language = 4;
+  // Auto Play
   bool auto_play = 5;
+  // Skip Intro
   bool skip_intro = 6;
 }
 
 // Permission represents a permission
 message Permission {
+  // Resource
   string resource = 1;
+  // Action
   string action = 2;
+  // Scope
   string scope = 3;
 }
 
 // Authentication requests/responses
 
+// Request message for Login
 message LoginRequest {
+  // Username
   string username = 1;
+  // Password
   string password = 2;
+  // ID of the associated device
   string device_id = 3;
+  // Device Name
   string device_name = 4;
 }
 
+// Response message for Login
 message LoginResponse {
+  // Access Token
   string access_token = 1;
+  // Refresh Token
   string refresh_token = 2;
+  // Expires In
   int64 expires_in = 3;
+  // Token Type
   string token_type = 4;
+  // User
   User user = 5;
 }
 
+// Request message for Logout
 message LogoutRequest {
+  // Refresh Token
   string refresh_token = 1;
+  // All Devices
   bool all_devices = 2;
 }
 
+// Request message for Refresh Token
 message RefreshTokenRequest {
+  // Refresh Token
   string refresh_token = 1;
 }
 
+// Response message for Refresh Token
 message RefreshTokenResponse {
+  // Access Token
   string access_token = 1;
+  // Refresh Token
   string refresh_token = 2;
+  // Expires In
   int64 expires_in = 3;
+  // Token Type
   string token_type = 4;
 }
 
+// Request message for Validate Token
 message ValidateTokenRequest {
+  // Access Token
   string access_token = 1;
 }
 
+// Response message for Validate Token
 message ValidateTokenResponse {
+  // Valid
   bool valid = 1;
+  // ID of the associated user
   string user_id = 2;
+  // Username
   string username = 3;
   narwhal.common.v1.UserRole role = 4;
+  // Scopes
   repeated string scopes = 5;
   google.protobuf.Timestamp expires_at = 6;
 }
 
 // User management requests/responses
 
+// Request message for Create User
 message CreateUserRequest {
+  // Username
   string username = 1;
+  // Email
   string email = 2;
+  // Password
   string password = 3;
   narwhal.common.v1.UserRole role = 4;
 }
 
+// Request message for Get User
 message GetUserRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Request message for Update User
 message UpdateUserRequest {
+  // Unique identifier
   string id = 1;
+  // User
   User user = 2;
   google.protobuf.FieldMask update_mask = 3;
 }
 
+// Request message for Delete User
 message DeleteUserRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Request message for Change Password
 message ChangePasswordRequest {
+  // ID of the associated user
   string user_id = 1;
+  // Current Password
   string current_password = 2;
+  // New Password
   string new_password = 3;
 }
 
 // Authorization requests/responses
 
+// Request message for Check Permission
 message CheckPermissionRequest {
+  // ID of the associated user
   string user_id = 1;
+  // Resource
   string resource = 2;
+  // Action
   string action = 3;
 }
 
+// Response message for Check Permission
 message CheckPermissionResponse {
+  // Allowed
   bool allowed = 1;
+  // Reason
   string reason = 2;
 }
 
+// Request message for Get User Permissions
 message GetUserPermissionsRequest {
+  // ID of the associated user
   string user_id = 1;
 }
 
+// Response message for Get User Permissions
 message GetUserPermissionsResponse {
+  // Permissions
   repeated Permission permissions = 1;
 }

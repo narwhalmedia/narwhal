@@ -72,11 +72,9 @@ generate: proto
 build:
 	@echo "Building services..."
 	go build -o bin/library ./cmd/library
-	go build -o bin/acquisition ./cmd/acquisition
-	go build -o bin/streaming ./cmd/streaming
-	go build -o bin/transcoding ./cmd/transcoding
 	go build -o bin/user ./cmd/user
-	go build -o bin/analytics ./cmd/analytics
+	go build -o bin/dbtest ./cmd/dbtest
+	go build -o bin/migrate ./cmd/migrate
 
 # Build specific service
 build-%:
@@ -89,12 +87,24 @@ build-library:
 build-user:
 	go build -o bin/user ./cmd/user
 
+build-dbtest:
+	go build -o bin/dbtest ./cmd/dbtest
+
+build-migrate:
+	go build -o bin/migrate ./cmd/migrate
+
 # Run services
 run-library: build-library
 	./bin/library
 
 run-user: build-user
 	./bin/user
+
+run-dbtest: build-dbtest
+	./bin/dbtest
+
+run-migrate: build-migrate
+	./bin/migrate
 
 # Development with hot reload (requires air)
 dev-library:

@@ -6,6 +6,11 @@ version: v2
 modules:
   - path: api/proto
     name: buf.build/narwhalmedia/narwhal
+    # Disable PACKAGE_DIRECTORY_MATCH since our package names include "narwhal" prefix
+    # but our directory structure doesn't
+    lint:
+      except:
+        - PACKAGE_DIRECTORY_MATCH
 
 # Dependencies from Buf Schema Registry
 deps:
@@ -15,9 +20,6 @@ deps:
 breaking:
   use:
     - FILE
-  except:
-    - EXTENSION
-    - FIELD_SAME_DEFAULT
 
 # Lint configuration
 lint:
@@ -25,9 +27,6 @@ lint:
     - STANDARD
     - COMMENTS
     - UNARY_RPC
-  except:
-    - ENUM_ZERO_VALUE_SUFFIX
-    - SERVICE_SUFFIX
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_google_protobuf_empty_requests: true
   rpc_allow_google_protobuf_empty_responses: true

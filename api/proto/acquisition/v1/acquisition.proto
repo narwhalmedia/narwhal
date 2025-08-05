@@ -3,7 +3,6 @@ syntax = "proto3";
 package narwhal.acquisition.v1;
 
 import "common/v1/common.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -13,83 +12,139 @@ option go_package = "github.com/narwhalmedia/narwhal/api/proto/acquisition/v1;ac
 service AcquisitionService {
   // Search operations
   rpc SearchContent(SearchContentRequest) returns (SearchContentResponse);
-  rpc GetRelease(GetReleaseRequest) returns (Release);
+  // Retrieves a release
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
 
   // Download management
-  rpc AddDownload(AddDownloadRequest) returns (Download);
-  rpc GetDownload(GetDownloadRequest) returns (Download);
+  rpc AddDownload(AddDownloadRequest) returns (AddDownloadResponse);
+  // Retrieves a download
+  rpc GetDownload(GetDownloadRequest) returns (GetDownloadResponse);
+  // Lists downloads
   rpc ListDownloads(ListDownloadsRequest) returns (ListDownloadsResponse);
-  rpc CancelDownload(CancelDownloadRequest) returns (google.protobuf.Empty);
-  rpc RetryDownload(RetryDownloadRequest) returns (Download);
+  // Cancel Download
+  rpc CancelDownload(CancelDownloadRequest) returns (CancelDownloadResponse);
+  // Retry Download
+  rpc RetryDownload(RetryDownloadRequest) returns (RetryDownloadResponse);
+  // Retrieves a download history
   rpc GetDownloadHistory(GetDownloadHistoryRequest) returns (GetDownloadHistoryResponse);
 
   // Quality profiles
-  rpc CreateQualityProfile(CreateQualityProfileRequest) returns (QualityProfile);
-  rpc GetQualityProfile(GetQualityProfileRequest) returns (QualityProfile);
+  rpc CreateQualityProfile(CreateQualityProfileRequest) returns (CreateQualityProfileResponse);
+  // Retrieves a quality profile
+  rpc GetQualityProfile(GetQualityProfileRequest) returns (GetQualityProfileResponse);
+  // Lists quality profiles
   rpc ListQualityProfiles(ListQualityProfilesRequest) returns (ListQualityProfilesResponse);
-  rpc UpdateQualityProfile(UpdateQualityProfileRequest) returns (QualityProfile);
-  rpc DeleteQualityProfile(DeleteQualityProfileRequest) returns (google.protobuf.Empty);
+  // Updates an existing quality profile
+  rpc UpdateQualityProfile(UpdateQualityProfileRequest) returns (UpdateQualityProfileResponse);
+  // Deletes a quality profile
+  rpc DeleteQualityProfile(DeleteQualityProfileRequest) returns (DeleteQualityProfileResponse);
 
   // Indexer management
   rpc ListIndexers(ListIndexersRequest) returns (ListIndexersResponse);
+  // Test Indexer
   rpc TestIndexer(TestIndexerRequest) returns (TestIndexerResponse);
 }
 
 // DownloadStatus represents the status of a download
 enum DownloadStatus {
+  // Default unspecified value
   DOWNLOAD_STATUS_UNSPECIFIED = 0;
+  // pending
   DOWNLOAD_STATUS_PENDING = 1;
+  // queued
   DOWNLOAD_STATUS_QUEUED = 2;
+  // downloading
   DOWNLOAD_STATUS_DOWNLOADING = 3;
+  // completed
   DOWNLOAD_STATUS_COMPLETED = 4;
+  // failed
   DOWNLOAD_STATUS_FAILED = 5;
+  // cancelled
   DOWNLOAD_STATUS_CANCELLED = 6;
 }
 
 // Release represents a release from an indexer
 message Release {
+  // Unique identifier
   string id = 1;
+  // Title of the content
   string title = 2;
+  // ID of the associated indexer
   string indexer_id = 3;
+  // Indexer Name
   string indexer_name = 4;
+  // Size Bytes
   int64 size_bytes = 5;
   google.protobuf.Timestamp publish_date = 6;
+  // Download Url
   string download_url = 7;
+  // Info Url
   string info_url = 8;
+  // Seeders
   int32 seeders = 9;
+  // Leechers
   int32 leechers = 10;
+  // Quality
   Quality quality = 11;
+  // Scene Source
   bool scene_source = 12;
+  // Free Leech
   bool free_leech = 13;
   map<string, string> attributes = 14;
 }
 
+// Response message for Get Release
+message GetReleaseResponse {
+  // The release
+  Release release = 1;
+}
+
 // Quality represents the quality attributes of a release
 message Quality {
+  // Resolution
   string resolution = 1;
+  // Source
   string source = 2;
+  // Codec
   string codec = 3;
+  // Bit Depth
   int32 bit_depth = 4;
+  // Hdr
   bool hdr = 5;
+  // Score
   int32 score = 6;
 }
 
 // Download represents a download task
 message Download {
+  // Unique identifier
   string id = 1;
+  // Title of the content
   string title = 2;
   narwhal.common.v1.MediaType type = 3;
+  // ID of the associated indexer
   string indexer_id = 4;
+  // Download Url
   string download_url = 5;
+  // Size Bytes
   int64 size_bytes = 6;
+  // Status
   DownloadStatus status = 7;
+  // Progress
   float progress = 8;
+  // Download Speed
   int64 download_speed = 9;
+  // Eta Seconds
   int32 eta_seconds = 10;
+  // Download Client
   string download_client = 11;
+  // Output Path
   string output_path = 12;
+  // Priority
   int32 priority = 13;
+  // Retry Count
   int32 retry_count = 14;
+  // Error
   string error = 15;
   google.protobuf.Timestamp started = 16;
   google.protobuf.Timestamp completed = 17;
@@ -97,158 +152,287 @@ message Download {
   google.protobuf.Timestamp updated = 19;
 }
 
+// Response message for Add Download
+message AddDownloadResponse {
+  // The download
+  Download download = 1;
+}
+
+// Response message for Get Download
+message GetDownloadResponse {
+  // The download
+  Download download = 1;
+}
+
+// Response message for Retry Download
+message RetryDownloadResponse {
+  // The download
+  Download download = 1;
+}
+
+// Response message for Cancel Download
+message CancelDownloadResponse {
+  // Empty response
+}
+
 // QualityProfile represents a quality profile for automatic selection
 message QualityProfile {
+  // Unique identifier
   string id = 1;
+  // Name of the resource
   string name = 2;
+  // Min Score
   int32 min_score = 3;
+  // Max Score
   int32 max_score = 4;
+  // Preferred Score
   int32 preferred_score = 5;
+  // Upgrade Allowed
   bool upgrade_allowed = 6;
+  // Preferred Keywords
   repeated string preferred_keywords = 7;
+  // Required Keywords
   repeated string required_keywords = 8;
+  // Ignored Keywords
   repeated string ignored_keywords = 9;
+}
+
+// Response message for Get Quality Profile
+message GetQualityProfileResponse {
+  // The quality profile
+  QualityProfile quality_profile = 1;
+}
+
+// Response message for Create Quality Profile
+message CreateQualityProfileResponse {
+  // The quality profile
+  QualityProfile quality_profile = 1;
+}
+
+// Response message for Update Quality Profile
+message UpdateQualityProfileResponse {
+  // The quality profile
+  QualityProfile quality_profile = 1;
+}
+
+// Response message for Delete Quality Profile
+message DeleteQualityProfileResponse {
+  // Empty response
 }
 
 // Indexer represents a content indexer
 message Indexer {
+  // Unique identifier
   string id = 1;
+  // Name of the resource
   string name = 2;
+  // Type
   string type = 3;
+  // Enabled
   bool enabled = 4;
   map<string, string> settings = 5;
   google.protobuf.Timestamp last_tested = 6;
+  // Whether the resource is healthy
   bool is_healthy = 7;
 }
 
 // Search requests/responses
 
+// Request message for Search Content
 message SearchContentRequest {
+  // Query
   string query = 1;
   narwhal.common.v1.MediaType type = 2;
+  // Indexer Ids
   repeated string indexer_ids = 3;
+  // ID of the associated quality profile
   string quality_profile_id = 4;
+  // Year
   int32 year = 5;
+  // ID of the associated imdb
   string imdb_id = 6;
+  // ID of the associated tmdb
   string tmdb_id = 7;
 }
 
+// Response message for Search Content
 message SearchContentResponse {
+  // Releases
   repeated Release releases = 1;
   map<string, string> indexer_errors = 2;
 }
 
+// Request message for Get Release
 message GetReleaseRequest {
+  // Unique identifier
   string id = 1;
+  // ID of the associated indexer
   string indexer_id = 2;
 }
 
 // Download management requests/responses
 
+// Request message for Add Download
 message AddDownloadRequest {
+  // ID of the associated release
   string release_id = 1;
+  // ID of the associated indexer
   string indexer_id = 2;
+  // Title of the content
   string title = 3;
+  // Download Url
   string download_url = 4;
+  // ID of the associated quality profile
   string quality_profile_id = 5;
+  // Output Path
   string output_path = 6;
+  // Priority
   int32 priority = 7;
 }
 
+// Request message for Get Download
 message GetDownloadRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Request message for List Downloads
 message ListDownloadsRequest {
   narwhal.common.v1.PaginationRequest pagination = 1;
+  // Status Filter
   DownloadStatus status_filter = 2;
+  // Sort By
   string sort_by = 3;
   narwhal.common.v1.SortOrder sort_order = 4;
 }
 
+// Response message for List Downloads
 message ListDownloadsResponse {
+  // Downloads
   repeated Download downloads = 1;
   narwhal.common.v1.PaginationResponse pagination = 2;
 }
 
+// Request message for Cancel Download
 message CancelDownloadRequest {
+  // Unique identifier
   string id = 1;
+  // Remove Files
   bool remove_files = 2;
 }
 
+// Request message for Retry Download
 message RetryDownloadRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Request message for Get Download History
 message GetDownloadHistoryRequest {
+  // ID of the associated download
   string download_id = 1;
   narwhal.common.v1.PaginationRequest pagination = 2;
 }
 
+// Response message for Get Download History
 message GetDownloadHistoryResponse {
   message HistoryEntry {
+    // Unique identifier
     string id = 1;
+    // ID of the associated download
     string download_id = 2;
+    // Status
     DownloadStatus status = 3;
+    // Message
     string message = 4;
     google.protobuf.Timestamp timestamp = 5;
   }
+  // Entries
   repeated HistoryEntry entries = 1;
   narwhal.common.v1.PaginationResponse pagination = 2;
 }
 
 // Quality profile requests/responses
 
+// Request message for Create Quality Profile
 message CreateQualityProfileRequest {
+  // Name of the resource
   string name = 1;
+  // Min Score
   int32 min_score = 2;
+  // Max Score
   int32 max_score = 3;
+  // Preferred Score
   int32 preferred_score = 4;
+  // Upgrade Allowed
   bool upgrade_allowed = 5;
+  // Preferred Keywords
   repeated string preferred_keywords = 6;
+  // Required Keywords
   repeated string required_keywords = 7;
+  // Ignored Keywords
   repeated string ignored_keywords = 8;
 }
 
+// Request message for Get Quality Profile
 message GetQualityProfileRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Request message for List Quality Profiles
 message ListQualityProfilesRequest {
   narwhal.common.v1.PaginationRequest pagination = 1;
 }
 
+// Response message for List Quality Profiles
 message ListQualityProfilesResponse {
+  // Profiles
   repeated QualityProfile profiles = 1;
   narwhal.common.v1.PaginationResponse pagination = 2;
 }
 
+// Request message for Update Quality Profile
 message UpdateQualityProfileRequest {
+  // Unique identifier
   string id = 1;
+  // Profile
   QualityProfile profile = 2;
   google.protobuf.FieldMask update_mask = 3;
 }
 
+// Request message for Delete Quality Profile
 message DeleteQualityProfileRequest {
+  // Unique identifier
   string id = 1;
 }
 
 // Indexer management requests/responses
 
+// Request message for List Indexers
 message ListIndexersRequest {
+  // Enabled Only
   bool enabled_only = 1;
 }
 
+// Response message for List Indexers
 message ListIndexersResponse {
+  // Indexers
   repeated Indexer indexers = 1;
 }
 
+// Request message for Test Indexer
 message TestIndexerRequest {
+  // Unique identifier
   string id = 1;
 }
 
+// Response message for Test Indexer
 message TestIndexerResponse {
+  // Success
   bool success = 1;
+  // Message
   string message = 2;
+  // Response Time Ms
   int32 response_time_ms = 3;
 }

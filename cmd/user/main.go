@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/narwhalmedia/narwhal/api/proto/auth/v1"
+	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/handler"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"

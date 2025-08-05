@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	librarypb "github.com/narwhalmedia/narwhal/api/proto/library/v1"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
