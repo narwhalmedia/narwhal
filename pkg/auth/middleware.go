@@ -204,9 +204,7 @@ func (a *AuthInterceptor) extractToken(ctx context.Context) (string, error) {
 
 	// Remove "Bearer " prefix
 	token := values[0]
-	if strings.HasPrefix(token, "Bearer ") {
-		token = strings.TrimPrefix(token, "Bearer ")
-	}
+	token = strings.TrimPrefix(token, "Bearer ")
 
 	return token, nil
 }

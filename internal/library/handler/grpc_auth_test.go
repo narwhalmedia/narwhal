@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	librarypb "github.com/narwhalmedia/narwhal/api/proto/library/v1"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
 	"github.com/narwhalmedia/narwhal/pkg/logger"

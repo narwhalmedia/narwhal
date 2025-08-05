@@ -5,8 +5,8 @@ import (
 	
 	"google.golang.org/protobuf/types/known/timestamppb"
 	
-	commonpb "github.com/narwhalmedia/narwhal/api/proto/common/v1"
-	librarypb "github.com/narwhalmedia/narwhal/api/proto/library/v1"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
@@ -59,25 +59,6 @@ func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
 	return proto
 }
 
-// convertModelsLibraryToProto converts models library to proto library
-func convertModelsLibraryToProto(lib *models.Library) *librarypb.Library {
-	proto := &librarypb.Library{
-		Id:                  lib.ID.String(),
-		Name:                lib.Name,
-		Path:                lib.Path,
-		Type:                convertMediaTypeToProto(string(lib.Type)),
-		AutoScan:            lib.AutoScan,
-		ScanIntervalMinutes: int32(lib.ScanInterval),
-		Created:             timestamppb.New(lib.Created),
-		Updated:             timestamppb.New(lib.Updated),
-	}
-	
-	if !lib.LastScanned.IsZero() {
-		proto.LastScanned = timestamppb.New(lib.LastScanned)
-	}
-	
-	return proto
-}
 
 // convertMediaToProto converts domain media to proto media
 func convertMediaToProto(media *models.Media, includeMetadata, includeEpisodes bool) *librarypb.Media {

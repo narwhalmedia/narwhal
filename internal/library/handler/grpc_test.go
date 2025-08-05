@@ -12,13 +12,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	commonpb "github.com/narwhalmedia/narwhal/api/proto/common/v1"
-	librarypb "github.com/narwhalmedia/narwhal/api/proto/library/v1"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
+	"github.com/narwhalmedia/narwhal/pkg/auth"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
-	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/mocks"
 )
 
@@ -36,6 +36,10 @@ type GRPCHandlerTestSuite struct {
 
 func (suite *GRPCHandlerTestSuite) SetupTest() {
 	suite.ctx = context.Background()
+	// Add authentication context
+	suite.ctx = context.WithValue(suite.ctx, auth.ContextKeyUserID, "test-user-123")
+	suite.ctx = context.WithValue(suite.ctx, auth.ContextKeyRoles, []string{"admin"})
+	
 	suite.mockService = new(mocks.MockLibraryService)
 	
 	// Create handler with mock service

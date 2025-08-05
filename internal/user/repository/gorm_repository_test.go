@@ -306,7 +306,7 @@ func (suite *GormRepositoryTestSuite) TestSessionOperations() {
 	assert.NoError(suite.T(), err)
 
 	// Verify deletion
-	retrieved, err = suite.repo.GetSession(suite.ctx, session.ID)
+	_, err = suite.repo.GetSession(suite.ctx, session.ID)
 	assert.Error(suite.T(), err)
 }
 

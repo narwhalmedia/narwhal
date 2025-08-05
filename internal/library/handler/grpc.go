@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	commonpb "github.com/narwhalmedia/narwhal/api/proto/common/v1"
-	librarypb "github.com/narwhalmedia/narwhal/api/proto/library/v1"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
 	"github.com/narwhalmedia/narwhal/pkg/errors"

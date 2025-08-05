@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/narwhalmedia/narwhal/api/proto/auth/v1"
-	"github.com/narwhalmedia/narwhal/api/proto/common/v1"
+	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
