@@ -162,8 +162,9 @@ message VideoStream {
   // Resolution
   Resolution resolution = 3;
 
-  // Frame rate
-  double frame_rate = 4;
+  // Reserved for backward compatibility (was double frame_rate)
+  reserved 4;
+  reserved "frame_rate";
 
   // Bitrate
   int64 bitrate = 5;
@@ -176,6 +177,10 @@ message VideoStream {
 
   // HDR metadata
   HDRMetadata hdr_metadata = 8;
+
+  // Frame rate as a rational number for exact representation
+  // Common values: 24000/1001 (23.976), 30000/1001 (29.97), 24/1, 25/1, 30/1, 50/1, 60/1
+  Rational frame_rate_rational = 9;
 }
 
 // AudioStream represents an audio stream
@@ -227,6 +232,16 @@ message SubtitleStream {
 message Resolution {
   int32 width = 1;
   int32 height = 2;
+}
+
+// Rational represents a rational number as a fraction
+// Used for exact frame rate representation (e.g., 24000/1001 for 23.976 fps)
+message Rational {
+  // Numerator of the fraction
+  int32 numerator = 1;
+  
+  // Denominator of the fraction (must not be 0)
+  int32 denominator = 2;
 }
 
 // HDRMetadata contains HDR information
@@ -348,8 +363,9 @@ message VideoCodecSettings {
   // Maximum bitrate
   int64 max_bitrate = 4;
 
-  // Target frame rate
-  double frame_rate = 5;
+  // Reserved for backward compatibility (was double frame_rate)
+  reserved 5;
+  reserved "frame_rate";
 
   // Keyframe interval
   int32 keyframe_interval = 6;
@@ -371,6 +387,10 @@ message VideoCodecSettings {
 
   // Constant rate factor (CRF)
   int32 crf = 12;
+
+  // Target frame rate as a rational number for exact representation
+  // Common values: 24000/1001 (23.976), 30000/1001 (29.97), 24/1, 25/1, 30/1, 50/1, 60/1
+  Rational frame_rate_rational = 13;
 }
 
 // AudioCodecSettings contains audio codec configuration
@@ -406,11 +426,14 @@ message StreamSelection {
 
   SelectionType type = 1;
 
-  // For INDEX type
-  int32 index = 2;
+  // Selection criteria - only one can be set
+  oneof criteria {
+    // Stream index for SELECTION_TYPE_INDEX
+    int32 index = 2;
 
-  // For LANGUAGE type
-  string language = 3;
+    // Language code for SELECTION_TYPE_LANGUAGE (e.g., "en", "es", "fr")
+    string language = 3;
+  }
 }
 
 // QualityPreset defines quality presets
@@ -469,6 +492,29 @@ enum HardwareType {
   HARDWARE_TYPE_VAAPI = 6;
 }
 
+// CodecType defines supported codec types
+enum CodecType {
+  CODEC_TYPE_UNSPECIFIED = 0;
+  CODEC_TYPE_H264 = 1;
+  CODEC_TYPE_H265 = 2;
+  CODEC_TYPE_HEVC = 3;  // Alias for H265
+  CODEC_TYPE_VP8 = 4;
+  CODEC_TYPE_VP9 = 5;
+  CODEC_TYPE_AV1 = 6;
+  CODEC_TYPE_MPEG2 = 7;
+  CODEC_TYPE_MPEG4 = 8;
+  CODEC_TYPE_PRORES = 9;
+  CODEC_TYPE_AAC = 10;
+  CODEC_TYPE_MP3 = 11;
+  CODEC_TYPE_OPUS = 12;
+  CODEC_TYPE_VORBIS = 13;
+  CODEC_TYPE_FLAC = 14;
+  CODEC_TYPE_AC3 = 15;
+  CODEC_TYPE_EAC3 = 16;
+  CODEC_TYPE_DTS = 17;
+  CODEC_TYPE_TRUEHD = 18;
+}
+
 // HardwareCapabilities describes available hardware
 message HardwareCapabilities {
   // Available hardware types
@@ -477,8 +523,9 @@ message HardwareCapabilities {
   // GPU devices
   repeated GPUDevice gpu_devices = 2;
 
-  // Supported codecs per hardware type
-  map<string, CodecSupport> codec_support = 3;
+  // Supported codecs per codec type
+  // Key is the CodecType enum value cast to int32
+  map<int32, CodecSupport> codec_support = 3;
 
   // Maximum concurrent sessions
   int32 max_concurrent_sessions = 4;
@@ -507,8 +554,8 @@ message GPUDevice {
 
 // CodecSupport describes codec capabilities
 message CodecSupport {
-  // Codec name
-  string codec = 1;
+  // Codec type
+  CodecType codec_type = 1;
 
   // Maximum resolution for decode
   Resolution max_decode_resolution = 2;
@@ -691,8 +738,9 @@ message StreamJobProgressRequest {
   // Job ID to monitor
   string job_id = 1;
 
-  // Update interval in seconds
-  int32 interval_seconds = 2;
+  // Update interval for progress streaming
+  // Allows sub-second precision (e.g., 500ms updates)
+  google.protobuf.Duration interval = 2;
 }
 
 // JobProgressUpdate for streaming
@@ -742,10 +790,11 @@ message CreateTranscodingProfileRequest {
 
 // UpdateTranscodingProfileRequest
 message UpdateTranscodingProfileRequest {
-  // Profile ID to update
-  string profile_id = 1;
+  // The resource name of the profile to update
+  // Format: profiles/{profile_id}
+  string name = 1;
 
-  // Updated profile data
+  // The profile resource with updated values
   TranscodingProfile profile = 2;
 
   // Field mask to specify which fields to update
@@ -755,8 +804,9 @@ message UpdateTranscodingProfileRequest {
 
 // DeleteTranscodingProfileRequest
 message DeleteTranscodingProfileRequest {
-  // Profile ID to delete
-  string profile_id = 1;
+  // The resource name of the profile to delete
+  // Format: profiles/{profile_id}
+  string name = 1;
 }
 
 // GetHardwareCapabilitiesRequest
