@@ -3,49 +3,81 @@ syntax = "proto3";
 package narwhal.transcoding.v1;
 
 import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/narwhalmedia/narwhal/pkg/transcoding/v1;transcodingpb";
 
+// CreateTranscodingJobResponse
+message CreateTranscodingJobResponse {
+  TranscodingJob job = 1;
+}
+// GetTranscodingJobResponse
+message GetTranscodingJobResponse {
+  TranscodingJob job = 1;
+}
+// CancelTranscodingJobResponse
+message CancelTranscodingJobResponse {
+  // Empty response
+}
+// CreateTranscodingProfileResponse
+message CreateTranscodingProfileResponse {
+  TranscodingProfile profile = 1;
+}
+// UpdateTranscodingProfileResponse
+message UpdateTranscodingProfileResponse {
+  TranscodingProfile profile = 1;
+}
+// DeleteTranscodingProfileResponse
+message DeleteTranscodingProfileResponse {
+  // Empty response
+}
+// GetHardwareCapabilitiesResponse
+message GetHardwareCapabilitiesResponse {
+  HardwareCapabilities capabilities = 1;
+}
+// GetWorkerPoolStatusResponse
+message GetWorkerPoolStatusResponse {
+  WorkerPoolStatus status = 1;
+}
+
 // TranscodingService handles media transcoding operations
 service TranscodingService {
   // Start a new transcoding job
-  rpc CreateTranscodingJob(CreateTranscodingJobRequest) returns (TranscodingJob);
+  rpc CreateTranscodingJob(CreateTranscodingJobRequest) returns (CreateTranscodingJobResponse);
 
   // Get job status
-  rpc GetTranscodingJob(GetTranscodingJobRequest) returns (TranscodingJob);
+  rpc GetTranscodingJob(GetTranscodingJobRequest) returns (GetTranscodingJobResponse);
 
   // List transcoding jobs
   rpc ListTranscodingJobs(ListTranscodingJobsRequest) returns (ListTranscodingJobsResponse);
 
   // Cancel a transcoding job
-  rpc CancelTranscodingJob(CancelTranscodingJobRequest) returns (google.protobuf.Empty);
+  rpc CancelTranscodingJob(CancelTranscodingJobRequest) returns (CancelTranscodingJobResponse);
 
   // Stream job progress updates
-  rpc StreamJobProgress(StreamJobProgressRequest) returns (stream JobProgressUpdate);
+  rpc StreamJobProgress(StreamJobProgressRequest) returns (stream StreamJobProgressResponse);
 
   // List available transcoding profiles
   rpc ListTranscodingProfiles(ListTranscodingProfilesRequest) returns (ListTranscodingProfilesResponse);
 
   // Create a custom transcoding profile
-  rpc CreateTranscodingProfile(CreateTranscodingProfileRequest) returns (TranscodingProfile);
+  rpc CreateTranscodingProfile(CreateTranscodingProfileRequest) returns (CreateTranscodingProfileResponse);
 
   // Update a transcoding profile
-  rpc UpdateTranscodingProfile(UpdateTranscodingProfileRequest) returns (TranscodingProfile);
+  rpc UpdateTranscodingProfile(UpdateTranscodingProfileRequest) returns (UpdateTranscodingProfileResponse);
 
   // Delete a transcoding profile
-  rpc DeleteTranscodingProfile(DeleteTranscodingProfileRequest) returns (google.protobuf.Empty);
+  rpc DeleteTranscodingProfile(DeleteTranscodingProfileRequest) returns (DeleteTranscodingProfileResponse);
 
   // Get hardware capabilities
-  rpc GetHardwareCapabilities(GetHardwareCapabilitiesRequest) returns (HardwareCapabilities);
+  rpc GetHardwareCapabilities(GetHardwareCapabilitiesRequest) returns (GetHardwareCapabilitiesResponse);
 
   // Batch transcoding operations
   rpc BatchCreateTranscodingJobs(BatchCreateTranscodingJobsRequest) returns (BatchCreateTranscodingJobsResponse);
 
   // Get worker pool status
-  rpc GetWorkerPoolStatus(GetWorkerPoolStatusRequest) returns (WorkerPoolStatus);
+  rpc GetWorkerPoolStatus(GetWorkerPoolStatusRequest) returns (GetWorkerPoolStatusResponse);
 }
 
 // TranscodingJob represents a transcoding job
@@ -236,11 +268,16 @@ message Resolution {
 
 // Rational represents a rational number as a fraction
 // Used for exact frame rate representation (e.g., 24000/1001 for 23.976 fps)
+// IMPORTANT: The denominator MUST NOT be zero to avoid division by zero errors
 message Rational {
   // Numerator of the fraction
+  // This value represents the top part of the fraction (e.g., 24000 in 24000/1001)
   int32 numerator = 1;
   
-  // Denominator of the fraction (must not be 0)
+  // Denominator of the fraction 
+  // WARNING: This value MUST NOT be 0 - zero denominators will cause runtime errors
+  // The server MUST validate that denominator != 0 before processing
+  // Common frame rate denominators: 1 (for integer fps), 1001 (for NTSC rates)
   int32 denominator = 2;
 }
 
@@ -494,25 +531,26 @@ enum HardwareType {
 
 // CodecType defines supported codec types
 enum CodecType {
+  option allow_alias = false;
+  
   CODEC_TYPE_UNSPECIFIED = 0;
   CODEC_TYPE_H264 = 1;
   CODEC_TYPE_H265 = 2;
-  CODEC_TYPE_HEVC = 3;  // Alias for H265
-  CODEC_TYPE_VP8 = 4;
-  CODEC_TYPE_VP9 = 5;
-  CODEC_TYPE_AV1 = 6;
-  CODEC_TYPE_MPEG2 = 7;
-  CODEC_TYPE_MPEG4 = 8;
-  CODEC_TYPE_PRORES = 9;
-  CODEC_TYPE_AAC = 10;
-  CODEC_TYPE_MP3 = 11;
-  CODEC_TYPE_OPUS = 12;
-  CODEC_TYPE_VORBIS = 13;
-  CODEC_TYPE_FLAC = 14;
-  CODEC_TYPE_AC3 = 15;
-  CODEC_TYPE_EAC3 = 16;
-  CODEC_TYPE_DTS = 17;
-  CODEC_TYPE_TRUEHD = 18;
+  CODEC_TYPE_VP8 = 3;
+  CODEC_TYPE_VP9 = 4;
+  CODEC_TYPE_AV1 = 5;
+  CODEC_TYPE_MPEG2 = 6;
+  CODEC_TYPE_MPEG4 = 7;
+  CODEC_TYPE_PRORES = 8;
+  CODEC_TYPE_AAC = 9;
+  CODEC_TYPE_MP3 = 10;
+  CODEC_TYPE_OPUS = 11;
+  CODEC_TYPE_VORBIS = 12;
+  CODEC_TYPE_FLAC = 13;
+  CODEC_TYPE_AC3 = 14;
+  CODEC_TYPE_EAC3 = 15;
+  CODEC_TYPE_DTS = 16;
+  CODEC_TYPE_TRUEHD = 17;
 }
 
 // HardwareCapabilities describes available hardware
@@ -551,7 +589,7 @@ message GPUDevice {
   double utilization = 5;
 
   // Supported codecs
-  repeated string supported_codecs = 6;
+  repeated CodecType supported_codecs = 6;
 }
 
 // CodecSupport describes codec capabilities
@@ -674,6 +712,12 @@ message CreateTranscodingJobRequest {
 
   // Whether to overwrite existing output
   bool overwrite = 9;
+
+  // Optional unique request ID for idempotency
+  // If provided, the server will ensure only one job is created for this ID
+  // Recommended format: UUID or client-generated unique identifier
+  // Follows AIP-154: allows safe retries without creating duplicate jobs
+  string request_id = 10;
 }
 
 // GetTranscodingJobRequest
@@ -745,8 +789,8 @@ message StreamJobProgressRequest {
   google.protobuf.Duration interval = 2;
 }
 
-// JobProgressUpdate for streaming
-message JobProgressUpdate {
+// StreamJobProgressResponse for streaming
+message StreamJobProgressResponse {
   // Job ID
   string job_id = 1;
 
@@ -830,6 +874,12 @@ message BatchCreateTranscodingJobsRequest {
 
   // Maximum parallel jobs
   int32 max_parallel = 4;
+
+  // Optional unique request ID for idempotency
+  // If provided, the server will ensure only one batch is created for this ID
+  // Recommended format: UUID or client-generated unique identifier
+  // Follows AIP-154: allows safe retries without creating duplicate batches
+  string request_id = 5;
 }
 
 // BatchCreateTranscodingJobsResponse
