@@ -4,6 +4,7 @@ package narwhal.transcoding.v1;
 
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/narwhalmedia/narwhal/pkg/transcoding/v1;transcodingpb";
@@ -498,7 +499,7 @@ message GPUDevice {
   int64 memory_bytes = 4;
 
   // Current utilization percentage
-  float utilization = 5;
+  double utilization = 5;
 
   // Supported codecs
   repeated string supported_codecs = 6;
@@ -540,7 +541,7 @@ message QualityMetrics {
   int64 peak_bitrate = 5;
 
   // File size reduction percentage
-  float size_reduction_percent = 6;
+  double size_reduction_percent = 6;
 }
 
 // WorkerPoolStatus represents the status of the worker pool
@@ -579,7 +580,7 @@ message WorkerInfo {
   HardwareCapabilities capabilities = 4;
 
   // Load average
-  float load_average = 5;
+  double load_average = 5;
 
   // Last heartbeat
   google.protobuf.Timestamp last_heartbeat = 6;
@@ -746,6 +747,10 @@ message UpdateTranscodingProfileRequest {
 
   // Updated profile data
   TranscodingProfile profile = 2;
+
+  // Field mask to specify which fields to update
+  // Allows partial updates instead of replacing the entire profile
+  google.protobuf.FieldMask update_mask = 3;
 }
 
 // DeleteTranscodingProfileRequest
