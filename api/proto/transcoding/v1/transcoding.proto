@@ -1,0 +1,792 @@
+syntax = "proto3";
+
+package narwhal.transcoding.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/pkg/transcoding/v1;transcodingpb";
+
+// TranscodingService handles media transcoding operations
+service TranscodingService {
+  // Start a new transcoding job
+  rpc CreateTranscodingJob(CreateTranscodingJobRequest) returns (TranscodingJob);
+  
+  // Get job status
+  rpc GetTranscodingJob(GetTranscodingJobRequest) returns (TranscodingJob);
+  
+  // List transcoding jobs
+  rpc ListTranscodingJobs(ListTranscodingJobsRequest) returns (ListTranscodingJobsResponse);
+  
+  // Cancel a transcoding job
+  rpc CancelTranscodingJob(CancelTranscodingJobRequest) returns (google.protobuf.Empty);
+  
+  // Stream job progress updates
+  rpc StreamJobProgress(StreamJobProgressRequest) returns (stream JobProgressUpdate);
+  
+  // Get available transcoding profiles
+  rpc GetTranscodingProfiles(GetTranscodingProfilesRequest) returns (GetTranscodingProfilesResponse);
+  
+  // Create a custom transcoding profile
+  rpc CreateTranscodingProfile(CreateTranscodingProfileRequest) returns (TranscodingProfile);
+  
+  // Update a transcoding profile
+  rpc UpdateTranscodingProfile(UpdateTranscodingProfileRequest) returns (TranscodingProfile);
+  
+  // Delete a transcoding profile
+  rpc DeleteTranscodingProfile(DeleteTranscodingProfileRequest) returns (google.protobuf.Empty);
+  
+  // Get hardware capabilities
+  rpc GetHardwareCapabilities(GetHardwareCapabilitiesRequest) returns (HardwareCapabilities);
+  
+  // Batch transcoding operations
+  rpc CreateBatchTranscodingJob(CreateBatchTranscodingJobRequest) returns (BatchTranscodingJobResponse);
+  
+  // Get worker pool status
+  rpc GetWorkerPoolStatus(GetWorkerPoolStatusRequest) returns (WorkerPoolStatus);
+}
+
+// TranscodingJob represents a transcoding job
+message TranscodingJob {
+  // Unique identifier for the job
+  string id = 1;
+  
+  // Input file information
+  InputFile input = 2;
+  
+  // Output file information
+  OutputFile output = 3;
+  
+  // Transcoding profile used
+  string profile_id = 4;
+  
+  // Current status of the job
+  JobStatus status = 5;
+  
+  // Progress information
+  JobProgress progress = 6;
+  
+  // Error information if failed
+  string error_message = 7;
+  
+  // Job priority
+  JobPriority priority = 8;
+  
+  // Hardware acceleration settings
+  HardwareAcceleration hardware_acceleration = 9;
+  
+  // Timestamps
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp started_at = 11;
+  google.protobuf.Timestamp completed_at = 12;
+  
+  // Worker information
+  string worker_id = 13;
+  
+  // Metadata
+  map<string, string> metadata = 14;
+  
+  // Retry count
+  int32 retry_count = 15;
+  
+  // Quality metrics
+  QualityMetrics quality_metrics = 16;
+}
+
+// InputFile contains information about the input media file
+message InputFile {
+  // File path or URL
+  string path = 1;
+  
+  // Media information
+  MediaInfo media_info = 2;
+  
+  // File size in bytes
+  int64 size_bytes = 3;
+  
+  // Checksum for verification
+  string checksum = 4;
+}
+
+// OutputFile contains information about the output media file
+message OutputFile {
+  // Output file path
+  string path = 1;
+  
+  // Expected format
+  string format = 2;
+  
+  // Target media information
+  MediaInfo target_info = 3;
+  
+  // Actual size in bytes (after completion)
+  int64 size_bytes = 4;
+  
+  // Checksum (after completion)
+  string checksum = 5;
+}
+
+// MediaInfo contains detailed media information
+message MediaInfo {
+  // Container format
+  string format = 1;
+  
+  // Duration
+  google.protobuf.Duration duration = 2;
+  
+  // Video streams
+  repeated VideoStream video_streams = 3;
+  
+  // Audio streams
+  repeated AudioStream audio_streams = 4;
+  
+  // Subtitle streams
+  repeated SubtitleStream subtitle_streams = 5;
+  
+  // Overall bitrate
+  int64 bitrate = 6;
+}
+
+// VideoStream represents a video stream
+message VideoStream {
+  // Stream index
+  int32 index = 1;
+  
+  // Codec name
+  string codec = 2;
+  
+  // Resolution
+  Resolution resolution = 3;
+  
+  // Frame rate
+  double frame_rate = 4;
+  
+  // Bitrate
+  int64 bitrate = 5;
+  
+  // Pixel format
+  string pixel_format = 6;
+  
+  // Color space
+  string color_space = 7;
+  
+  // HDR metadata
+  HDRMetadata hdr_metadata = 8;
+}
+
+// AudioStream represents an audio stream
+message AudioStream {
+  // Stream index
+  int32 index = 1;
+  
+  // Codec name
+  string codec = 2;
+  
+  // Sample rate
+  int32 sample_rate = 3;
+  
+  // Number of channels
+  int32 channels = 4;
+  
+  // Channel layout
+  string channel_layout = 5;
+  
+  // Bitrate
+  int64 bitrate = 6;
+  
+  // Language
+  string language = 7;
+  
+  // Title/description
+  string title = 8;
+}
+
+// SubtitleStream represents a subtitle stream
+message SubtitleStream {
+  // Stream index
+  int32 index = 1;
+  
+  // Codec name
+  string codec = 2;
+  
+  // Language
+  string language = 3;
+  
+  // Title/description
+  string title = 4;
+  
+  // Whether it's forced
+  bool forced = 5;
+}
+
+// Resolution represents video resolution
+message Resolution {
+  int32 width = 1;
+  int32 height = 2;
+}
+
+// HDRMetadata contains HDR information
+message HDRMetadata {
+  // HDR format (HDR10, HDR10+, Dolby Vision, etc.)
+  string format = 1;
+  
+  // Maximum content light level
+  int32 max_cll = 2;
+  
+  // Maximum frame average light level
+  int32 max_fall = 3;
+  
+  // Master display metadata
+  string master_display = 4;
+}
+
+// JobStatus represents the status of a transcoding job
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_PENDING = 1;
+  JOB_STATUS_QUEUED = 2;
+  JOB_STATUS_RUNNING = 3;
+  JOB_STATUS_COMPLETED = 4;
+  JOB_STATUS_FAILED = 5;
+  JOB_STATUS_CANCELLED = 6;
+  JOB_STATUS_RETRYING = 7;
+}
+
+// JobPriority represents the priority of a transcoding job
+enum JobPriority {
+  JOB_PRIORITY_UNSPECIFIED = 0;
+  JOB_PRIORITY_LOW = 1;
+  JOB_PRIORITY_NORMAL = 2;
+  JOB_PRIORITY_HIGH = 3;
+  JOB_PRIORITY_URGENT = 4;
+}
+
+// JobProgress contains progress information
+message JobProgress {
+  // Percentage complete (0-100)
+  float percent = 1;
+  
+  // Current frame being processed
+  int64 current_frame = 2;
+  
+  // Total frames
+  int64 total_frames = 3;
+  
+  // Current time position
+  google.protobuf.Duration current_time = 4;
+  
+  // Total duration
+  google.protobuf.Duration total_duration = 5;
+  
+  // Processing speed (e.g., 1.5x)
+  float speed = 6;
+  
+  // Estimated time remaining
+  google.protobuf.Duration eta = 7;
+  
+  // Current pass (for multi-pass encoding)
+  int32 current_pass = 8;
+  
+  // Total passes
+  int32 total_passes = 9;
+}
+
+// TranscodingProfile defines encoding settings
+message TranscodingProfile {
+  // Unique identifier
+  string id = 1;
+  
+  // Profile name
+  string name = 2;
+  
+  // Description
+  string description = 3;
+  
+  // Video codec settings
+  VideoCodecSettings video_codec = 4;
+  
+  // Audio codec settings
+  repeated AudioCodecSettings audio_codecs = 5;
+  
+  // Container format
+  string container_format = 6;
+  
+  // Whether this is a system profile
+  bool is_system = 7;
+  
+  // Target device/platform
+  string target_device = 8;
+  
+  // Quality preset
+  QualityPreset quality_preset = 9;
+  
+  // Encoding speed preset
+  EncodingSpeed encoding_speed = 10;
+  
+  // Maximum file size (optional)
+  int64 max_file_size_bytes = 11;
+  
+  // Additional FFmpeg options
+  map<string, string> ffmpeg_options = 12;
+}
+
+// VideoCodecSettings contains video codec configuration
+message VideoCodecSettings {
+  // Codec name (h264, h265, av1, etc.)
+  string codec = 1;
+  
+  // Target resolution
+  Resolution resolution = 2;
+  
+  // Target bitrate
+  int64 bitrate = 3;
+  
+  // Maximum bitrate
+  int64 max_bitrate = 4;
+  
+  // Target frame rate
+  double frame_rate = 5;
+  
+  // Keyframe interval
+  int32 keyframe_interval = 6;
+  
+  // Encoding preset (ultrafast, fast, medium, slow, veryslow)
+  string preset = 7;
+  
+  // Profile (baseline, main, high, etc.)
+  string profile = 8;
+  
+  // Level (3.0, 4.1, 5.1, etc.)
+  string level = 9;
+  
+  // Pixel format
+  string pixel_format = 10;
+  
+  // Two-pass encoding
+  bool two_pass = 11;
+  
+  // Constant rate factor (CRF)
+  int32 crf = 12;
+}
+
+// AudioCodecSettings contains audio codec configuration
+message AudioCodecSettings {
+  // Codec name (aac, opus, mp3, etc.)
+  string codec = 1;
+  
+  // Target bitrate
+  int64 bitrate = 2;
+  
+  // Sample rate
+  int32 sample_rate = 3;
+  
+  // Number of channels
+  int32 channels = 4;
+  
+  // Channel layout
+  string channel_layout = 5;
+  
+  // Stream selection (all, first, specific index)
+  StreamSelection stream_selection = 6;
+}
+
+// StreamSelection defines which streams to process
+message StreamSelection {
+  enum SelectionType {
+    SELECTION_TYPE_UNSPECIFIED = 0;
+    SELECTION_TYPE_ALL = 1;
+    SELECTION_TYPE_FIRST = 2;
+    SELECTION_TYPE_INDEX = 3;
+    SELECTION_TYPE_LANGUAGE = 4;
+  }
+  
+  SelectionType type = 1;
+  
+  // For INDEX type
+  int32 index = 2;
+  
+  // For LANGUAGE type
+  string language = 3;
+}
+
+// QualityPreset defines quality presets
+enum QualityPreset {
+  QUALITY_PRESET_UNSPECIFIED = 0;
+  QUALITY_PRESET_LOW = 1;
+  QUALITY_PRESET_MEDIUM = 2;
+  QUALITY_PRESET_HIGH = 3;
+  QUALITY_PRESET_ULTRA = 4;
+  QUALITY_PRESET_LOSSLESS = 5;
+}
+
+// EncodingSpeed defines encoding speed presets
+enum EncodingSpeed {
+  ENCODING_SPEED_UNSPECIFIED = 0;
+  ENCODING_SPEED_ULTRAFAST = 1;
+  ENCODING_SPEED_SUPERFAST = 2;
+  ENCODING_SPEED_VERYFAST = 3;
+  ENCODING_SPEED_FASTER = 4;
+  ENCODING_SPEED_FAST = 5;
+  ENCODING_SPEED_MEDIUM = 6;
+  ENCODING_SPEED_SLOW = 7;
+  ENCODING_SPEED_SLOWER = 8;
+  ENCODING_SPEED_VERYSLOW = 9;
+}
+
+// HardwareAcceleration settings
+message HardwareAcceleration {
+  // Whether hardware acceleration is enabled
+  bool enabled = 1;
+  
+  // Type of hardware acceleration
+  HardwareType type = 2;
+  
+  // Specific device to use (e.g., GPU index)
+  string device = 3;
+  
+  // Decoder acceleration
+  bool decode_acceleration = 4;
+  
+  // Encoder acceleration
+  bool encode_acceleration = 5;
+  
+  // Fallback to software if hardware fails
+  bool fallback_to_software = 6;
+}
+
+// HardwareType defines types of hardware acceleration
+enum HardwareType {
+  HARDWARE_TYPE_UNSPECIFIED = 0;
+  HARDWARE_TYPE_NONE = 1;
+  HARDWARE_TYPE_NVIDIA_NVENC = 2;
+  HARDWARE_TYPE_INTEL_QSV = 3;
+  HARDWARE_TYPE_AMD_AMF = 4;
+  HARDWARE_TYPE_APPLE_VIDEOTOOLBOX = 5;
+  HARDWARE_TYPE_VAAPI = 6;
+}
+
+// HardwareCapabilities describes available hardware
+message HardwareCapabilities {
+  // Available hardware types
+  repeated HardwareType available_types = 1;
+  
+  // GPU devices
+  repeated GPUDevice gpu_devices = 2;
+  
+  // Supported codecs per hardware type
+  map<string, CodecSupport> codec_support = 3;
+  
+  // Maximum concurrent sessions
+  int32 max_concurrent_sessions = 4;
+}
+
+// GPUDevice represents a GPU device
+message GPUDevice {
+  // Device index
+  int32 index = 1;
+  
+  // Device name
+  string name = 2;
+  
+  // Vendor
+  string vendor = 3;
+  
+  // Available memory in bytes
+  int64 memory_bytes = 4;
+  
+  // Current utilization percentage
+  float utilization = 5;
+  
+  // Supported codecs
+  repeated string supported_codecs = 6;
+}
+
+// CodecSupport describes codec capabilities
+message CodecSupport {
+  // Codec name
+  string codec = 1;
+  
+  // Maximum resolution for decode
+  Resolution max_decode_resolution = 2;
+  
+  // Maximum resolution for encode
+  Resolution max_encode_resolution = 3;
+  
+  // Supported profiles
+  repeated string profiles = 4;
+  
+  // Maximum level
+  string max_level = 5;
+}
+
+// QualityMetrics contains quality analysis results
+message QualityMetrics {
+  // Peak Signal-to-Noise Ratio
+  float psnr = 1;
+  
+  // Structural Similarity Index
+  float ssim = 2;
+  
+  // Video Multimethod Assessment Fusion
+  float vmaf = 3;
+  
+  // Average bitrate achieved
+  int64 average_bitrate = 4;
+  
+  // Peak bitrate
+  int64 peak_bitrate = 5;
+  
+  // File size reduction percentage
+  float size_reduction_percent = 6;
+}
+
+// WorkerPoolStatus represents the status of the worker pool
+message WorkerPoolStatus {
+  // Total number of workers
+  int32 total_workers = 1;
+  
+  // Active workers
+  int32 active_workers = 2;
+  
+  // Idle workers
+  int32 idle_workers = 3;
+  
+  // Jobs in queue
+  int32 queued_jobs = 4;
+  
+  // Jobs being processed
+  int32 processing_jobs = 5;
+  
+  // Worker details
+  repeated WorkerInfo workers = 6;
+}
+
+// WorkerInfo contains information about a worker
+message WorkerInfo {
+  // Worker ID
+  string id = 1;
+  
+  // Worker status
+  WorkerStatus status = 2;
+  
+  // Current job ID (if working)
+  string current_job_id = 3;
+  
+  // Hardware capabilities
+  HardwareCapabilities capabilities = 4;
+  
+  // Load average
+  float load_average = 5;
+  
+  // Last heartbeat
+  google.protobuf.Timestamp last_heartbeat = 6;
+}
+
+// WorkerStatus represents the status of a worker
+enum WorkerStatus {
+  WORKER_STATUS_UNSPECIFIED = 0;
+  WORKER_STATUS_IDLE = 1;
+  WORKER_STATUS_BUSY = 2;
+  WORKER_STATUS_OFFLINE = 3;
+  WORKER_STATUS_ERROR = 4;
+}
+
+// Request/Response messages
+
+// CreateTranscodingJobRequest
+message CreateTranscodingJobRequest {
+  // Input file path or URL
+  string input_path = 1;
+  
+  // Output file path
+  string output_path = 2;
+  
+  // Profile ID to use
+  string profile_id = 3;
+  
+  // Job priority
+  JobPriority priority = 4;
+  
+  // Hardware acceleration preferences
+  HardwareAcceleration hardware_acceleration = 5;
+  
+  // Job metadata
+  map<string, string> metadata = 6;
+  
+  // Start time offset (for partial transcoding)
+  google.protobuf.Duration start_offset = 7;
+  
+  // Duration limit (for partial transcoding)
+  google.protobuf.Duration duration = 8;
+  
+  // Whether to overwrite existing output
+  bool overwrite = 9;
+}
+
+// GetTranscodingJobRequest
+message GetTranscodingJobRequest {
+  // Job ID
+  string job_id = 1;
+}
+
+// ListTranscodingJobsRequest
+message ListTranscodingJobsRequest {
+  // Filter by status
+  repeated JobStatus statuses = 1;
+  
+  // Filter by priority
+  repeated JobPriority priorities = 2;
+  
+  // Filter by worker ID
+  string worker_id = 3;
+  
+  // Pagination
+  int32 page_size = 4;
+  string page_token = 5;
+  
+  // Sort order
+  SortOrder sort_order = 6;
+  
+  // Filter by creation time
+  google.protobuf.Timestamp created_after = 7;
+  google.protobuf.Timestamp created_before = 8;
+}
+
+// SortOrder for listing
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_CREATED_ASC = 1;
+  SORT_ORDER_CREATED_DESC = 2;
+  SORT_ORDER_PRIORITY_ASC = 3;
+  SORT_ORDER_PRIORITY_DESC = 4;
+}
+
+// ListTranscodingJobsResponse
+message ListTranscodingJobsResponse {
+  // List of jobs
+  repeated TranscodingJob jobs = 1;
+  
+  // Next page token
+  string next_page_token = 2;
+  
+  // Total count
+  int32 total_count = 3;
+}
+
+// CancelTranscodingJobRequest
+message CancelTranscodingJobRequest {
+  // Job ID to cancel
+  string job_id = 1;
+  
+  // Reason for cancellation
+  string reason = 2;
+}
+
+// StreamJobProgressRequest
+message StreamJobProgressRequest {
+  // Job ID to monitor
+  string job_id = 1;
+  
+  // Update interval in seconds
+  int32 interval_seconds = 2;
+}
+
+// JobProgressUpdate for streaming
+message JobProgressUpdate {
+  // Job ID
+  string job_id = 1;
+  
+  // Current status
+  JobStatus status = 2;
+  
+  // Progress information
+  JobProgress progress = 3;
+  
+  // Timestamp of update
+  google.protobuf.Timestamp timestamp = 4;
+  
+  // Log message (optional)
+  string log_message = 5;
+  
+  // Error message (if failed)
+  string error_message = 6;
+}
+
+// GetTranscodingProfilesRequest
+message GetTranscodingProfilesRequest {
+  // Filter by target device
+  string target_device = 1;
+  
+  // Include system profiles
+  bool include_system = 2;
+  
+  // Include custom profiles
+  bool include_custom = 3;
+}
+
+// GetTranscodingProfilesResponse
+message GetTranscodingProfilesResponse {
+  // List of profiles
+  repeated TranscodingProfile profiles = 1;
+}
+
+// CreateTranscodingProfileRequest
+message CreateTranscodingProfileRequest {
+  // Profile to create
+  TranscodingProfile profile = 1;
+}
+
+// UpdateTranscodingProfileRequest
+message UpdateTranscodingProfileRequest {
+  // Profile ID to update
+  string profile_id = 1;
+  
+  // Updated profile data
+  TranscodingProfile profile = 2;
+}
+
+// DeleteTranscodingProfileRequest
+message DeleteTranscodingProfileRequest {
+  // Profile ID to delete
+  string profile_id = 1;
+}
+
+// GetHardwareCapabilitiesRequest
+message GetHardwareCapabilitiesRequest {
+  // Refresh capabilities (re-detect hardware)
+  bool refresh = 1;
+}
+
+// CreateBatchTranscodingJobRequest
+message CreateBatchTranscodingJobRequest {
+  // List of job requests
+  repeated CreateTranscodingJobRequest jobs = 1;
+  
+  // Batch priority
+  JobPriority priority = 2;
+  
+  // Whether to stop on first failure
+  bool stop_on_failure = 3;
+  
+  // Maximum parallel jobs
+  int32 max_parallel = 4;
+}
+
+// BatchTranscodingJobResponse
+message BatchTranscodingJobResponse {
+  // Batch ID
+  string batch_id = 1;
+  
+  // Created jobs
+  repeated TranscodingJob jobs = 2;
+  
+  // Total jobs in batch
+  int32 total_jobs = 3;
+}
+
+// GetWorkerPoolStatusRequest
+message GetWorkerPoolStatusRequest {
+  // Include detailed worker information
+  bool include_worker_details = 1;
+}
