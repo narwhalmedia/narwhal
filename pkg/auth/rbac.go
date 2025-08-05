@@ -45,7 +45,7 @@ func (r *RBAC) initializeDefaultPermissions() {
 		domain.ResourceStreaming:   {domain.ActionRead},
 		domain.ResourceAcquisition: {domain.ActionRead},
 		domain.ResourceAnalytics:   {domain.ActionRead}, // Can view own analytics
-		domain.ResourceSystem:      {},                   // No system access
+		domain.ResourceSystem:      {},                  // No system access
 	}
 
 	// Guest role - minimal permissions
@@ -103,18 +103,18 @@ func (r *RBAC) AddPermission(role, resource, action string) {
 	if _, ok := r.permissions[role]; !ok {
 		r.permissions[role] = make(map[string][]string)
 	}
-	
+
 	if _, ok := r.permissions[role][resource]; !ok {
 		r.permissions[role][resource] = []string{}
 	}
-	
+
 	// Check if action already exists
 	for _, a := range r.permissions[role][resource] {
 		if a == action {
 			return
 		}
 	}
-	
+
 	r.permissions[role][resource] = append(r.permissions[role][resource], action)
 }
 
@@ -171,7 +171,7 @@ func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) e
 			return nil
 		}
 	}
-	
+
 	permStrs := []string{}
 	for _, perm := range permissions {
 		permStrs = append(permStrs, fmt.Sprintf("%s:%s", perm.Resource, perm.Action))
@@ -201,7 +201,7 @@ func (p *PolicyEnforcer) CheckOwnership(userID string, resourceUserID string, ro
 	if userID == resourceUserID {
 		return nil
 	}
-	
+
 	// Check if admin access is allowed and user has admin role
 	if ownership.AllowAdmin {
 		for _, role := range roles {
@@ -210,7 +210,7 @@ func (p *PolicyEnforcer) CheckOwnership(userID string, resourceUserID string, ro
 			}
 		}
 	}
-	
+
 	return fmt.Errorf("permission denied: not the resource owner")
 }
 
@@ -222,43 +222,43 @@ func DefaultPermissions() []domain.Permission {
 		{Resource: domain.ResourceLibrary, Action: domain.ActionWrite, Description: "Create/update libraries"},
 		{Resource: domain.ResourceLibrary, Action: domain.ActionDelete, Description: "Delete libraries"},
 		{Resource: domain.ResourceLibrary, Action: domain.ActionAdmin, Description: "Manage library settings"},
-		
+
 		// Media permissions
 		{Resource: domain.ResourceMedia, Action: domain.ActionRead, Description: "View media"},
 		{Resource: domain.ResourceMedia, Action: domain.ActionWrite, Description: "Add/update media"},
 		{Resource: domain.ResourceMedia, Action: domain.ActionDelete, Description: "Delete media"},
 		{Resource: domain.ResourceMedia, Action: domain.ActionAdmin, Description: "Manage media settings"},
-		
+
 		// User permissions
 		{Resource: domain.ResourceUser, Action: domain.ActionRead, Description: "View users"},
 		{Resource: domain.ResourceUser, Action: domain.ActionWrite, Description: "Create/update users"},
 		{Resource: domain.ResourceUser, Action: domain.ActionDelete, Description: "Delete users"},
 		{Resource: domain.ResourceUser, Action: domain.ActionAdmin, Description: "Manage user settings"},
-		
+
 		// Transcoding permissions
 		{Resource: domain.ResourceTranscoding, Action: domain.ActionRead, Description: "View transcoding jobs"},
 		{Resource: domain.ResourceTranscoding, Action: domain.ActionWrite, Description: "Create transcoding jobs"},
 		{Resource: domain.ResourceTranscoding, Action: domain.ActionDelete, Description: "Cancel transcoding jobs"},
 		{Resource: domain.ResourceTranscoding, Action: domain.ActionAdmin, Description: "Manage transcoding settings"},
-		
+
 		// Streaming permissions
 		{Resource: domain.ResourceStreaming, Action: domain.ActionRead, Description: "Stream media"},
 		{Resource: domain.ResourceStreaming, Action: domain.ActionWrite, Description: "Manage streams"},
 		{Resource: domain.ResourceStreaming, Action: domain.ActionDelete, Description: "Terminate streams"},
 		{Resource: domain.ResourceStreaming, Action: domain.ActionAdmin, Description: "Manage streaming settings"},
-		
+
 		// Acquisition permissions
 		{Resource: domain.ResourceAcquisition, Action: domain.ActionRead, Description: "View downloads"},
 		{Resource: domain.ResourceAcquisition, Action: domain.ActionWrite, Description: "Add downloads"},
 		{Resource: domain.ResourceAcquisition, Action: domain.ActionDelete, Description: "Remove downloads"},
 		{Resource: domain.ResourceAcquisition, Action: domain.ActionAdmin, Description: "Manage acquisition settings"},
-		
+
 		// Analytics permissions
 		{Resource: domain.ResourceAnalytics, Action: domain.ActionRead, Description: "View analytics"},
 		{Resource: domain.ResourceAnalytics, Action: domain.ActionWrite, Description: "Create reports"},
 		{Resource: domain.ResourceAnalytics, Action: domain.ActionDelete, Description: "Delete reports"},
 		{Resource: domain.ResourceAnalytics, Action: domain.ActionAdmin, Description: "Manage analytics settings"},
-		
+
 		// System permissions
 		{Resource: domain.ResourceSystem, Action: domain.ActionRead, Description: "View system status"},
 		{Resource: domain.ResourceSystem, Action: domain.ActionWrite, Description: "Modify system settings"},

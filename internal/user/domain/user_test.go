@@ -20,10 +20,10 @@ func (suite *UserDomainTestSuite) TestUser_SetPassword() {
 		ID:       uuid.New(),
 		Username: "testuser",
 	}
-	
+
 	// Act
 	err := user.SetPassword("testpassword123")
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotEmpty(suite.T(), user.PasswordHash)
@@ -37,7 +37,7 @@ func (suite *UserDomainTestSuite) TestUser_CheckPassword() {
 		Username: "testuser",
 	}
 	user.SetPassword("testpassword123")
-	
+
 	// Act & Assert
 	assert.True(suite.T(), user.CheckPassword("testpassword123"))
 	assert.False(suite.T(), user.CheckPassword("wrongpassword"))
@@ -54,7 +54,7 @@ func (suite *UserDomainTestSuite) TestUser_HasRole() {
 			{Name: domain.RoleUser},
 		},
 	}
-	
+
 	// Act & Assert
 	assert.True(suite.T(), user.HasRole(domain.RoleAdmin))
 	assert.True(suite.T(), user.HasRole(domain.RoleUser))
@@ -78,7 +78,7 @@ func (suite *UserDomainTestSuite) TestUser_HasPermission() {
 			},
 		},
 	}
-	
+
 	// Act & Assert
 	assert.True(suite.T(), user.HasPermission("users", "create"))
 	assert.True(suite.T(), user.HasPermission("users", "read"))
@@ -95,7 +95,7 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 		{Resource: "media", Action: "read"},
 		{Resource: "media", Action: "create"},
 	}
-	
+
 	user := &domain.User{
 		ID:       uuid.New(),
 		Username: "testuser",
@@ -110,13 +110,13 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 			},
 		},
 	}
-	
+
 	// Act
 	userPermissions := user.GetPermissions()
-	
+
 	// Assert - Should have 3 unique permissions
 	assert.Len(suite.T(), userPermissions, 3)
-	
+
 	// Check all permissions are present
 	hasPermission := func(perms []domain.Permission, resource, action string) bool {
 		for _, p := range perms {
@@ -126,7 +126,7 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 		}
 		return false
 	}
-	
+
 	assert.True(suite.T(), hasPermission(userPermissions, "users", "read"))
 	assert.True(suite.T(), hasPermission(userPermissions, "media", "read"))
 	assert.True(suite.T(), hasPermission(userPermissions, "media", "create"))
@@ -135,19 +135,19 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 func (suite *UserDomainTestSuite) TestSession_IsExpired() {
 	// Arrange
 	now := time.Now()
-	
+
 	// Expired session
 	expiredSession := &domain.Session{
 		ID:        uuid.New(),
 		ExpiresAt: now.Add(-1 * time.Hour),
 	}
-	
+
 	// Valid session
 	validSession := &domain.Session{
 		ID:        uuid.New(),
 		ExpiresAt: now.Add(1 * time.Hour),
 	}
-	
+
 	// Act & Assert
 	assert.True(suite.T(), expiredSession.IsExpired())
 	assert.False(suite.T(), validSession.IsExpired())
@@ -167,7 +167,7 @@ func (suite *UserDomainTestSuite) TestUserPreferences_Defaults() {
 			PreferredQuality: "auto",
 		},
 	}
-	
+
 	// Assert
 	assert.Equal(suite.T(), "en", user.Preferences.Language)
 	assert.Equal(suite.T(), "dark", user.Preferences.Theme)
@@ -188,12 +188,12 @@ func (suite *UserDomainTestSuite) TestRole_HasPermission() {
 			{Resource: "media", Action: "*"}, // Wildcard permission
 		},
 	}
-	
+
 	// Act & Assert
 	assert.True(suite.T(), role.HasPermission("users", "create"))
 	assert.True(suite.T(), role.HasPermission("users", "read"))
 	assert.False(suite.T(), role.HasPermission("users", "delete"))
-	
+
 	// Wildcard should match any action
 	assert.True(suite.T(), role.HasPermission("media", "create"))
 	assert.True(suite.T(), role.HasPermission("media", "read"))
@@ -207,20 +207,20 @@ func (suite *UserDomainTestSuite) TestPermission_Matches() {
 	assert.True(suite.T(), perm.Matches("users", "read"))
 	assert.False(suite.T(), perm.Matches("users", "write"))
 	assert.False(suite.T(), perm.Matches("media", "read"))
-	
+
 	// Test wildcard action
 	wildcard := domain.Permission{Resource: "media", Action: "*"}
 	assert.True(suite.T(), wildcard.Matches("media", "read"))
 	assert.True(suite.T(), wildcard.Matches("media", "write"))
 	assert.True(suite.T(), wildcard.Matches("media", "delete"))
 	assert.False(suite.T(), wildcard.Matches("users", "read"))
-	
+
 	// Test wildcard resource
 	wildcardResource := domain.Permission{Resource: "*", Action: "read"}
 	assert.True(suite.T(), wildcardResource.Matches("users", "read"))
 	assert.True(suite.T(), wildcardResource.Matches("media", "read"))
 	assert.False(suite.T(), wildcardResource.Matches("users", "write"))
-	
+
 	// Test double wildcard
 	allAccess := domain.Permission{Resource: "*", Action: "*"}
 	assert.True(suite.T(), allAccess.Matches("users", "read"))

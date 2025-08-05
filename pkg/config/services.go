@@ -43,17 +43,17 @@ type UserConfig struct {
 
 // AuthSettings contains authentication specific settings
 type AuthSettings struct {
-	JWTSecret           string        `koanf:"jwt_secret"`
-	JWTAccessExpiry     time.Duration `koanf:"jwt_access_expiry"`
-	JWTRefreshExpiry    time.Duration `koanf:"jwt_refresh_expiry"`
-	BCryptCost          int           `koanf:"bcrypt_cost"`
-	SessionTimeout      time.Duration `koanf:"session_timeout"`
-	MaxLoginAttempts    int           `koanf:"max_login_attempts"`
-	LockoutDuration     time.Duration `koanf:"lockout_duration"`
-	PasswordMinLength   int           `koanf:"password_min_length"`
-	RequireEmailVerify  bool          `koanf:"require_email_verify"`
-	EnableOAuth         bool          `koanf:"enable_oauth"`
-	OAuthProviders      []string      `koanf:"oauth_providers"`
+	JWTSecret          string        `koanf:"jwt_secret"`
+	JWTAccessExpiry    time.Duration `koanf:"jwt_access_expiry"`
+	JWTRefreshExpiry   time.Duration `koanf:"jwt_refresh_expiry"`
+	BCryptCost         int           `koanf:"bcrypt_cost"`
+	SessionTimeout     time.Duration `koanf:"session_timeout"`
+	MaxLoginAttempts   int           `koanf:"max_login_attempts"`
+	LockoutDuration    time.Duration `koanf:"lockout_duration"`
+	PasswordMinLength  int           `koanf:"password_min_length"`
+	RequireEmailVerify bool          `koanf:"require_email_verify"`
+	EnableOAuth        bool          `koanf:"enable_oauth"`
+	OAuthProviders     []string      `koanf:"oauth_providers"`
 }
 
 // Validate validates the user configuration
@@ -81,26 +81,26 @@ type StreamingConfig struct {
 
 // StreamingSettings contains streaming service specific settings
 type StreamingSettings struct {
-	TranscodingEnabled  bool              `koanf:"transcoding_enabled"`
-	TranscodingProfiles []TranscodeProfile `koanf:"transcoding_profiles"`
-	SegmentDuration     time.Duration     `koanf:"segment_duration"`
-	BufferSize          int               `koanf:"buffer_size"`
-	MaxConcurrentStreams int              `koanf:"max_concurrent_streams"`
-	CachePath           string            `koanf:"cache_path"`
-	CacheSize           int64             `koanf:"cache_size"` // in bytes
-	EnableHLS           bool              `koanf:"enable_hls"`
-	EnableDASH          bool              `koanf:"enable_dash"`
-	HardwareAccel       string            `koanf:"hardware_accel"` // none, nvidia, intel, amd
+	TranscodingEnabled   bool               `koanf:"transcoding_enabled"`
+	TranscodingProfiles  []TranscodeProfile `koanf:"transcoding_profiles"`
+	SegmentDuration      time.Duration      `koanf:"segment_duration"`
+	BufferSize           int                `koanf:"buffer_size"`
+	MaxConcurrentStreams int                `koanf:"max_concurrent_streams"`
+	CachePath            string             `koanf:"cache_path"`
+	CacheSize            int64              `koanf:"cache_size"` // in bytes
+	EnableHLS            bool               `koanf:"enable_hls"`
+	EnableDASH           bool               `koanf:"enable_dash"`
+	HardwareAccel        string             `koanf:"hardware_accel"` // none, nvidia, intel, amd
 }
 
 // TranscodeProfile defines a transcoding profile
 type TranscodeProfile struct {
-	Name      string `koanf:"name"`
+	Name       string `koanf:"name"`
 	VideoCodec string `koanf:"video_codec"`
 	AudioCodec string `koanf:"audio_codec"`
-	Bitrate   string `koanf:"bitrate"`
+	Bitrate    string `koanf:"bitrate"`
 	Resolution string `koanf:"resolution"`
-	Preset    string `koanf:"preset"`
+	Preset     string `koanf:"preset"`
 }
 
 // Validate validates the streaming configuration
@@ -125,28 +125,28 @@ type AcquisitionConfig struct {
 
 // AcquisitionSettings contains acquisition service specific settings
 type AcquisitionSettings struct {
-	Indexers            []IndexerConfig `koanf:"indexers"`
-	DownloadPath        string          `koanf:"download_path"`
-	CompletedPath       string          `koanf:"completed_path"`
-	MaxActiveDownloads  int             `koanf:"max_active_downloads"`
-	DownloadTimeout     time.Duration   `koanf:"download_timeout"`
-	RetryAttempts       int             `koanf:"retry_attempts"`
-	RetryDelay          time.Duration   `koanf:"retry_delay"`
-	MinFreeDiskSpace    int64           `koanf:"min_free_disk_space"` // in bytes
-	PreferredQuality    []string        `koanf:"preferred_quality"`
-	ExcludedKeywords    []string        `koanf:"excluded_keywords"`
-	RequiredKeywords    []string        `koanf:"required_keywords"`
+	Indexers           []IndexerConfig `koanf:"indexers"`
+	DownloadPath       string          `koanf:"download_path"`
+	CompletedPath      string          `koanf:"completed_path"`
+	MaxActiveDownloads int             `koanf:"max_active_downloads"`
+	DownloadTimeout    time.Duration   `koanf:"download_timeout"`
+	RetryAttempts      int             `koanf:"retry_attempts"`
+	RetryDelay         time.Duration   `koanf:"retry_delay"`
+	MinFreeDiskSpace   int64           `koanf:"min_free_disk_space"` // in bytes
+	PreferredQuality   []string        `koanf:"preferred_quality"`
+	ExcludedKeywords   []string        `koanf:"excluded_keywords"`
+	RequiredKeywords   []string        `koanf:"required_keywords"`
 }
 
 // IndexerConfig contains indexer configuration
 type IndexerConfig struct {
-	Name     string `koanf:"name"`
-	Type     string `koanf:"type"` // torrent, usenet, etc
-	URL      string `koanf:"url"`
-	APIKey   string `koanf:"api_key"`
-	Enabled  bool   `koanf:"enabled"`
-	Priority int    `koanf:"priority"`
-	RateLimit int   `koanf:"rate_limit"` // requests per minute
+	Name      string `koanf:"name"`
+	Type      string `koanf:"type"` // torrent, usenet, etc
+	URL       string `koanf:"url"`
+	APIKey    string `koanf:"api_key"`
+	Enabled   bool   `koanf:"enabled"`
+	Priority  int    `koanf:"priority"`
+	RateLimit int    `koanf:"rate_limit"` // requests per minute
 }
 
 // Validate validates the acquisition configuration
@@ -169,7 +169,7 @@ func GetDefaultLibraryConfig() *LibraryConfig {
 	base.Service.Name = "library"
 	base.Service.Port = 8081
 	base.Service.GRPCPort = 9091
-	
+
 	return &LibraryConfig{
 		BaseConfig: *base,
 		Library: LibrarySettings{
@@ -189,7 +189,7 @@ func GetDefaultUserConfig() *UserConfig {
 	base.Service.Name = "user"
 	base.Service.Port = 8082
 	base.Service.GRPCPort = 9092
-	
+
 	return &UserConfig{
 		BaseConfig: *base,
 		Auth: AuthSettings{
@@ -214,7 +214,7 @@ func GetDefaultStreamingConfig() *StreamingConfig {
 	base.Service.Name = "streaming"
 	base.Service.Port = 8083
 	base.Service.GRPCPort = 9093
-	
+
 	return &StreamingConfig{
 		BaseConfig: *base,
 		Streaming: StreamingSettings{
@@ -255,7 +255,7 @@ func GetDefaultAcquisitionConfig() *AcquisitionConfig {
 	base.Service.Name = "acquisition"
 	base.Service.Port = 8084
 	base.Service.GRPCPort = 9094
-	
+
 	return &AcquisitionConfig{
 		BaseConfig: *base,
 		Acquisition: AcquisitionSettings{

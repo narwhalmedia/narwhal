@@ -19,33 +19,33 @@ import (
 func main() {
 	// 1. Load configuration
 	cfg := config.MustLoadServiceConfig("library", config.GetDefaultLibraryConfig())
-	
+
 	// 2. Initialize logger based on config
 	logger := initLogger(cfg.Logger)
-	
+
 	// 3. Connect to database
 	db, err := database.NewGormDB(cfg.Database.ToDatabaseConfig())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	
+
 	// 4. Run migrations
 	if err := database.RunMigrations(db); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
-	
+
 	// 5. Initialize service components using config
 	// ... service initialization ...
-	
+
 	// 6. Start servers
 	go startHTTPServer(config.GetListenAddress(&cfg.Service))
 	go startGRPCServer(config.GetGRPCListenAddress(&cfg.Service))
-	
+
 	// 7. Start metrics server if enabled
 	if cfg.Metrics.Enabled {
 		go startMetricsServer(cfg.Metrics)
 	}
-	
+
 	// Wait for shutdown signal
 	waitForShutdown()
 }
@@ -87,7 +87,7 @@ func TestServiceWithConfig(t *testing.T) {
 			// ... test settings
 		},
 	}
-	
+
 	// Use the test config
 	service := NewService(cfg)
 	// ... run tests

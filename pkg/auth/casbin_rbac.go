@@ -64,18 +64,18 @@ func NewCasbinRBACFromString(modelText, policyText string, logger interfaces.Log
 			if line == "" || strings.HasPrefix(line, "#") {
 				continue
 			}
-			
+
 			// Parse CSV line
 			parts := strings.Split(line, ",")
 			if len(parts) < 4 {
 				continue
 			}
-			
+
 			// Clean up parts
 			for i := range parts {
 				parts[i] = strings.TrimSpace(parts[i])
 			}
-			
+
 			// Add policy
 			if parts[0] == "p" {
 				enforcer.AddPolicy(parts[1], parts[2], parts[3])
@@ -101,7 +101,7 @@ func (r *CasbinRBAC) CheckPermission(role, resource, action string) bool {
 
 	allowed, err := r.enforcer.Enforce(role, resource, action)
 	if err != nil {
-		r.logger.Error("Failed to check permission", 
+		r.logger.Error("Failed to check permission",
 			interfaces.Error(err),
 			interfaces.String("role", role),
 			interfaces.String("resource", resource),
@@ -128,19 +128,19 @@ func (r *CasbinRBAC) GetRolePermissions(role string) map[string][]string {
 	defer r.mu.RUnlock()
 
 	permissions := make(map[string][]string)
-	
+
 	// Get all policies for the role
 	policies, _ := r.enforcer.GetFilteredPolicy(0, role)
-	
+
 	for _, policy := range policies {
 		if len(policy) >= 3 {
 			resource := policy[1]
 			action := policy[2]
-			
+
 			if _, exists := permissions[resource]; !exists {
 				permissions[resource] = []string{}
 			}
-			
+
 			// Check if action already exists
 			found := false
 			for _, a := range permissions[resource] {
@@ -149,13 +149,13 @@ func (r *CasbinRBAC) GetRolePermissions(role string) map[string][]string {
 					break
 				}
 			}
-			
+
 			if !found {
 				permissions[resource] = append(permissions[resource], action)
 			}
 		}
 	}
-	
+
 	return permissions
 }
 
@@ -166,7 +166,7 @@ func (r *CasbinRBAC) AddPermission(role, resource, action string) {
 
 	added, err := r.enforcer.AddPolicy(role, resource, action)
 	if err != nil {
-		r.logger.Error("Failed to add permission", 
+		r.logger.Error("Failed to add permission",
 			interfaces.Error(err),
 			interfaces.String("role", role),
 			interfaces.String("resource", resource),
@@ -189,7 +189,7 @@ func (r *CasbinRBAC) RemovePermission(role, resource, action string) {
 
 	removed, err := r.enforcer.RemovePolicy(role, resource, action)
 	if err != nil {
-		r.logger.Error("Failed to remove permission", 
+		r.logger.Error("Failed to remove permission",
 			interfaces.Error(err),
 			interfaces.String("role", role),
 			interfaces.String("resource", resource),
@@ -250,7 +250,7 @@ func (r *CasbinRBAC) GetUserRoles(userID string) []string {
 
 	roles, err := r.enforcer.GetRolesForUser(userID)
 	if err != nil {
-		r.logger.Error("Failed to get user roles", 
+		r.logger.Error("Failed to get user roles",
 			interfaces.Error(err),
 			interfaces.String("userID", userID))
 		return nil
@@ -266,7 +266,7 @@ func (r *CasbinRBAC) CheckUserPermission(userID, resource, action string) bool {
 
 	allowed, err := r.enforcer.Enforce(userID, resource, action)
 	if err != nil {
-		r.logger.Error("Failed to check user permission", 
+		r.logger.Error("Failed to check user permission",
 			interfaces.Error(err),
 			interfaces.String("userID", userID),
 			interfaces.String("resource", resource),
@@ -285,7 +285,7 @@ func (r *CasbinRBAC) AddRole(role string, permissions []Permission) error {
 	// Add each permission for the role
 	for _, perm := range permissions {
 		if _, err := r.enforcer.AddPolicy(role, perm.Resource, perm.Action); err != nil {
-			return fmt.Errorf("failed to add permission %s:%s to role %s: %w", 
+			return fmt.Errorf("failed to add permission %s:%s to role %s: %w",
 				perm.Resource, perm.Action, role, err)
 		}
 	}
@@ -330,7 +330,7 @@ func (r *CasbinRBAC) GetAllRoles() []string {
 	// Get all unique subjects from policies
 	roleMap := make(map[string]bool)
 	policies, _ := r.enforcer.GetPolicy()
-	
+
 	for _, policy := range policies {
 		if len(policy) > 0 {
 			roleMap[policy[0]] = true
@@ -361,7 +361,6 @@ func (r *CasbinRBAC) LoadPolicy() error {
 
 	return r.enforcer.LoadPolicy()
 }
-
 
 // CasbinPolicyEnforcer provides policy-based access control using Casbin
 type CasbinPolicyEnforcer struct {
@@ -396,7 +395,7 @@ func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...Permiss
 			return nil
 		}
 	}
-	
+
 	permStrs := []string{}
 	for _, perm := range permissions {
 		permStrs = append(permStrs, fmt.Sprintf("%s:%s", perm.Resource, perm.Action))
@@ -420,7 +419,7 @@ func (p *CasbinPolicyEnforcer) CheckOwnership(userID string, resourceUserID stri
 	if userID == resourceUserID {
 		return nil
 	}
-	
+
 	// Check if admin access is allowed and user has admin role
 	if ownership.AllowAdmin {
 		for _, role := range roles {
@@ -429,7 +428,7 @@ func (p *CasbinPolicyEnforcer) CheckOwnership(userID string, resourceUserID stri
 			}
 		}
 	}
-	
+
 	return fmt.Errorf("permission denied: not the resource owner")
 }
 

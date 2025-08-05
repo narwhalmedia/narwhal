@@ -12,7 +12,7 @@ type Config struct {
 	Encoding    string   `json:"encoding" yaml:"encoding"` // json or console
 	OutputPaths []string `json:"output_paths" yaml:"output_paths"`
 	ErrorPaths  []string `json:"error_paths" yaml:"error_paths"`
-	
+
 	// Additional fields to include in all logs
 	InitialFields map[string]interface{} `json:"initial_fields" yaml:"initial_fields"`
 }
@@ -49,7 +49,7 @@ func (c *Config) Build() (*ZapLogger, error) {
 
 	// Create zap config
 	var zapConfig zap.Config
-	
+
 	if c.Development {
 		zapConfig = zap.NewDevelopmentConfig()
 		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder

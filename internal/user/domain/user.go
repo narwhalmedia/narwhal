@@ -15,11 +15,11 @@ type User struct {
 	PasswordHash string    `gorm:"not null"`
 	DisplayName  string
 	Avatar       string
-	Roles        []Role     `gorm:"many2many:user_roles;"`
-	Sessions     []Session  `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
+	Roles        []Role          `gorm:"many2many:user_roles;"`
+	Sessions     []Session       `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 	Preferences  UserPreferences `gorm:"embedded;embeddedPrefix:pref_"`
-	IsActive     bool       `gorm:"default:true"`
-	IsVerified   bool       `gorm:"default:false"`
+	IsActive     bool            `gorm:"default:true"`
+	IsVerified   bool            `gorm:"default:false"`
 	LastLoginAt  *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
@@ -27,8 +27,8 @@ type User struct {
 
 // Role represents a user role
 type Role struct {
-	ID          uuid.UUID    `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Name        string       `gorm:"uniqueIndex;not null"`
+	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Name        string    `gorm:"uniqueIndex;not null"`
 	Description string
 	Permissions []Permission `gorm:"many2many:role_permissions;"`
 	CreatedAt   time.Time
@@ -60,13 +60,13 @@ type Session struct {
 
 // UserPreferences represents user-specific preferences
 type UserPreferences struct {
-	Language          string `gorm:"default:'en'"`
-	Theme             string `gorm:"default:'dark'"`
-	TimeZone          string `gorm:"default:'UTC'"`
-	AutoPlayNext      bool   `gorm:"default:true"`
-	SubtitleLanguage  string `gorm:"default:'en'"`
-	PreferredQuality  string `gorm:"default:'auto'"`
-	EnableNotifications bool `gorm:"default:true"`
+	Language            string `gorm:"default:'en'"`
+	Theme               string `gorm:"default:'dark'"`
+	TimeZone            string `gorm:"default:'UTC'"`
+	AutoPlayNext        bool   `gorm:"default:true"`
+	SubtitleLanguage    string `gorm:"default:'en'"`
+	PreferredQuality    string `gorm:"default:'auto'"`
+	EnableNotifications bool   `gorm:"default:true"`
 }
 
 // SetPassword hashes and sets the user's password
@@ -110,7 +110,7 @@ func (u *User) HasPermission(resource, action string) bool {
 // GetPermissions returns all unique permissions for the user
 func (u *User) GetPermissions() []Permission {
 	permMap := make(map[string]Permission)
-	
+
 	for _, role := range u.Roles {
 		for _, perm := range role.Permissions {
 			key := perm.Resource + ":" + perm.Action
@@ -119,12 +119,12 @@ func (u *User) GetPermissions() []Permission {
 			}
 		}
 	}
-	
+
 	perms := make([]Permission, 0, len(permMap))
 	for _, perm := range permMap {
 		perms = append(perms, perm)
 	}
-	
+
 	return perms
 }
 
@@ -136,12 +136,12 @@ const (
 
 // TokenClaims represents JWT token claims
 type TokenClaims struct {
-	UserID      string   `json:"user_id"`
-	Username    string   `json:"username"`
-	Email       string   `json:"email"`
-	Roles       []string `json:"roles"`
-	TokenType   string   `json:"token_type"`
-	SessionID   string   `json:"session_id,omitempty"`
+	UserID    string   `json:"user_id"`
+	Username  string   `json:"username"`
+	Email     string   `json:"email"`
+	Roles     []string `json:"roles"`
+	TokenType string   `json:"token_type"`
+	SessionID string   `json:"session_id,omitempty"`
 }
 
 // AuthTokens represents a pair of access and refresh tokens
@@ -163,14 +163,14 @@ const (
 
 // Resource types for permissions
 const (
-	ResourceLibrary      = "library"
-	ResourceMedia        = "media"
-	ResourceUser         = "user"
-	ResourceTranscoding  = "transcoding"
-	ResourceStreaming    = "streaming"
-	ResourceAcquisition  = "acquisition"
-	ResourceAnalytics    = "analytics"
-	ResourceSystem       = "system"
+	ResourceLibrary     = "library"
+	ResourceMedia       = "media"
+	ResourceUser        = "user"
+	ResourceTranscoding = "transcoding"
+	ResourceStreaming   = "streaming"
+	ResourceAcquisition = "acquisition"
+	ResourceAnalytics   = "analytics"
+	ResourceSystem      = "system"
 )
 
 // Action types for permissions

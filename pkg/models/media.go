@@ -12,7 +12,7 @@ type MediaType string
 const (
 	MediaTypeMovie  MediaType = "movie"
 	MediaTypeSeries MediaType = "series"
-	MediaTypeTV     MediaType = "tv"      // Alias for series
+	MediaTypeTV     MediaType = "tv" // Alias for series
 	MediaTypeMusic  MediaType = "music"
 )
 
@@ -33,7 +33,7 @@ type Media struct {
 	LastScanned time.Time  `json:"last_scanned" db:"last_scanned"`
 	Metadata    *Metadata  `json:"metadata,omitempty"`
 	Episodes    []*Episode `json:"episodes,omitempty"` // For series
-	
+
 	// Extended fields for GORM compatibility
 	Status         string     `json:"status,omitempty" db:"status"`
 	FilePath       string     `json:"file_path,omitempty" db:"file_path"`
@@ -53,48 +53,48 @@ type Media struct {
 
 // Episode represents an episode of a series
 type Episode struct {
-	ID           uuid.UUID `json:"id" db:"id"`
-	MediaID      uuid.UUID `json:"media_id" db:"media_id"`
-	SeasonNumber int       `json:"season_number" db:"season_number"`
-	EpisodeNumber int      `json:"episode_number" db:"episode_number"`
-	Title        string    `json:"title" db:"title"`
-	Path         string    `json:"path" db:"path"`
-	Duration     int       `json:"duration" db:"duration"`
-	AirDate      time.Time `json:"air_date,omitempty" db:"air_date"`
-	Added        time.Time `json:"added" db:"added"`
+	ID            uuid.UUID `json:"id" db:"id"`
+	MediaID       uuid.UUID `json:"media_id" db:"media_id"`
+	SeasonNumber  int       `json:"season_number" db:"season_number"`
+	EpisodeNumber int       `json:"episode_number" db:"episode_number"`
+	Title         string    `json:"title" db:"title"`
+	Path          string    `json:"path" db:"path"`
+	Duration      int       `json:"duration" db:"duration"`
+	AirDate       time.Time `json:"air_date,omitempty" db:"air_date"`
+	Added         time.Time `json:"added" db:"added"`
 }
 
 // Metadata contains enriched metadata for media items
 type Metadata struct {
-	ID           uuid.UUID  `json:"id" db:"id"`
-	MediaID      uuid.UUID  `json:"media_id" db:"media_id"`
-	Title        string     `json:"title,omitempty" db:"title"`
-	IMDBID       string     `json:"imdb_id,omitempty" db:"imdb_id"`
-	TMDBID       string     `json:"tmdb_id,omitempty" db:"tmdb_id"`
-	TVDBID       string     `json:"tvdb_id,omitempty" db:"tvdb_id"`
-	Description  string     `json:"description,omitempty" db:"description"`
-	ReleaseDate  string     `json:"release_date,omitempty" db:"release_date"`
-	Rating       float32    `json:"rating,omitempty" db:"rating"`
-	Genres       []string   `json:"genres,omitempty"`
-	Cast         []string   `json:"cast,omitempty"`
-	Directors    []string   `json:"directors,omitempty"`
-	PosterURL    string     `json:"poster_url,omitempty" db:"poster_url"`
-	BackdropURL  string     `json:"backdrop_url,omitempty" db:"backdrop_url"`
-	TrailerURL   string     `json:"trailer_url,omitempty" db:"trailer_url"`
-	LastUpdated  time.Time  `json:"last_updated" db:"last_updated"`
+	ID          uuid.UUID `json:"id" db:"id"`
+	MediaID     uuid.UUID `json:"media_id" db:"media_id"`
+	Title       string    `json:"title,omitempty" db:"title"`
+	IMDBID      string    `json:"imdb_id,omitempty" db:"imdb_id"`
+	TMDBID      string    `json:"tmdb_id,omitempty" db:"tmdb_id"`
+	TVDBID      string    `json:"tvdb_id,omitempty" db:"tvdb_id"`
+	Description string    `json:"description,omitempty" db:"description"`
+	ReleaseDate string    `json:"release_date,omitempty" db:"release_date"`
+	Rating      float32   `json:"rating,omitempty" db:"rating"`
+	Genres      []string  `json:"genres,omitempty"`
+	Cast        []string  `json:"cast,omitempty"`
+	Directors   []string  `json:"directors,omitempty"`
+	PosterURL   string    `json:"poster_url,omitempty" db:"poster_url"`
+	BackdropURL string    `json:"backdrop_url,omitempty" db:"backdrop_url"`
+	TrailerURL  string    `json:"trailer_url,omitempty" db:"trailer_url"`
+	LastUpdated time.Time `json:"last_updated" db:"last_updated"`
 }
 
 // Library represents a media library location
 type Library struct {
-	ID          uuid.UUID   `json:"id" db:"id"`
-	Name        string      `json:"name" db:"name"`
-	Path        string      `json:"path" db:"path"`
-	Type        MediaType   `json:"type" db:"type"`
-	AutoScan    bool        `json:"auto_scan" db:"auto_scan"`
-	ScanInterval int        `json:"scan_interval" db:"scan_interval"` // in minutes
-	LastScanned time.Time   `json:"last_scanned" db:"last_scanned"`
-	Created     time.Time   `json:"created" db:"created"`
-	Updated     time.Time   `json:"updated" db:"updated"`
+	ID           uuid.UUID `json:"id" db:"id"`
+	Name         string    `json:"name" db:"name"`
+	Path         string    `json:"path" db:"path"`
+	Type         MediaType `json:"type" db:"type"`
+	AutoScan     bool      `json:"auto_scan" db:"auto_scan"`
+	ScanInterval int       `json:"scan_interval" db:"scan_interval"` // in minutes
+	LastScanned  time.Time `json:"last_scanned" db:"last_scanned"`
+	Created      time.Time `json:"created" db:"created"`
+	Updated      time.Time `json:"updated" db:"updated"`
 }
 
 // StreamSession represents an active streaming session

@@ -12,14 +12,14 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
-	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
+	"github.com/narwhalmedia/narwhal/pkg/auth"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/models"
-	"github.com/narwhalmedia/narwhal/pkg/auth"
 	"github.com/narwhalmedia/narwhal/pkg/pagination"
 )
 
@@ -35,7 +35,7 @@ type GRPCHandler struct {
 func NewGRPCHandler(libraryService service.LibraryServiceInterface, logger interfaces.Logger, paginationEncoder *pagination.CursorEncoder) *GRPCHandler {
 	return &GRPCHandler{
 		libraryService:    libraryService,
-		logger:           logger,
+		logger:            logger,
 		paginationEncoder: paginationEncoder,
 	}
 }
@@ -47,12 +47,12 @@ func (h *GRPCHandler) checkAuth(ctx context.Context) (string, []string, error) {
 	if !ok || userID == "" {
 		return "", nil, status.Error(codes.Unauthenticated, "user not authenticated")
 	}
-	
+
 	roles, ok := auth.GetRolesFromContext(ctx)
 	if !ok {
 		return "", nil, status.Error(codes.Internal, "roles not found in context")
 	}
-	
+
 	return userID, roles, nil
 }
 
@@ -63,7 +63,7 @@ func (h *GRPCHandler) CreateLibrary(ctx context.Context, req *librarypb.CreateLi
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	library := &domain.Library{
 		ID:           uuid.New(),
 		Name:         req.Name,
@@ -90,25 +90,25 @@ func (h *GRPCHandler) GetLibrary(ctx context.Context, req *librarypb.GetLibraryR
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse and validate library ID
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid library ID")
 	}
-	
+
 	// Get library from service
 	library, err := h.libraryService.GetLibrary(ctx, id)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "library not found")
 		}
-		h.logger.Error("Failed to get library", 
+		h.logger.Error("Failed to get library",
 			interfaces.Error(err),
 			interfaces.String("library_id", req.Id))
 		return nil, status.Errorf(codes.Internal, "failed to get library: %v", err)
 	}
-	
+
 	return convertLibraryToProto(library), nil
 }
 
@@ -119,14 +119,14 @@ func (h *GRPCHandler) ListLibraries(ctx context.Context, req *librarypb.ListLibr
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Get all libraries from service
 	libraries, err := h.libraryService.ListLibraries(ctx, nil)
 	if err != nil {
 		h.logger.Error("Failed to list libraries", interfaces.Error(err))
 		return nil, status.Errorf(codes.Internal, "failed to list libraries: %v", err)
 	}
-	
+
 	// Apply type filter if specified
 	filteredLibraries := libraries
 	if req.TypeFilter != commonpb.MediaType_MEDIA_TYPE_UNSPECIFIED {
@@ -139,17 +139,17 @@ func (h *GRPCHandler) ListLibraries(ctx context.Context, req *librarypb.ListLibr
 		}
 		filteredLibraries = filtered
 	}
-	
+
 	// Convert to proto format
 	protoLibraries := make([]*librarypb.Library, len(filteredLibraries))
 	for i, lib := range filteredLibraries {
 		protoLibraries[i] = convertLibraryToProto(lib)
 	}
-	
+
 	// Handle pagination
 	pageSize := int32(50)
 	offset := 0
-	
+
 	if req.Pagination != nil {
 		if req.Pagination.PageSize > 0 {
 			pageSize = req.Pagination.PageSize
@@ -157,12 +157,12 @@ func (h *GRPCHandler) ListLibraries(ctx context.Context, req *librarypb.ListLibr
 				pageSize = 200
 			}
 		}
-		
+
 		// Calculate offset from page token
 		if req.Pagination.PageToken != "" && h.paginationEncoder != nil {
 			calculatedOffset, err := pagination.CalculateOffset(h.paginationEncoder, req.Pagination.PageToken, 0)
 			if err != nil {
-				h.logger.Warn("Invalid pagination token", 
+				h.logger.Warn("Invalid pagination token",
 					interfaces.Error(err),
 					interfaces.String("token", req.Pagination.PageToken))
 				// Continue with offset 0 on invalid token
@@ -171,21 +171,21 @@ func (h *GRPCHandler) ListLibraries(ctx context.Context, req *librarypb.ListLibr
 			}
 		}
 	}
-	
+
 	// Apply pagination
 	totalItems := len(protoLibraries)
 	startIdx := offset
 	endIdx := offset + int(pageSize)
-	
+
 	if startIdx > totalItems {
 		startIdx = totalItems
 	}
 	if endIdx > totalItems {
 		endIdx = totalItems
 	}
-	
+
 	paginatedLibraries := protoLibraries[startIdx:endIdx]
-	
+
 	// Generate next page token
 	var nextPageToken string
 	if h.paginationEncoder != nil && endIdx < totalItems {
@@ -196,7 +196,7 @@ func (h *GRPCHandler) ListLibraries(ctx context.Context, req *librarypb.ListLibr
 			nextPageToken = token
 		}
 	}
-	
+
 	return &librarypb.ListLibrariesResponse{
 		Libraries: paginatedLibraries,
 		Pagination: &commonpb.PaginationResponse{
@@ -213,21 +213,21 @@ func (h *GRPCHandler) UpdateLibrary(ctx context.Context, req *librarypb.UpdateLi
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse and validate library ID
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid library ID")
 	}
-	
+
 	// Validate request
 	if req.Library == nil {
 		return nil, status.Error(codes.InvalidArgument, "library data is required")
 	}
-	
+
 	// Build update map based on field mask
 	updates := make(map[string]interface{})
-	
+
 	if req.UpdateMask != nil && len(req.UpdateMask.Paths) > 0 {
 		// Apply only specified fields
 		for _, path := range req.UpdateMask.Paths {
@@ -261,19 +261,19 @@ func (h *GRPCHandler) UpdateLibrary(ctx context.Context, req *librarypb.UpdateLi
 			updates["scan_interval"] = int(req.Library.ScanIntervalMinutes) * 60
 		}
 	}
-	
+
 	// Update library
 	library, err := h.libraryService.UpdateLibrary(ctx, id, updates)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "library not found")
 		}
-		h.logger.Error("Failed to update library", 
+		h.logger.Error("Failed to update library",
 			interfaces.Error(err),
 			interfaces.String("library_id", req.Id))
 		return nil, status.Errorf(codes.Internal, "failed to update library: %v", err)
 	}
-	
+
 	return convertLibraryToProto(library), nil
 }
 
@@ -284,27 +284,27 @@ func (h *GRPCHandler) DeleteLibrary(ctx context.Context, req *librarypb.DeleteLi
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse and validate library ID
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid library ID")
 	}
-	
+
 	// Delete library
 	if err := h.libraryService.DeleteLibrary(ctx, id); err != nil {
 		if errors.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "library not found")
 		}
-		h.logger.Error("Failed to delete library", 
+		h.logger.Error("Failed to delete library",
 			interfaces.Error(err),
 			interfaces.String("library_id", req.Id))
 		return nil, status.Errorf(codes.Internal, "failed to delete library: %v", err)
 	}
-	
+
 	h.logger.Info("Library deleted successfully",
 		interfaces.String("library_id", req.Id))
-	
+
 	return &emptypb.Empty{}, nil
 }
 
@@ -314,7 +314,7 @@ func (h *GRPCHandler) ScanLibrary(ctx context.Context, req *librarypb.ScanLibrar
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid library ID")
 	}
-	
+
 	if err := h.libraryService.ScanLibrary(ctx, id); err != nil {
 		if errors.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "library not found")
@@ -342,7 +342,7 @@ func (h *GRPCHandler) GetMedia(ctx context.Context, req *librarypb.GetMediaReque
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid media ID")
 	}
-	
+
 	media, err := h.libraryService.GetMedia(ctx, id)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -361,7 +361,7 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse library ID if provided
 	var libraryID *uuid.UUID
 	if req.LibraryId != "" {
@@ -371,14 +371,14 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 		}
 		libraryID = &id
 	}
-	
+
 	// TODO: Add status filter to proto definition if needed
 	var statusFilter *string
-	
+
 	// Handle pagination
 	limit := int(50)
 	offset := int(0)
-	
+
 	if req.Pagination != nil {
 		if req.Pagination.PageSize > 0 {
 			limit = int(req.Pagination.PageSize)
@@ -386,12 +386,12 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 				limit = 200 // Max page size
 			}
 		}
-		
+
 		// Calculate offset from page token
 		if req.Pagination.PageToken != "" && h.paginationEncoder != nil {
 			calculatedOffset, err := pagination.CalculateOffset(h.paginationEncoder, req.Pagination.PageToken, 0)
 			if err != nil {
-				h.logger.Warn("Invalid pagination token", 
+				h.logger.Warn("Invalid pagination token",
 					interfaces.Error(err),
 					interfaces.String("token", req.Pagination.PageToken))
 				// Continue with offset 0 on invalid token
@@ -400,11 +400,11 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 			}
 		}
 	}
-	
+
 	// Get media items
 	var mediaItems []*models.Media
 	var err error
-	
+
 	if libraryID != nil {
 		// List media for specific library
 		mediaItems, err = h.libraryService.ListMediaByLibrary(ctx, *libraryID, statusFilter, limit, offset)
@@ -413,21 +413,21 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 		// TODO: Implement listing all media across libraries
 		mediaItems, err = h.libraryService.SearchMedia(ctx, "", nil, statusFilter, nil, limit, offset)
 	}
-	
+
 	if err != nil {
-		h.logger.Error("Failed to list media", 
+		h.logger.Error("Failed to list media",
 			interfaces.Error(err),
 			interfaces.String("library_id", req.LibraryId))
 		return nil, status.Errorf(codes.Internal, "failed to list media: %v", err)
 	}
-	
+
 	// Convert to proto format
 	protoMedia := make([]*librarypb.Media, len(mediaItems))
 	for i, media := range mediaItems {
 		// For list operations, include basic metadata but not episodes
 		protoMedia[i] = convertMediaToProto(media, true, false)
 	}
-	
+
 	// Generate next page token
 	var nextPageToken string
 	if h.paginationEncoder != nil && len(mediaItems) == limit {
@@ -439,7 +439,7 @@ func (h *GRPCHandler) ListMedia(ctx context.Context, req *librarypb.ListMediaReq
 			nextPageToken = token
 		}
 	}
-	
+
 	return &librarypb.ListMediaResponse{
 		Media: protoMedia,
 		Pagination: &commonpb.PaginationResponse{
@@ -455,17 +455,17 @@ func (h *GRPCHandler) SearchMedia(ctx context.Context, req *librarypb.SearchMedi
 	var mediaType *string
 	var statusFilter *string
 	var libraryID *uuid.UUID
-	
+
 	if req.TypeFilter != 0 {
 		mt := string(convertMediaType(req.TypeFilter))
 		mediaType = &mt
 	}
-	
+
 	limit := int(req.Pagination.GetPageSize())
 	if limit <= 0 {
 		limit = 50
 	}
-	
+
 	results, err := h.libraryService.SearchMedia(ctx, req.Query, mediaType, statusFilter, libraryID, limit, 0)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "search failed: %v", err)
@@ -493,21 +493,21 @@ func (h *GRPCHandler) UpdateMedia(ctx context.Context, req *librarypb.UpdateMedi
 	if _, _, err := h.checkAuth(ctx); err != nil {
 		return nil, err
 	}
-	
+
 	// Parse and validate media ID
 	id, err := uuid.Parse(req.Id)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid media ID")
 	}
-	
+
 	// Validate request
 	if req.Media == nil {
 		return nil, status.Error(codes.InvalidArgument, "media data is required")
 	}
-	
+
 	// Build update map based on field mask
 	updates := make(map[string]interface{})
-	
+
 	if req.UpdateMask != nil && len(req.UpdateMask.Paths) > 0 {
 		// Apply only specified fields
 		for _, path := range req.UpdateMask.Paths {
@@ -542,7 +542,7 @@ func (h *GRPCHandler) UpdateMedia(ctx context.Context, req *librarypb.UpdateMedi
 		if req.Media.Path != "" {
 			updates["path"] = req.Media.Path
 		}
-		
+
 		// Update metadata fields if provided
 		if req.Media.Metadata != nil {
 			if req.Media.Metadata.Description != "" {
@@ -556,19 +556,19 @@ func (h *GRPCHandler) UpdateMedia(ctx context.Context, req *librarypb.UpdateMedi
 			}
 		}
 	}
-	
+
 	// Update media
 	media, err := h.libraryService.UpdateMedia(ctx, id, updates)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, status.Error(codes.NotFound, "media not found")
 		}
-		h.logger.Error("Failed to update media", 
+		h.logger.Error("Failed to update media",
 			interfaces.Error(err),
 			interfaces.String("media_id", req.Id))
 		return nil, status.Errorf(codes.Internal, "failed to update media: %v", err)
 	}
-	
+
 	return convertMediaToProto(media, true, false), nil
 }
 
@@ -578,7 +578,7 @@ func (h *GRPCHandler) DeleteMedia(ctx context.Context, req *librarypb.DeleteMedi
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid media ID")
 	}
-	
+
 	// Get media details before deletion if we need to delete the file
 	var media *models.Media
 	if req.DeleteFile {
@@ -592,7 +592,7 @@ func (h *GRPCHandler) DeleteMedia(ctx context.Context, req *librarypb.DeleteMedi
 			return nil, status.Errorf(codes.Internal, "failed to get media: %v", err)
 		}
 	}
-	
+
 	// Delete from database
 	if err := h.libraryService.DeleteMedia(ctx, id); err != nil {
 		if errors.IsNotFound(err) {
@@ -644,7 +644,7 @@ func (h *GRPCHandler) deletePhysicalFile(path string) error {
 	if !filepath.IsAbs(path) {
 		return fmt.Errorf("path must be absolute")
 	}
-	
+
 	// Check if file exists
 	info, err := os.Stat(path)
 	if err != nil {
@@ -654,16 +654,16 @@ func (h *GRPCHandler) deletePhysicalFile(path string) error {
 		}
 		return fmt.Errorf("failed to stat file: %w", err)
 	}
-	
+
 	// Don't delete directories
 	if info.IsDir() {
 		return fmt.Errorf("cannot delete directory")
 	}
-	
+
 	// Delete the file
 	if err := os.Remove(path); err != nil {
 		return fmt.Errorf("failed to remove file: %w", err)
 	}
-	
+
 	return nil
 }

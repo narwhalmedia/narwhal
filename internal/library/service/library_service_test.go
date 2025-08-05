@@ -250,7 +250,7 @@ func (suite *LibraryServiceTestSuite) SetupTest() {
 	suite.mockRepo = new(MockLibraryRepository)
 	suite.cache = utils.NewInMemoryCache()
 	suite.eventBus = events.NewLocalEventBus(logger.NewNoopLogger())
-	
+
 	suite.libraryService = service.NewLibraryService(
 		suite.mockRepo,
 		suite.eventBus,
@@ -274,13 +274,13 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_Success() {
 		Enabled:      true,
 		ScanInterval: 3600,
 	}
-	
+
 	suite.mockRepo.On("GetLibraryByPath", suite.ctx, "/test/path").Return(nil, errors.NotFound("not found"))
 	suite.mockRepo.On("CreateLibrary", suite.ctx, mock.AnythingOfType("*domain.Library")).Return(nil)
-	
+
 	// Act
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotEqual(suite.T(), uuid.Nil, library.ID)
@@ -292,17 +292,17 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_PathExists() {
 		ID:   uuid.New(),
 		Path: "/test/path",
 	}
-	
+
 	library := &domain.Library{
 		Name: "Test Library",
 		Path: "/test/path",
 	}
-	
+
 	suite.mockRepo.On("GetLibraryByPath", suite.ctx, "/test/path").Return(existingLibrary, nil)
-	
+
 	// Act
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
-	
+
 	// Assert
 	assert.Error(suite.T(), err)
 	assert.True(suite.T(), errors.IsConflict(err))
@@ -314,10 +314,10 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_MissingFields() {
 		Name: "", // Missing name
 		Path: "/test/path",
 	}
-	
+
 	// Act
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
-	
+
 	// Assert
 	assert.Error(suite.T(), err)
 	assert.True(suite.T(), errors.IsBadRequest(err))
@@ -330,12 +330,12 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Success() {
 		ID:   libraryID,
 		Name: "Test Library",
 	}
-	
+
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(expectedLibrary, nil)
-	
+
 	// Act
 	library, err := suite.libraryService.GetLibrary(suite.ctx, libraryID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), expectedLibrary, library)
@@ -348,16 +348,16 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Cached() {
 		ID:   libraryID,
 		Name: "Test Library",
 	}
-	
+
 	// First call - from repository
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(expectedLibrary, nil).Once()
-	
+
 	// Act - First call
 	library1, err1 := suite.libraryService.GetLibrary(suite.ctx, libraryID)
-	
+
 	// Act - Second call (should use cache)
 	library2, err2 := suite.libraryService.GetLibrary(suite.ctx, libraryID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err1)
 	assert.NoError(suite.T(), err2)
@@ -376,19 +376,19 @@ func (suite *LibraryServiceTestSuite) TestUpdateLibrary_Success() {
 		Enabled:      true,
 		ScanInterval: 3600,
 	}
-	
+
 	updates := map[string]interface{}{
 		"name":          "Updated Name",
 		"enabled":       false,
 		"scan_interval": 7200,
 	}
-	
+
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(existingLibrary, nil)
 	suite.mockRepo.On("UpdateLibrary", suite.ctx, mock.AnythingOfType("*domain.Library")).Return(nil)
-	
+
 	// Act
 	updatedLibrary, err := suite.libraryService.UpdateLibrary(suite.ctx, libraryID, updates)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), "Updated Name", updatedLibrary.Name)
@@ -403,13 +403,13 @@ func (suite *LibraryServiceTestSuite) TestDeleteLibrary_Success() {
 		ID:   libraryID,
 		Name: "To Delete",
 	}
-	
+
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(library, nil)
 	suite.mockRepo.On("DeleteLibrary", suite.ctx, libraryID).Return(nil)
-	
+
 	// Act
 	err := suite.libraryService.DeleteLibrary(suite.ctx, libraryID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 }
@@ -424,16 +424,16 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 		Type:    "movie",
 		Enabled: true,
 	}
-	
+
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(library, nil)
 	suite.mockRepo.On("CreateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
 	suite.mockRepo.On("UpdateLibrary", mock.Anything, mock.AnythingOfType("*domain.Library")).Return(nil).Maybe()
 	suite.mockRepo.On("UpdateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
 	suite.mockRepo.On("GetMediaByPath", mock.Anything, mock.AnythingOfType("string")).Return(nil, errors.NotFound("not found")).Maybe()
-	
+
 	// Act
 	err := suite.libraryService.ScanLibrary(suite.ctx, libraryID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	// Scan runs asynchronously, so we just verify it started
@@ -451,23 +451,23 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 // 		Type:    "movie",
 // 		Enabled: true,
 // 	}
-// 	
+//
 // 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(library, nil).Twice()
 // 	suite.mockRepo.On("CreateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
 // 	suite.mockRepo.On("UpdateLibrary", mock.Anything, mock.AnythingOfType("*domain.Library")).Return(nil).Maybe()
 // 	suite.mockRepo.On("UpdateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
 // 	suite.mockRepo.On("GetMediaByPath", mock.Anything, mock.AnythingOfType("string")).Return(nil, errors.NotFound("not found")).Maybe()
-// 	
+//
 // 	// Start first scan
 // 	err := suite.libraryService.ScanLibrary(suite.ctx, libraryID)
 // 	assert.NoError(suite.T(), err)
-// 	
+//
 // 	// Sleep briefly to ensure the goroutine starts
 // 	time.Sleep(50 * time.Millisecond)
-// 	
+//
 // 	// Act - Try to start another scan
 // 	err = suite.libraryService.ScanLibrary(suite.ctx, libraryID)
-// 	
+//
 // 	// Assert
 // 	assert.Error(suite.T(), err)
 // 	assert.True(suite.T(), errors.IsConflict(err))
@@ -478,12 +478,12 @@ func (suite *LibraryServiceTestSuite) TestGetMedia_Success() {
 	mediaID := uuid.New()
 	expectedMedia := testutil.CreateTestMedia(uuid.New(), "Test Movie", models.MediaTypeMovie)
 	expectedMedia.ID = mediaID
-	
+
 	suite.mockRepo.On("GetMedia", suite.ctx, mediaID).Return(expectedMedia, nil)
-	
+
 	// Act
 	media, err := suite.libraryService.GetMedia(suite.ctx, mediaID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), expectedMedia, media)
@@ -494,18 +494,18 @@ func (suite *LibraryServiceTestSuite) TestSearchMedia_Success() {
 	libraryID := uuid.New()
 	mediaType := string(models.MediaTypeMovie)
 	status := "available"
-	
+
 	expectedMedia := []*models.Media{
 		testutil.CreateTestMedia(libraryID, "Movie 1", models.MediaTypeMovie),
 		testutil.CreateTestMedia(libraryID, "Movie 2", models.MediaTypeMovie),
 	}
-	
+
 	suite.mockRepo.On("SearchMedia", suite.ctx, "test", &mediaType, &status, &libraryID, 50, 0).
 		Return(expectedMedia, nil)
-	
+
 	// Act
 	results, err := suite.libraryService.SearchMedia(suite.ctx, "test", &mediaType, &status, &libraryID, 50, 0)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.Len(suite.T(), results, 2)
@@ -516,19 +516,19 @@ func (suite *LibraryServiceTestSuite) TestUpdateMedia_Success() {
 	mediaID := uuid.New()
 	existingMedia := testutil.CreateTestMedia(uuid.New(), "Original Title", models.MediaTypeMovie)
 	existingMedia.ID = mediaID
-	
+
 	updates := map[string]interface{}{
 		"title":       "Updated Title",
 		"description": "New description",
 		"tags":        []string{"action", "drama"},
 	}
-	
+
 	suite.mockRepo.On("GetMedia", suite.ctx, mediaID).Return(existingMedia, nil)
 	suite.mockRepo.On("UpdateMedia", suite.ctx, mock.AnythingOfType("*models.Media")).Return(nil)
-	
+
 	// Act
 	updatedMedia, err := suite.libraryService.UpdateMedia(suite.ctx, mediaID, updates)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.Equal(suite.T(), "Updated Title", updatedMedia.Title)
@@ -541,13 +541,13 @@ func (suite *LibraryServiceTestSuite) TestDeleteMedia_Success() {
 	mediaID := uuid.New()
 	media := testutil.CreateTestMedia(uuid.New(), "To Delete", models.MediaTypeMovie)
 	media.ID = mediaID
-	
+
 	suite.mockRepo.On("GetMedia", suite.ctx, mediaID).Return(media, nil)
 	suite.mockRepo.On("DeleteMedia", suite.ctx, mediaID).Return(nil)
-	
+
 	// Act
 	err := suite.libraryService.DeleteMedia(suite.ctx, mediaID)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 }

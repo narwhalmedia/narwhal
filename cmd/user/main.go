@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/handler"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
 	"github.com/narwhalmedia/narwhal/pkg/config"
 	"github.com/narwhalmedia/narwhal/pkg/database"
 	"github.com/narwhalmedia/narwhal/pkg/events"

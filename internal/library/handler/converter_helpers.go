@@ -2,12 +2,12 @@ package handler
 
 import (
 	"time"
-	
+
 	"google.golang.org/protobuf/types/known/timestamppb"
-	
+
+	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
@@ -51,30 +51,29 @@ func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
 		Created:             timestamppb.New(lib.CreatedAt),
 		Updated:             timestamppb.New(lib.UpdatedAt),
 	}
-	
+
 	if lib.LastScanAt != nil {
 		proto.LastScanned = timestamppb.New(*lib.LastScanAt)
 	}
-	
+
 	return proto
 }
-
 
 // convertMediaToProto converts domain media to proto media
 func convertMediaToProto(media *models.Media, includeMetadata, includeEpisodes bool) *librarypb.Media {
 	protoMedia := &librarypb.Media{
-		Id:           media.ID.String(),
-		Title:        media.Title,
-		Type:         convertMediaTypeToProtoFromMediaType(media.Type),
-		Path:         media.Path,
+		Id:              media.ID.String(),
+		Title:           media.Title,
+		Type:            convertMediaTypeToProtoFromMediaType(media.Type),
+		Path:            media.Path,
 		SizeBytes:       media.Size,
 		DurationSeconds: int32(media.Duration),
-		Resolution:   media.Resolution,
-		Codec:        media.Codec,
-		Bitrate:      int32(media.Bitrate),
-		Added:        timestamppb.New(media.Added),
-		Modified:     timestamppb.New(media.Modified),
-		LastScanned:  timestamppb.New(media.LastScanned),
+		Resolution:      media.Resolution,
+		Codec:           media.Codec,
+		Bitrate:         int32(media.Bitrate),
+		Added:           timestamppb.New(media.Added),
+		Modified:        timestamppb.New(media.Modified),
+		LastScanned:     timestamppb.New(media.LastScanned),
 	}
 
 	if includeMetadata && media.Metadata != nil {
@@ -122,7 +121,7 @@ func convertMetadataToProto(metadata *models.Metadata) *librarypb.Metadata {
 		BackdropUrl: metadata.BackdropURL,
 		TrailerUrl:  metadata.TrailerURL,
 	}
-	
+
 	// Parse ReleaseDate string to time.Time if not empty
 	if metadata.ReleaseDate != "" {
 		// Try common date formats
@@ -133,26 +132,26 @@ func convertMetadataToProto(metadata *models.Metadata) *librarypb.Metadata {
 			}
 		}
 	}
-	
+
 	return proto
 }
 
 // convertEpisodeToProto converts domain episode to proto episode
 func convertEpisodeToProto(episode *models.Episode) *librarypb.Episode {
 	proto := &librarypb.Episode{
-		Id:            episode.ID.String(),
-		MediaId:       episode.MediaID.String(),
-		SeasonNumber:  int32(episode.SeasonNumber),
-		EpisodeNumber: int32(episode.EpisodeNumber),
-		Title:         episode.Title,
-		Path:          episode.Path,
+		Id:              episode.ID.String(),
+		MediaId:         episode.MediaID.String(),
+		SeasonNumber:    int32(episode.SeasonNumber),
+		EpisodeNumber:   int32(episode.EpisodeNumber),
+		Title:           episode.Title,
+		Path:            episode.Path,
 		DurationSeconds: int32(episode.Duration),
-		Added:          timestamppb.New(episode.Added),
+		Added:           timestamppb.New(episode.Added),
 	}
-	
+
 	if !episode.AirDate.IsZero() {
 		proto.AirDate = timestamppb.New(episode.AirDate)
 	}
-	
+
 	return proto
 }

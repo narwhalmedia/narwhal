@@ -29,10 +29,10 @@ func NewInMemoryCache() *InMemoryCache {
 	cache := &InMemoryCache{
 		entries: make(map[string]*CacheEntry),
 	}
-	
+
 	// Start cleanup goroutine
 	go cache.cleanup()
-	
+
 	return cache
 }
 

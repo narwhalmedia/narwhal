@@ -121,32 +121,32 @@ func ExtractTitle(path string) string {
 	filename := filepath.Base(path)
 	ext := filepath.Ext(filename)
 	title := strings.TrimSuffix(filename, ext)
-	
+
 	// Regular expressions for common patterns
 	yearPattern := regexp.MustCompile(`\s*[\(\[]?\d{4}[\)\]]?\s*`)
 	qualityPattern := regexp.MustCompile(`\s*[\(\[]?(1080p|720p|480p|2160p|4K|BluRay|BRRip|WEBRip|HDTV|DVDRip|WEB-DL|x264|x265|h264|h265|HEVC)[\)\]]?.*`)
 	releaseGroupPattern := regexp.MustCompile(`-[A-Za-z0-9]+$`)
-	
+
 	// Clean up common separators
 	title = strings.ReplaceAll(title, ".", " ")
 	title = strings.ReplaceAll(title, "_", " ")
 	title = strings.ReplaceAll(title, "-", " ")
-	
+
 	// Remove year
 	title = yearPattern.ReplaceAllString(title, " ")
-	
+
 	// Remove quality and everything after
 	title = qualityPattern.ReplaceAllString(title, "")
-	
+
 	// Remove release group
 	title = releaseGroupPattern.ReplaceAllString(title, "")
-	
+
 	// Clean up multiple spaces
 	title = regexp.MustCompile(`\s+`).ReplaceAllString(title, " ")
-	
+
 	// Trim whitespace
 	title = strings.TrimSpace(title)
-	
+
 	// Capitalize words
 	words := strings.Fields(title)
 	for i, word := range words {
@@ -154,35 +154,35 @@ func ExtractTitle(path string) string {
 			words[i] = strings.ToUpper(word[:1]) + strings.ToLower(word[1:])
 		}
 	}
-	
+
 	return strings.Join(words, " ")
 }
 
 // ScanPath scans a library path and returns scan results
 func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, error) {
 	libraryID := library.ID.String()
-	
+
 	// Check if already scanning
 	if s.IsScanning(libraryID) {
 		return &ScanResult{
-			LibraryID: library.ID,
-			Status:    "already_scanning",
-			Errors:    1,
+			LibraryID:    library.ID,
+			Status:       "already_scanning",
+			Errors:       1,
 			ErrorMessage: "Library is already being scanned",
 		}, nil
 	}
-	
+
 	// Set scanning state
 	s.SetScanning(libraryID, true)
 	defer s.SetScanning(libraryID, false)
-	
+
 	result := &ScanResult{
 		ID:        uuid.New(),
 		LibraryID: library.ID,
 		StartedAt: time.Now(),
 		Status:    "scanning",
 	}
-	
+
 	// Check if path exists
 	if _, err := os.Stat(library.Path); os.IsNotExist(err) {
 		result.Status = "failed"
@@ -192,7 +192,7 @@ func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, 
 		result.Duration = time.Since(result.StartedAt).Milliseconds()
 		return result, nil
 	}
-	
+
 	// Scan for files
 	files, err := s.ScanDirectory(library.Path, library.Type)
 	if err != nil {
@@ -203,21 +203,21 @@ func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, 
 		result.Duration = time.Since(result.StartedAt).Milliseconds()
 		return result, nil
 	}
-	
+
 	// Count files
 	result.FilesFound = len(files)
 	result.FilesScanned = len(files)
-	
+
 	// Complete scan
 	completedAt := time.Now()
 	result.CompletedAt = &completedAt
 	result.Status = "completed"
 	result.Duration = time.Since(result.StartedAt).Milliseconds()
-	
+
 	s.logger.Info("Library scan completed",
 		interfaces.String("library_id", libraryID),
 		interfaces.Int("files_found", result.FilesFound))
-	
+
 	return result, nil
 }
 

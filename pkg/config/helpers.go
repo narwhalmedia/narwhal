@@ -20,7 +20,7 @@ func (c DatabaseConfig) ToDatabaseConfig() *database.PostgresConfig {
 	if c.SSLMode == "" {
 		c.SSLMode = "disable"
 	}
-	
+
 	return &database.PostgresConfig{
 		Host:            c.Host,
 		Port:            c.Port,
@@ -41,12 +41,12 @@ func GetServiceVersion(cfg *ServiceConfig) string {
 	if cfg.Version != "" {
 		return cfg.Version
 	}
-	
+
 	// Try to get from environment
 	if version := os.Getenv("SERVICE_VERSION"); version != "" {
 		return version
 	}
-	
+
 	// Default to dev
 	return "dev"
 }

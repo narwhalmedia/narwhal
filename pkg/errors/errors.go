@@ -151,7 +151,7 @@ func IsDuplicateError(err error) bool {
 		return false
 	}
 	errStr := err.Error()
-	return strings.Contains(errStr, "duplicate key") || 
+	return strings.Contains(errStr, "duplicate key") ||
 		strings.Contains(errStr, "UNIQUE constraint") ||
 		strings.Contains(errStr, "duplicate entry")
 }

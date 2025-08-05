@@ -17,31 +17,31 @@ import (
 func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
-		
+
 		// Extract or generate request ID
 		requestID := extractRequestID(ctx)
 		if requestID == "" {
 			requestID = uuid.New().String()
 			ctx = context.WithValue(ctx, "request_id", requestID)
 		}
-		
+
 		// Create request-scoped logger
 		reqLogger := logger.With(
 			zap.String("request_id", requestID),
 			zap.String("method", info.FullMethod),
 		)
-		
+
 		// Log request
 		reqLogger.Info("gRPC request started",
 			zap.Any("request", req),
 		)
-		
+
 		// Call handler
 		resp, err := handler(ctx, req)
-		
+
 		// Calculate duration
 		duration := time.Since(start)
-		
+
 		// Determine status code
 		code := codes.OK
 		if err != nil {
@@ -51,7 +51,7 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 				code = codes.Unknown
 			}
 		}
-		
+
 		// Log response
 		if err != nil {
 			reqLogger.Error("gRPC request failed",
@@ -66,7 +66,7 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 				zap.Any("response", resp),
 			)
 		}
-		
+
 		return resp, err
 	}
 }
@@ -75,13 +75,13 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 func StreamLoggingInterceptor(logger *zap.Logger) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		start := time.Now()
-		
+
 		// Extract or generate request ID
 		requestID := extractRequestIDFromStream(ss.Context())
 		if requestID == "" {
 			requestID = uuid.New().String()
 		}
-		
+
 		// Create request-scoped logger
 		reqLogger := logger.With(
 			zap.String("request_id", requestID),
@@ -89,22 +89,22 @@ func StreamLoggingInterceptor(logger *zap.Logger) grpc.StreamServerInterceptor {
 			zap.Bool("is_client_stream", info.IsClientStream),
 			zap.Bool("is_server_stream", info.IsServerStream),
 		)
-		
+
 		// Log stream start
 		reqLogger.Info("gRPC stream started")
-		
+
 		// Wrap the stream with logging
 		wrappedStream := &loggingServerStream{
 			ServerStream: ss,
 			logger:       reqLogger,
 		}
-		
+
 		// Call handler
 		err := handler(srv, wrappedStream)
-		
+
 		// Calculate duration
 		duration := time.Since(start)
-		
+
 		// Log stream end
 		if err != nil {
 			reqLogger.Error("gRPC stream failed",
@@ -116,7 +116,7 @@ func StreamLoggingInterceptor(logger *zap.Logger) grpc.StreamServerInterceptor {
 				zap.Duration("duration", duration),
 			)
 		}
-		
+
 		return err
 	}
 }
@@ -153,12 +153,12 @@ func extractRequestID(ctx context.Context) string {
 	if !ok {
 		return ""
 	}
-	
+
 	values := md.Get("x-request-id")
 	if len(values) > 0 {
 		return values[0]
 	}
-	
+
 	return ""
 }
 

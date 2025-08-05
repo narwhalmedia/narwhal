@@ -78,7 +78,7 @@ func TestEncryptDecrypt(t *testing.T) {
 			// Encrypt
 			encrypted, err := enc.Encrypt(tt.plaintext)
 			assert.NoError(t, err)
-			
+
 			if tt.plaintext == "" {
 				assert.Empty(t, encrypted)
 			} else {
@@ -99,24 +99,24 @@ func TestEncryptionUniqueness(t *testing.T) {
 	require.NoError(t, err)
 
 	plaintext := "test-api-key"
-	
+
 	// Encrypt the same plaintext multiple times
 	encrypted1, err := enc.Encrypt(plaintext)
 	require.NoError(t, err)
-	
+
 	encrypted2, err := enc.Encrypt(plaintext)
 	require.NoError(t, err)
-	
+
 	// Each encryption should produce different ciphertext due to random nonce
 	assert.NotEqual(t, encrypted1, encrypted2)
-	
+
 	// But both should decrypt to the same plaintext
 	decrypted1, err := enc.Decrypt(encrypted1)
 	require.NoError(t, err)
-	
+
 	decrypted2, err := enc.Decrypt(encrypted2)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, plaintext, decrypted1)
 	assert.Equal(t, plaintext, decrypted2)
 }
@@ -163,21 +163,21 @@ func TestDecryptInvalidData(t *testing.T) {
 func TestDifferentKeys(t *testing.T) {
 	enc1, err := NewEncryptor("key1")
 	require.NoError(t, err)
-	
+
 	enc2, err := NewEncryptor("key2")
 	require.NoError(t, err)
-	
+
 	plaintext := "secret-api-key"
-	
+
 	// Encrypt with first encryptor
 	encrypted, err := enc1.Encrypt(plaintext)
 	require.NoError(t, err)
-	
+
 	// Try to decrypt with second encryptor (different key)
 	decrypted, err := enc2.Decrypt(encrypted)
 	assert.Error(t, err)
 	assert.Empty(t, decrypted)
-	
+
 	// Decrypt with correct encryptor should work
 	decrypted, err = enc1.Decrypt(encrypted)
 	assert.NoError(t, err)

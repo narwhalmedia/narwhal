@@ -206,7 +206,7 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 		s.logger.Error("Library scan failed",
 			interfaces.String("library_id", library.ID.String()),
 			interfaces.Error(err))
-		
+
 		scanResult.CompletedAt = timePtr(time.Now())
 		scanResult.ErrorMessage = err.Error()
 		s.repo.UpdateScanHistory(ctx, scanResult)
@@ -216,14 +216,14 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 	// Process found files
 	for _, file := range files {
 		existing, _ := s.repo.GetMediaByPath(ctx, file.Path)
-		
+
 		if existing != nil {
 			// Update existing media if file was modified
 			if file.Modified.After(existing.Modified) {
 				existing.Size = file.Size
 				existing.Modified = file.Modified
 				existing.LastScanned = time.Now()
-				
+
 				if err := s.repo.UpdateMedia(ctx, existing); err != nil {
 					s.logger.Error("Failed to update media",
 						interfaces.String("path", file.Path),
@@ -251,19 +251,19 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 			media.FilePath = file.Path
 			media.FileSize = file.Size
 			media.FileModifiedAt = &file.Modified
-			
+
 			if err := s.repo.CreateMedia(ctx, media); err != nil {
 				s.logger.Error("Failed to create media",
 					interfaces.String("path", file.Path),
 					interfaces.Error(err))
 				continue
 			}
-			
+
 			// Publish media added event
 			s.eventBus.PublishAsync(ctx, domain.NewMediaAddedEvent(media))
 			scanResult.FilesAdded++
 		}
-		
+
 		scanResult.FilesScanned++
 	}
 

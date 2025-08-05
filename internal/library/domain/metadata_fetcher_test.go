@@ -70,20 +70,20 @@ func (m *MockMetadataProvider) GetEpisodeDetails(ctx context.Context, providerID
 
 type MetadataFetcherTestSuite struct {
 	suite.Suite
-	ctx            context.Context
-	fetcher        *domain.MetadataFetcher
-	mockProvider   *MockMetadataProvider
+	ctx          context.Context
+	fetcher      *domain.MetadataFetcher
+	mockProvider *MockMetadataProvider
 }
 
 func (suite *MetadataFetcherTestSuite) SetupTest() {
 	suite.ctx = context.Background()
 	suite.mockProvider = new(MockMetadataProvider)
 	suite.fetcher = domain.NewMetadataFetcher(logger.NewNoopLogger())
-	
+
 	// Setup default mock behavior
 	suite.mockProvider.On("GetName").Return("TestProvider").Maybe()
 	suite.mockProvider.On("GetType").Return("all").Maybe()
-	
+
 	// Register the mock provider
 	suite.fetcher.RegisterProvider(suite.mockProvider)
 }
@@ -100,7 +100,7 @@ func (suite *MetadataFetcherTestSuite) TestFetchMovieMetadata_Success() {
 		Type:  models.MediaTypeMovie,
 		Year:  2023,
 	}
-	
+
 	searchResults := []models.SearchResult{
 		{
 			ProviderID:   "tmdb123",
@@ -109,7 +109,7 @@ func (suite *MetadataFetcherTestSuite) TestFetchMovieMetadata_Success() {
 			ProviderName: "TMDB",
 		},
 	}
-	
+
 	expectedMetadata := &models.Metadata{
 		ID:          uuid.New(),
 		MediaID:     media.ID,
@@ -120,14 +120,14 @@ func (suite *MetadataFetcherTestSuite) TestFetchMovieMetadata_Success() {
 		Rating:      8.5,
 		Genres:      []string{"Action", "Drama"},
 	}
-	
+
 	suite.mockProvider.On("GetType").Return("movie")
 	suite.mockProvider.On("SearchMovie", suite.ctx, "Test Movie", 2023).Return(searchResults, nil)
 	suite.mockProvider.On("GetMovieDetails", suite.ctx, "tmdb123").Return(expectedMetadata, nil)
-	
+
 	// Act
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), metadata)
@@ -144,7 +144,7 @@ func (suite *MetadataFetcherTestSuite) TestFetchTVMetadata_Success() {
 		Type:  models.MediaTypeTV,
 		Year:  2023,
 	}
-	
+
 	searchResults := []models.SearchResult{
 		{
 			ProviderID:   "tvdb123",
@@ -153,7 +153,7 @@ func (suite *MetadataFetcherTestSuite) TestFetchTVMetadata_Success() {
 			ProviderName: "TVDB",
 		},
 	}
-	
+
 	expectedMetadata := &models.Metadata{
 		ID:          uuid.New(),
 		MediaID:     media.ID,
@@ -164,14 +164,14 @@ func (suite *MetadataFetcherTestSuite) TestFetchTVMetadata_Success() {
 		Rating:      8.0,
 		Genres:      []string{"Drama", "Mystery"},
 	}
-	
+
 	suite.mockProvider.On("GetType").Return("tv")
 	suite.mockProvider.On("SearchTV", suite.ctx, "Test Series", 2023).Return(searchResults, nil)
 	suite.mockProvider.On("GetTVDetails", suite.ctx, "tvdb123").Return(expectedMetadata, nil)
-	
+
 	// Act
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), metadata)
@@ -187,13 +187,13 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_NoResults() {
 		Type:  models.MediaTypeMovie,
 		Year:  2023,
 	}
-	
+
 	suite.mockProvider.On("GetType").Return("movie")
 	suite.mockProvider.On("SearchMovie", suite.ctx, "Unknown Movie", 2023).Return([]models.SearchResult{}, nil)
-	
+
 	// Act
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
-	
+
 	// Assert
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), metadata)
@@ -207,10 +207,10 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_InvalidMediaType() {
 		Title: "Test",
 		Type:  "invalid",
 	}
-	
+
 	// Act
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
-	
+
 	// Assert
 	assert.Error(suite.T(), err)
 	assert.Nil(suite.T(), metadata)
@@ -223,7 +223,7 @@ func (suite *MetadataFetcherTestSuite) TestFetchEpisodeMetadata_Success() {
 		ID:     uuid.New(),
 		TVDBID: "tvdb123",
 	}
-	
+
 	expectedEpisodeMetadata := &models.EpisodeMetadata{
 		ID:            uuid.New(),
 		Title:         "Episode Title",
@@ -232,13 +232,13 @@ func (suite *MetadataFetcherTestSuite) TestFetchEpisodeMetadata_Success() {
 		SeasonNumber:  1,
 		EpisodeNumber: 1,
 	}
-	
+
 	suite.mockProvider.On("GetType").Return("tv")
 	suite.mockProvider.On("GetEpisodeDetails", suite.ctx, "tvdb123", 1, 1).Return(expectedEpisodeMetadata, nil)
-	
+
 	// Act
 	episodeMetadata, err := suite.fetcher.FetchEpisodeMetadata(suite.ctx, seriesMetadata, 1, 1)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), episodeMetadata)
@@ -249,10 +249,10 @@ func (suite *MetadataFetcherTestSuite) TestFetchEpisodeMetadata_Success() {
 func (suite *MetadataFetcherTestSuite) TestGetProviders() {
 	// Arrange
 	suite.mockProvider.On("GetName").Return("TestProvider")
-	
+
 	// Act
 	providers := suite.fetcher.GetProviders()
-	
+
 	// Assert
 	assert.Len(suite.T(), providers, 1)
 	assert.Equal(suite.T(), "TestProvider", providers[0].GetName())
@@ -263,10 +263,10 @@ func (suite *MetadataFetcherTestSuite) TestRegisterProvider_Duplicate() {
 	mockProvider2 := new(MockMetadataProvider)
 	mockProvider2.On("GetName").Return("TestProvider")
 	suite.mockProvider.On("GetName").Return("TestProvider")
-	
+
 	// Act - Try to register duplicate provider
 	suite.fetcher.RegisterProvider(mockProvider2)
-	
+
 	// Assert - Should still only have one provider
 	providers := suite.fetcher.GetProviders()
 	assert.Len(suite.T(), providers, 1)
@@ -280,16 +280,16 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_MultipleProviders() {
 		Type:  models.MediaTypeMovie,
 		Year:  2023,
 	}
-	
+
 	// Create second provider that will succeed
 	mockProvider2 := new(MockMetadataProvider)
 	mockProvider2.On("GetName").Return("SecondProvider")
 	mockProvider2.On("GetType").Return("movie")
-	
+
 	// First provider returns no results
 	suite.mockProvider.On("GetType").Return("movie")
 	suite.mockProvider.On("SearchMovie", suite.ctx, "Test Movie", 2023).Return([]models.SearchResult{}, nil)
-	
+
 	// Second provider returns results
 	searchResults := []models.SearchResult{
 		{
@@ -299,27 +299,27 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_MultipleProviders() {
 			ProviderName: "SecondProvider",
 		},
 	}
-	
+
 	expectedMetadata := &models.Metadata{
 		ID:      uuid.New(),
 		MediaID: media.ID,
 		Title:   "Test Movie",
 	}
-	
+
 	mockProvider2.On("SearchMovie", suite.ctx, "Test Movie", 2023).Return(searchResults, nil)
 	mockProvider2.On("GetMovieDetails", suite.ctx, "provider2_123").Return(expectedMetadata, nil)
-	
+
 	// Register second provider
 	suite.fetcher.RegisterProvider(mockProvider2)
-	
+
 	// Act
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), metadata)
 	assert.Equal(suite.T(), expectedMetadata.Title, metadata.Title)
-	
+
 	// Cleanup
 	mockProvider2.AssertExpectations(suite.T())
 }

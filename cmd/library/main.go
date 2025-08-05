@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
@@ -22,6 +21,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/database"
 	"github.com/narwhalmedia/narwhal/pkg/events"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/pkg/pagination"
 	"github.com/narwhalmedia/narwhal/pkg/utils"

@@ -174,7 +174,7 @@ func TestJWTManager_ValidateRefreshToken(t *testing.T) {
 	// Test - Note: The refresh token returned by GenerateTokenPair is a random string,
 	// not a JWT. So we need to test with the actual JWT refresh token
 	// For this test, we'll validate that the method exists and works with proper JWT
-	
+
 	// Create a proper JWT refresh token for testing
 	claims := &auth.CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -218,7 +218,7 @@ func TestGenerateRefreshToken(t *testing.T) {
 	assert.NotEmpty(t, token1)
 	assert.NotEmpty(t, token2)
 	assert.NotEqual(t, token1, token2) // Should be unique
-	
+
 	// Verify it's base64 encoded
 	assert.Regexp(t, `^[A-Za-z0-9+/\-_=]+$`, token1)
 }
@@ -232,7 +232,7 @@ func TestGenerateSecret(t *testing.T) {
 	assert.NotEmpty(t, secret1)
 	assert.NotEmpty(t, secret2)
 	assert.NotEqual(t, secret1, secret2) // Should be unique
-	
+
 	// Verify it's base64 encoded
 	assert.Regexp(t, `^[A-Za-z0-9+/=]+$`, secret1)
 }

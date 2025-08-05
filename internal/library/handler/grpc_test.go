@@ -12,12 +12,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
-	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/test/mocks"
 )
@@ -27,11 +27,11 @@ import (
 
 type GRPCHandlerTestSuite struct {
 	suite.Suite
-	ctx            context.Context
-	mockService    *mocks.MockLibraryService
-	handler        *handler.GRPCHandler
-	testLibraryID  uuid.UUID
-	testMediaID    uuid.UUID
+	ctx           context.Context
+	mockService   *mocks.MockLibraryService
+	handler       *handler.GRPCHandler
+	testLibraryID uuid.UUID
+	testMediaID   uuid.UUID
 }
 
 func (suite *GRPCHandlerTestSuite) SetupTest() {
@@ -39,9 +39,9 @@ func (suite *GRPCHandlerTestSuite) SetupTest() {
 	// Add authentication context
 	suite.ctx = context.WithValue(suite.ctx, auth.ContextKeyUserID, "test-user-123")
 	suite.ctx = context.WithValue(suite.ctx, auth.ContextKeyRoles, []string{"admin"})
-	
+
 	suite.mockService = new(mocks.MockLibraryService)
-	
+
 	// Create handler with mock service
 	suite.handler = handler.NewGRPCHandler(
 		suite.mockService,
@@ -67,13 +67,13 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_Success() {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	
+
 	suite.mockService.On("GetLibrary", suite.ctx, suite.testLibraryID).Return(library, nil)
-	
+
 	// Act
 	req := &librarypb.GetLibraryRequest{Id: suite.testLibraryID.String()}
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), resp)
@@ -86,11 +86,11 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_NotFound() {
 	// Arrange
 	suite.mockService.On("GetLibrary", suite.ctx, suite.testLibraryID).
 		Return(nil, errors.NotFound("library not found"))
-	
+
 	// Act
 	req := &librarypb.GetLibraryRequest{Id: suite.testLibraryID.String()}
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
@@ -103,7 +103,7 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_InvalidID() {
 	// Act
 	req := &librarypb.GetLibraryRequest{Id: "invalid-uuid"}
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
@@ -134,9 +134,9 @@ func (suite *GRPCHandlerTestSuite) TestListLibraries_Success() {
 			UpdatedAt: time.Now(),
 		},
 	}
-	
+
 	suite.mockService.On("ListLibraries", suite.ctx, (*bool)(nil)).Return(libraries, nil)
-	
+
 	// Act
 	req := &librarypb.ListLibrariesRequest{
 		Pagination: &commonpb.PaginationRequest{
@@ -144,7 +144,7 @@ func (suite *GRPCHandlerTestSuite) TestListLibraries_Success() {
 		},
 	}
 	resp, err := suite.handler.ListLibraries(suite.ctx, req)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), resp)
@@ -164,11 +164,11 @@ func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
 		CreatedAt: time.Now().Add(-24 * time.Hour),
 		UpdatedAt: time.Now(),
 	}
-	
+
 	suite.mockService.On("UpdateLibrary", suite.ctx, suite.testLibraryID, mock.MatchedBy(func(u map[string]interface{}) bool {
 		return u["name"] == "Updated Name" && u["enabled"] == false
 	})).Return(updatedLibrary, nil)
-	
+
 	// Act
 	req := &librarypb.UpdateLibraryRequest{
 		Id: suite.testLibraryID.String(),
@@ -178,7 +178,7 @@ func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
 		},
 	}
 	resp, err := suite.handler.UpdateLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), resp)
@@ -189,11 +189,11 @@ func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
 func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_Success() {
 	// Arrange
 	suite.mockService.On("DeleteLibrary", suite.ctx, suite.testLibraryID).Return(nil)
-	
+
 	// Act
 	req := &librarypb.DeleteLibraryRequest{Id: suite.testLibraryID.String()}
 	resp, err := suite.handler.DeleteLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.NoError(suite.T(), err)
 	assert.NotNil(suite.T(), resp)
@@ -203,11 +203,11 @@ func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_NotFound() {
 	// Arrange
 	suite.mockService.On("DeleteLibrary", suite.ctx, suite.testLibraryID).
 		Return(errors.NotFound("library not found"))
-	
+
 	// Act
 	req := &librarypb.DeleteLibraryRequest{Id: suite.testLibraryID.String()}
 	resp, err := suite.handler.DeleteLibrary(suite.ctx, req)
-	
+
 	// Assert
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)

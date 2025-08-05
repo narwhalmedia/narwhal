@@ -6,10 +6,10 @@ import (
 
 // BaseEvent is a basic implementation of the Event interface
 type BaseEvent struct {
-	Type      string                 `json:"type"`
-	Time      int64                  `json:"timestamp"`
-	AggID     string                 `json:"aggregate_id"`
-	Data      map[string]interface{} `json:"data"`
+	Type  string                 `json:"type"`
+	Time  int64                  `json:"timestamp"`
+	AggID string                 `json:"aggregate_id"`
+	Data  map[string]interface{} `json:"data"`
 }
 
 // NewEvent creates a new event

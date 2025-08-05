@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/encryption"
 	pkgerrors "github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/models"
+	"gorm.io/gorm"
 )
 
 // GormRepository implements the repository interfaces using GORM
@@ -28,12 +28,12 @@ func NewGormRepository(db *gorm.DB) (*GormRepository, error) {
 		// Use a default key for development, but log a warning
 		encryptionKey = "development-key-please-change-in-production"
 	}
-	
+
 	encryptor, err := encryption.NewEncryptor(encryptionKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create encryptor: %w", err)
 	}
-	
+
 	return &GormRepository{
 		db:        db,
 		encryptor: encryptor,
@@ -163,10 +163,10 @@ func (r *GormRepository) CreateMedia(ctx context.Context, media *models.Media) e
 		TMDBID:         media.TMDBID,
 		IMDBID:         media.IMDBID,
 		TVDBID:         media.TVDBID,
-		VideoCodec:    media.Codec,
-		AudioCodec:    "", // Not available in models.Media
-		Resolution:    media.Resolution,
-		Bitrate:       media.Bitrate,
+		VideoCodec:     media.Codec,
+		AudioCodec:     "", // Not available in models.Media
+		Resolution:     media.Resolution,
+		Bitrate:        media.Bitrate,
 	}
 
 	if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
@@ -250,22 +250,22 @@ func (r *GormRepository) SearchMedia(ctx context.Context, query string, mediaTyp
 // UpdateMedia updates a media item
 func (r *GormRepository) UpdateMedia(ctx context.Context, media *models.Media) error {
 	updates := map[string]interface{}{
-		"title":           media.Title,
-		"status":          media.Status,
-		"file_path":       media.FilePath,
-		"file_size":       media.FileSize,
+		"title":            media.Title,
+		"status":           media.Status,
+		"file_path":        media.FilePath,
+		"file_size":        media.FileSize,
 		"file_modified_at": media.FileModifiedAt,
-		"description":     media.Description,
-		"release_date":    media.ReleaseDate,
-		"runtime":         media.Duration / 60, // Convert seconds to minutes
-		"genres":          media.Genres,
-		"tags":            media.Tags,
-		"tmdb_id":         media.TMDBID,
-		"imdb_id":         media.IMDBID,
-		"tvdb_id":         media.TVDBID,
-		"video_codec":     media.Codec,
-		"resolution":      media.Resolution,
-		"bitrate":         media.Bitrate,
+		"description":      media.Description,
+		"release_date":     media.ReleaseDate,
+		"runtime":          media.Duration / 60, // Convert seconds to minutes
+		"genres":           media.Genres,
+		"tags":             media.Tags,
+		"tmdb_id":          media.TMDBID,
+		"imdb_id":          media.IMDBID,
+		"tvdb_id":          media.TVDBID,
+		"video_codec":      media.Codec,
+		"resolution":       media.Resolution,
+		"bitrate":          media.Bitrate,
 	}
 
 	result := r.db.WithContext(ctx).Model(&MediaItem{}).Where("id = ?", media.ID).Updates(updates)
@@ -449,11 +449,11 @@ func (r *GormRepository) ListEpisodesBySeason(ctx context.Context, mediaID uuid.
 // UpdateEpisode updates an episode
 func (r *GormRepository) UpdateEpisode(ctx context.Context, episode *models.Episode) error {
 	updates := map[string]interface{}{
-		"title":         episode.Title,
-		"air_date":      episode.AirDate,
-		"runtime":       episode.Duration / 60, // Convert seconds to minutes
-		"file_path":     episode.Path,
-		"status":        "available", // Default status
+		"title":     episode.Title,
+		"air_date":  episode.AirDate,
+		"runtime":   episode.Duration / 60, // Convert seconds to minutes
+		"file_path": episode.Path,
+		"status":    "available", // Default status
 	}
 
 	result := r.db.WithContext(ctx).Model(&Episode{}).Where("id = ?", episode.ID).Updates(updates)
@@ -489,7 +489,7 @@ func (r *GormRepository) CreateProvider(ctx context.Context, provider *domain.Me
 	if err != nil {
 		return fmt.Errorf("failed to encrypt API key: %w", err)
 	}
-	
+
 	model := &MetadataProvider{
 		Name:         provider.Name,
 		ProviderType: provider.ProviderType,
@@ -537,11 +537,11 @@ func (r *GormRepository) GetProviderByName(ctx context.Context, name string) (*d
 // ListProviders lists metadata providers
 func (r *GormRepository) ListProviders(ctx context.Context, enabled *bool, providerType *string) ([]*domain.MetadataProviderConfig, error) {
 	query := r.db.WithContext(ctx)
-	
+
 	if enabled != nil {
 		query = query.Where("enabled = ?", *enabled)
 	}
-	
+
 	if providerType != nil && *providerType != "" {
 		query = query.Where("provider_type = ?", *providerType)
 	}
@@ -566,7 +566,7 @@ func (r *GormRepository) UpdateProvider(ctx context.Context, provider *domain.Me
 	if err != nil {
 		return fmt.Errorf("failed to encrypt API key: %w", err)
 	}
-	
+
 	updates := map[string]interface{}{
 		"name":          provider.Name,
 		"provider_type": provider.ProviderType,
@@ -700,11 +700,11 @@ func (r *GormRepository) toDomainEpisode(model *Episode) *models.Episode {
 		Duration:      model.Runtime * 60, // Convert minutes to seconds
 		Added:         model.CreatedAt,
 	}
-	
+
 	if model.AirDate != nil {
 		ep.AirDate = *model.AirDate
 	}
-	
+
 	return ep
 }
 
@@ -715,7 +715,7 @@ func (r *GormRepository) toDomainProvider(model *MetadataProvider) *domain.Metad
 		// Log error but don't fail - return empty key
 		decryptedKey = ""
 	}
-	
+
 	return &domain.MetadataProviderConfig{
 		ID:           model.ID,
 		Name:         model.Name,

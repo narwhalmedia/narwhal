@@ -28,10 +28,10 @@ const (
 
 // RBACConfig holds configuration for RBAC
 type RBACConfig struct {
-	Type            RBACType
+	Type             RBACType
 	CasbinModelPath  string
 	CasbinPolicyPath string
-	Logger          interfaces.Logger
+	Logger           interfaces.Logger
 }
 
 // NewRBACFromConfig creates an RBAC instance based on configuration
@@ -39,7 +39,7 @@ func NewRBACFromConfig(config RBACConfig) (RBACInterface, error) {
 	switch config.Type {
 	case RBACTypeBuiltin:
 		return NewRBAC(), nil
-		
+
 	case RBACTypeCasbin:
 		// Check if files exist
 		if config.CasbinModelPath != "" && config.CasbinPolicyPath != "" {
@@ -49,7 +49,7 @@ func NewRBACFromConfig(config RBACConfig) (RBACInterface, error) {
 				}
 			}
 		}
-		
+
 		// Use embedded default configuration
 		modelText := `[request_definition]
 r = sub, obj, act
@@ -70,14 +70,14 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act`
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// Initialize default policies
 		if err := InitializeDefaultPolicies(rbac); err != nil {
 			return nil, fmt.Errorf("failed to initialize default policies: %w", err)
 		}
-		
+
 		return rbac, nil
-		
+
 	default:
 		return nil, fmt.Errorf("unknown RBAC type: %s", config.Type)
 	}

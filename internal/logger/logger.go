@@ -66,37 +66,37 @@ func New(serviceName, environment, logLevel, logFormat string) (*zap.Logger, err
 // WithContext creates a logger with request context fields
 func WithContext(logger *zap.Logger, requestID, userID string) *zap.Logger {
 	fields := []zap.Field{}
-	
+
 	if requestID != "" {
 		fields = append(fields, zap.String("request_id", requestID))
 	}
-	
+
 	if userID != "" {
 		fields = append(fields, zap.String("user_id", userID))
 	}
-	
+
 	if len(fields) > 0 {
 		return logger.With(fields...)
 	}
-	
+
 	return logger
 }
 
 // WithTracing adds trace and span IDs to the logger
 func WithTracing(logger *zap.Logger, traceID, spanID string) *zap.Logger {
 	fields := []zap.Field{}
-	
+
 	if traceID != "" {
 		fields = append(fields, zap.String("trace_id", traceID))
 	}
-	
+
 	if spanID != "" {
 		fields = append(fields, zap.String("span_id", spanID))
 	}
-	
+
 	if len(fields) > 0 {
 		return logger.With(fields...)
 	}
-	
+
 	return logger
 }

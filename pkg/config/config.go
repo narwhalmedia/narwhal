@@ -89,8 +89,8 @@ type RedisConfig struct {
 
 // LoggerConfig contains logging configuration
 type LoggerConfig struct {
-	Level       string `koanf:"level"`       // debug, info, warn, error
-	Format      string `koanf:"format"`      // json, console
+	Level       string `koanf:"level"`  // debug, info, warn, error
+	Format      string `koanf:"format"` // json, console
 	Development bool   `koanf:"development"`
 	OutputPath  string `koanf:"output_path"` // stdout, stderr, or file path
 }
@@ -106,7 +106,7 @@ type MetricsConfig struct {
 // TracingConfig contains distributed tracing configuration
 type TracingConfig struct {
 	Enabled      bool    `koanf:"enabled"`
-	Provider     string  `koanf:"provider"`      // jaeger, zipkin, otlp
+	Provider     string  `koanf:"provider"` // jaeger, zipkin, otlp
 	Endpoint     string  `koanf:"endpoint"`
 	SamplingRate float64 `koanf:"sampling_rate"` // 0.0 to 1.0
 }
@@ -213,7 +213,7 @@ func (m *Manager) loadFromFile(path string) error {
 func (m *Manager) loadFromEnv() error {
 	// Convert service name to uppercase for env prefix
 	prefix := strings.ToUpper(m.serviceName) + "_"
-	
+
 	// Load environment variables
 	return m.k.Load(env.Provider(prefix, ".", func(s string) string {
 		// Convert NARWHAL_DATABASE_HOST to database.host
@@ -229,13 +229,13 @@ func getDefaultConfigPaths(serviceName string) []string {
 		"config.json",
 		fmt.Sprintf("%s.yaml", serviceName),
 		fmt.Sprintf("%s.json", serviceName),
-		
+
 		// Config directory
 		"configs/config.yaml",
 		"configs/config.json",
 		fmt.Sprintf("configs/%s.yaml", serviceName),
 		fmt.Sprintf("configs/%s.json", serviceName),
-		
+
 		// Environment-specific configs
 		fmt.Sprintf("configs/%s.%s.yaml", serviceName, getEnvironment()),
 		fmt.Sprintf("configs/%s.%s.json", serviceName, getEnvironment()),

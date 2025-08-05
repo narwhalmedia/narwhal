@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"gorm.io/gorm"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	userRepo "github.com/narwhalmedia/narwhal/internal/user/repository"
+	"gorm.io/gorm"
 )
 
 // Migration represents a database migration
@@ -67,7 +67,7 @@ func (m *Migrator) Migrate() error {
 		}
 
 		fmt.Printf("Running migration %s: %s\n", migration.Version, migration.Name)
-		
+
 		// Run migration in a transaction
 		err := m.db.Transaction(func(tx *gorm.DB) error {
 			if err := migration.Up(tx); err != nil {
@@ -180,12 +180,12 @@ func migration002AddIndexes(tx *gorm.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_media_items_library_status ON media_items(library_id, status)",
 		"CREATE INDEX IF NOT EXISTS idx_episodes_media_season ON episodes(media_id, season_number)",
 		"CREATE INDEX IF NOT EXISTS idx_episodes_media_season_episode ON episodes(media_id, season_number, episode_number)",
-		
+
 		// User indexes
 		"CREATE INDEX IF NOT EXISTS idx_sessions_user_expires ON sessions(user_id, expires_at)",
 		"CREATE INDEX IF NOT EXISTS idx_user_roles_composite ON user_roles(user_id, role_id)",
 		"CREATE INDEX IF NOT EXISTS idx_role_permissions_composite ON role_permissions(role_id, permission_id)",
-		
+
 		// Search indexes
 		"CREATE INDEX IF NOT EXISTS idx_media_items_title_trgm ON media_items USING gin(title gin_trgm_ops)",
 		"CREATE INDEX IF NOT EXISTS idx_media_items_original_title_trgm ON media_items USING gin(original_title gin_trgm_ops)",
@@ -212,13 +212,13 @@ func migration003AddConstraints(tx *gorm.DB) error {
 	constraints := []string{
 		// Ensure unique episodes per series
 		"ALTER TABLE episodes ADD CONSTRAINT unique_episode_per_series UNIQUE (media_id, season_number, episode_number) WHERE deleted_at IS NULL",
-		
+
 		// Ensure unique user roles
 		"ALTER TABLE user_roles ADD CONSTRAINT unique_user_role UNIQUE (user_id, role_id)",
-		
+
 		// Ensure unique role permissions
 		"ALTER TABLE role_permissions ADD CONSTRAINT unique_role_permission UNIQUE (role_id, permission_id)",
-		
+
 		// Ensure unique permissions
 		"ALTER TABLE permissions ADD CONSTRAINT unique_permission UNIQUE (resource, action)",
 	}
@@ -246,7 +246,7 @@ func isConstraintExistsError(err error) bool {
 
 // contains checks if a string contains a substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr || 
+	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr ||
 		len(s) >= len(substr) && s[:len(substr)] == substr ||
 		len(s) > len(substr) && findSubstring(s, substr)
 }

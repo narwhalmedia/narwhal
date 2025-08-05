@@ -26,7 +26,7 @@ type LibraryRepositoryTestSuite struct {
 func (suite *LibraryRepositoryTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.container = testutil.SetupPostgresContainer(suite.T())
-	
+
 	// Run migrations
 	err := suite.container.MigrateModels(
 		&repository.Library{},
@@ -43,7 +43,7 @@ func (suite *LibraryRepositoryTestSuite) SetupTest() {
 	var err error
 	suite.repo, err = repository.NewGormRepository(suite.container.DB)
 	suite.Require().NoError(err)
-	
+
 	// Clean tables before each test
 	suite.container.TruncateTables("episodes", "media_items", "scan_histories", "metadata_providers", "libraries")
 }
@@ -212,7 +212,7 @@ func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
 		FilePath:    "/media/test.mp4",
 		FileSize:    1024 * 1024 * 100,
 	}
-	
+
 	// Create media
 	err := suite.repo.CreateMedia(suite.ctx, media)
 	assert.NoError(suite.T(), err)
@@ -331,7 +331,7 @@ func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 		FilesUpdated: 5,
 		FilesDeleted: 2,
 	}
-	
+
 	err := suite.repo.CreateScanHistory(suite.ctx, scan)
 	assert.NoError(suite.T(), err)
 

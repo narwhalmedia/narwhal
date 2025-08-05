@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 )
 
@@ -32,12 +32,12 @@ func (suite *AuthTestSuite) TestCreateLibrary_NoAuth() {
 		Name: "Test Library",
 		Path: "/test/path",
 	}
-	
+
 	resp, err := suite.handler.CreateLibrary(ctx, req)
-	
+
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	assert.True(suite.T(), ok)
 	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
@@ -49,20 +49,20 @@ func (suite *AuthTestSuite) TestCreateLibrary_WithAuth() {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.ContextKeyUserID, "test-user-123")
 	ctx = context.WithValue(ctx, auth.ContextKeyRoles, []string{"admin"})
-	
+
 	req := &librarypb.CreateLibraryRequest{
 		Name: "Test Library",
 		Path: "/test/path",
 	}
-	
+
 	// This will fail at the service layer since service is nil,
 	// but it should pass authentication
 	resp, err := suite.handler.CreateLibrary(ctx, req)
-	
+
 	// Should panic or error differently, not auth error
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	if ok {
 		assert.NotEqual(suite.T(), codes.Unauthenticated, st.Code())
@@ -74,12 +74,12 @@ func (suite *AuthTestSuite) TestGetLibrary_NoAuth() {
 	req := &librarypb.GetLibraryRequest{
 		Id: "550e8400-e29b-41d4-a716-446655440000",
 	}
-	
+
 	resp, err := suite.handler.GetLibrary(ctx, req)
-	
+
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	assert.True(suite.T(), ok)
 	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
@@ -88,12 +88,12 @@ func (suite *AuthTestSuite) TestGetLibrary_NoAuth() {
 func (suite *AuthTestSuite) TestListLibraries_NoAuth() {
 	ctx := context.Background()
 	req := &librarypb.ListLibrariesRequest{}
-	
+
 	resp, err := suite.handler.ListLibraries(ctx, req)
-	
+
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	assert.True(suite.T(), ok)
 	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
@@ -107,12 +107,12 @@ func (suite *AuthTestSuite) TestUpdateLibrary_NoAuth() {
 			Name: "Updated",
 		},
 	}
-	
+
 	resp, err := suite.handler.UpdateLibrary(ctx, req)
-	
+
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	assert.True(suite.T(), ok)
 	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
@@ -123,12 +123,12 @@ func (suite *AuthTestSuite) TestDeleteLibrary_NoAuth() {
 	req := &librarypb.DeleteLibraryRequest{
 		Id: "550e8400-e29b-41d4-a716-446655440000",
 	}
-	
+
 	resp, err := suite.handler.DeleteLibrary(ctx, req)
-	
+
 	assert.Nil(suite.T(), resp)
 	assert.Error(suite.T(), err)
-	
+
 	st, ok := status.FromError(err)
 	assert.True(suite.T(), ok)
 	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())

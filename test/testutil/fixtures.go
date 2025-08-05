@@ -95,7 +95,7 @@ func CreateTestMedia(libraryID uuid.UUID, title string, mediaType models.MediaTy
 		Type:        mediaType,
 		Path:        "/test/media/" + title + ".mp4",
 		Size:        1024 * 1024 * 100, // 100MB
-		Duration:    3600,               // 1 hour
+		Duration:    3600,              // 1 hour
 		Resolution:  "1920x1080",
 		Codec:       "h264",
 		Bitrate:     5000,

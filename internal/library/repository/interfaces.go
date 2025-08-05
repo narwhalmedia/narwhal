@@ -64,7 +64,7 @@ type Repository interface {
 	EpisodeRepository
 	ScanRepository
 	MetadataProviderRepository
-	
+
 	// Transaction support
 	BeginTx(ctx context.Context) (Repository, error)
 	Commit() error

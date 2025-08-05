@@ -111,10 +111,10 @@ func (w *wrappedServerStream) Context() context.Context {
 // PublicMethods returns a map of public gRPC methods that don't require authentication
 func PublicMethods() map[string]bool {
 	return map[string]bool{
-		"/narwhal.auth.v1.AuthService/Login":        true,
-		"/narwhal.auth.v1.AuthService/RefreshToken": true,
-		"/narwhal.auth.v1.AuthService/CreateUser":   true, // First user creation
-		"/grpc.health.v1.Health/Check":              true,
+		"/narwhal.auth.v1.AuthService/Login":                        true,
+		"/narwhal.auth.v1.AuthService/RefreshToken":                 true,
+		"/narwhal.auth.v1.AuthService/CreateUser":                   true, // First user creation
+		"/grpc.health.v1.Health/Check":                              true,
 		"/grpc.reflection.v1.ServerReflection/ServerReflectionInfo": true,
 	}
 }

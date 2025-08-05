@@ -40,7 +40,7 @@ type PolicyEnforcerInterface interface {
 // NewAuthInterceptor creates a new auth interceptor
 func NewAuthInterceptor(jwtManager *JWTManager, rbac RBACInterface) *AuthInterceptor {
 	var enforcer PolicyEnforcerInterface
-	
+
 	// Create appropriate enforcer based on RBAC type
 	switch r := rbac.(type) {
 	case *RBAC:
@@ -51,7 +51,7 @@ func NewAuthInterceptor(jwtManager *JWTManager, rbac RBACInterface) *AuthInterce
 		// Default to a generic enforcer
 		enforcer = &GenericPolicyEnforcer{rbac: rbac}
 	}
-	
+
 	return &AuthInterceptor{
 		jwtManager: jwtManager,
 		rbac:       rbac,
@@ -79,7 +79,7 @@ func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...Permis
 			return nil
 		}
 	}
-	
+
 	permStrs := []string{}
 	for _, perm := range permissions {
 		permStrs = append(permStrs, fmt.Sprintf("%s:%s", perm.Resource, perm.Action))
@@ -242,23 +242,23 @@ func (a *AuthInterceptor) getMethodPermissions(method string) (resource, action 
 		"/narwhal.library.v1.LibraryService/ScanLibrary":   {"library", "write"},
 		"/narwhal.library.v1.LibraryService/GetLibrary":    {"library", "read"},
 		"/narwhal.library.v1.LibraryService/ListLibraries": {"library", "read"},
-		
+
 		// Media operations
-		"/narwhal.library.v1.LibraryService/GetMedia":      {"media", "read"},
-		"/narwhal.library.v1.LibraryService/ListMedia":     {"media", "read"},
-		"/narwhal.library.v1.LibraryService/SearchMedia":   {"media", "read"},
-		"/narwhal.library.v1.LibraryService/UpdateMedia":   {"media", "write"},
-		"/narwhal.library.v1.LibraryService/DeleteMedia":   {"media", "delete"},
-		
+		"/narwhal.library.v1.LibraryService/GetMedia":    {"media", "read"},
+		"/narwhal.library.v1.LibraryService/ListMedia":   {"media", "read"},
+		"/narwhal.library.v1.LibraryService/SearchMedia": {"media", "read"},
+		"/narwhal.library.v1.LibraryService/UpdateMedia": {"media", "write"},
+		"/narwhal.library.v1.LibraryService/DeleteMedia": {"media", "delete"},
+
 		// User service
-		"/narwhal.user.v1.UserService/GetUser":      {"user", "read"},
-		"/narwhal.user.v1.UserService/ListUsers":    {"user", "read"},
-		"/narwhal.user.v1.UserService/UpdateUser":   {"user", "write"},
-		"/narwhal.user.v1.UserService/DeleteUser":   {"user", "delete"},
-		"/narwhal.user.v1.UserService/CreateUser":   {"user", "admin"},
-		"/narwhal.user.v1.UserService/AssignRole":   {"user", "admin"},
-		"/narwhal.user.v1.UserService/RemoveRole":   {"user", "admin"},
-		
+		"/narwhal.user.v1.UserService/GetUser":    {"user", "read"},
+		"/narwhal.user.v1.UserService/ListUsers":  {"user", "read"},
+		"/narwhal.user.v1.UserService/UpdateUser": {"user", "write"},
+		"/narwhal.user.v1.UserService/DeleteUser": {"user", "delete"},
+		"/narwhal.user.v1.UserService/CreateUser": {"user", "admin"},
+		"/narwhal.user.v1.UserService/AssignRole": {"user", "admin"},
+		"/narwhal.user.v1.UserService/RemoveRole": {"user", "admin"},
+
 		// System operations
 		"/narwhal.user.v1.UserService/CreateRole":       {"system", "admin"},
 		"/narwhal.user.v1.UserService/UpdateRole":       {"system", "admin"},

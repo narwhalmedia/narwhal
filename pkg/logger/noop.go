@@ -2,7 +2,7 @@ package logger
 
 import (
 	"context"
-	
+
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 

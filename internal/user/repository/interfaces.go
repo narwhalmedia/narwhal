@@ -60,7 +60,7 @@ type Repository interface {
 	RoleRepository
 	PermissionRepository
 	SessionRepository
-	
+
 	// Transaction support
 	BeginTx(ctx context.Context) (Repository, error)
 	Commit() error

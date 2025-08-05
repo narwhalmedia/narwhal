@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
-	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
+	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 	"google.golang.org/grpc/codes"

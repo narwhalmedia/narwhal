@@ -15,21 +15,21 @@ type User struct {
 	PasswordHash string    `gorm:"not null"`
 	DisplayName  string
 	Avatar       string
-	IsActive     bool       `gorm:"default:true"`
-	IsVerified   bool       `gorm:"default:false"`
+	IsActive     bool `gorm:"default:true"`
+	IsVerified   bool `gorm:"default:false"`
 	LastLoginAt  *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 
 	// Embedded preferences
-	PrefLanguage          string `gorm:"column:pref_language;default:'en'"`
-	PrefTheme             string `gorm:"column:pref_theme;default:'dark'"`
-	PrefTimeZone          string `gorm:"column:pref_time_zone;default:'UTC'"`
-	PrefAutoPlayNext      bool   `gorm:"column:pref_auto_play_next;default:true"`
-	PrefSubtitleLanguage  string `gorm:"column:pref_subtitle_language;default:'en'"`
-	PrefPreferredQuality  string `gorm:"column:pref_preferred_quality;default:'auto'"`
-	PrefEnableNotifications bool `gorm:"column:pref_enable_notifications;default:true"`
+	PrefLanguage            string `gorm:"column:pref_language;default:'en'"`
+	PrefTheme               string `gorm:"column:pref_theme;default:'dark'"`
+	PrefTimeZone            string `gorm:"column:pref_time_zone;default:'UTC'"`
+	PrefAutoPlayNext        bool   `gorm:"column:pref_auto_play_next;default:true"`
+	PrefSubtitleLanguage    string `gorm:"column:pref_subtitle_language;default:'en'"`
+	PrefPreferredQuality    string `gorm:"column:pref_preferred_quality;default:'auto'"`
+	PrefEnableNotifications bool   `gorm:"column:pref_enable_notifications;default:true"`
 
 	// Relationships
 	Roles    []Role    `gorm:"many2many:user_roles;"`

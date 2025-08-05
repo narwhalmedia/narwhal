@@ -26,7 +26,7 @@ type GormRepositoryTestSuite struct {
 func (suite *GormRepositoryTestSuite) SetupSuite() {
 	suite.ctx = context.Background()
 	suite.container = testutil.SetupPostgresContainer(suite.T())
-	
+
 	// Run migrations
 	err := suite.container.MigrateModels(
 		&domain.User{},
@@ -40,7 +40,7 @@ func (suite *GormRepositoryTestSuite) SetupSuite() {
 func (suite *GormRepositoryTestSuite) SetupTest() {
 	// Create repository
 	suite.repo = repository.NewGormRepository(suite.container.DB)
-	
+
 	// Clean tables before each test
 	suite.container.TruncateTables("sessions", "user_roles", "role_permissions", "users", "roles", "permissions")
 }

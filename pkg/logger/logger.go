@@ -6,7 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	
+
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
@@ -20,19 +20,19 @@ type ZapLogger struct {
 func New() interfaces.Logger {
 	env := os.Getenv("ENVIRONMENT")
 	development := env == "" || env == "development"
-	
+
 	logger, err := NewZapLogger(development)
 	if err != nil {
 		panic(err)
 	}
-	
+
 	return logger
 }
 
 // NewZapLogger creates a new zap logger with the specified configuration
 func NewZapLogger(development bool) (*ZapLogger, error) {
 	var config zap.Config
-	
+
 	if development {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder

@@ -17,14 +17,14 @@ type LibraryServiceInterface interface {
 	UpdateLibrary(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*domain.Library, error)
 	DeleteLibrary(ctx context.Context, id uuid.UUID) error
 	ScanLibrary(ctx context.Context, id uuid.UUID) error
-	
+
 	// Media operations
 	GetMedia(ctx context.Context, id uuid.UUID) (*models.Media, error)
 	SearchMedia(ctx context.Context, query string, mediaType *string, status *string, libraryID *uuid.UUID, limit, offset int) ([]*models.Media, error)
 	UpdateMedia(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.Media, error)
 	DeleteMedia(ctx context.Context, id uuid.UUID) error
 	ListMediaByLibrary(ctx context.Context, libraryID uuid.UUID, status *string, limit, offset int) ([]*models.Media, error)
-	
+
 	// Scan operations
 	GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error)
 }
