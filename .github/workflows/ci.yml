@@ -143,7 +143,11 @@ jobs:
 
       - uses: bufbuild/buf-setup-action@v1
         with:
-          version: '1.28.1'
+          github_token: ${{ github.token }}
+          version: 1.50.0
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
 
       - name: Install dev tools
         run: |
