@@ -40,7 +40,9 @@ jobs:
       - name: Cache Go build and modules
         uses: actions/cache@v4
         with:
-          path: ~/.cache/go-build:~/go/pkg/mod
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
           key: go-${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
 
       - name: Set up Go
@@ -125,9 +127,9 @@ jobs:
       - name: Cache Go build and modules
         uses: actions/cache@v4
         with:
-          path:
-            - ~/.cache/go-build
-            - ~/go/pkg/mod
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
           key: go-${{ runner.os }}-build-${{ hashFiles('**/go.sum') }}
 
       - name: Set up Go
