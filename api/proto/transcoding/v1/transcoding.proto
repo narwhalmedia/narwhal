@@ -20,6 +20,10 @@ message GetTranscodingJobResponse {
 message CancelTranscodingJobResponse {
   // Empty response
 }
+// GetTranscodingProfileResponse
+message GetTranscodingProfileResponse {
+  TranscodingProfile profile = 1;
+}
 // CreateTranscodingProfileResponse
 message CreateTranscodingProfileResponse {
   TranscodingProfile profile = 1;
@@ -60,6 +64,9 @@ service TranscodingService {
 
   // List available transcoding profiles
   rpc ListTranscodingProfiles(ListTranscodingProfilesRequest) returns (ListTranscodingProfilesResponse);
+
+  // Get a single transcoding profile by ID
+  rpc GetTranscodingProfile(GetTranscodingProfileRequest) returns (GetTranscodingProfileResponse);
 
   // Create a custom transcoding profile
   rpc CreateTranscodingProfile(CreateTranscodingProfileRequest) returns (CreateTranscodingProfileResponse);
@@ -188,8 +195,8 @@ message VideoStream {
   // Stream index
   int32 index = 1;
 
-  // Codec name
-  string codec = 2;
+  // Codec type
+  CodecType codec = 2;
 
   // Resolution
   Resolution resolution = 3;
@@ -220,8 +227,8 @@ message AudioStream {
   // Stream index
   int32 index = 1;
 
-  // Codec name
-  string codec = 2;
+  // Codec type
+  CodecType codec = 2;
 
   // Sample rate
   int32 sample_rate = 3;
@@ -388,8 +395,8 @@ message TranscodingProfile {
 
 // VideoCodecSettings contains video codec configuration
 message VideoCodecSettings {
-  // Codec name (h264, h265, av1, etc.)
-  string codec = 1;
+  // Codec type
+  CodecType codec = 1;
 
   // Target resolution
   Resolution resolution = 2;
@@ -432,8 +439,8 @@ message VideoCodecSettings {
 
 // AudioCodecSettings contains audio codec configuration
 message AudioCodecSettings {
-  // Codec name (aac, opus, mp3, etc.)
-  string codec = 1;
+  // Codec type
+  CodecType codec = 1;
 
   // Target bitrate
   int64 bitrate = 2;
@@ -531,8 +538,6 @@ enum HardwareType {
 
 // CodecType defines supported codec types
 enum CodecType {
-  option allow_alias = false;
-  
   CODEC_TYPE_UNSPECIFIED = 0;
   CODEC_TYPE_H264 = 1;
   CODEC_TYPE_H265 = 2;
@@ -820,12 +825,35 @@ message ListTranscodingProfilesRequest {
 
   // Include custom profiles
   bool include_custom = 3;
+
+  // Maximum number of profiles to return
+  // If unspecified, defaults to a server-defined limit
+  int32 page_size = 4;
+
+  // Page token from a previous ListTranscodingProfilesResponse
+  // Used to retrieve the next page of results
+  string page_token = 5;
 }
 
 // ListTranscodingProfilesResponse
 message ListTranscodingProfilesResponse {
   // List of profiles
   repeated TranscodingProfile profiles = 1;
+
+  // Token to retrieve the next page of results
+  // Empty if there are no more results
+  string next_page_token = 2;
+
+  // Total count of profiles matching the filter
+  // May be approximate for large result sets
+  int32 total_count = 3;
+}
+
+// GetTranscodingProfileRequest
+message GetTranscodingProfileRequest {
+  // The resource name of the profile to retrieve
+  // Format: profiles/{profile_id}
+  string name = 1;
 }
 
 // CreateTranscodingProfileRequest
