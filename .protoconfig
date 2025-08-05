@@ -1,0 +1,13 @@
+{
+  "import_paths": [
+    "api/proto",
+    "."
+  ],
+  "exclude_paths": [
+    "vendor",
+    "node_modules",
+    ".git",
+    "bin",
+    "gen"
+  ]
+}

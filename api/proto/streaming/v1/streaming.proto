@@ -1,0 +1,180 @@
+syntax = "proto3";
+
+package narwhal.streaming.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/streaming/v1;streamingpb";
+
+// StreamingService handles media streaming operations
+service StreamingService {
+  // Stream management
+  rpc CreateStream(CreateStreamRequest) returns (CreateStreamResponse);
+  rpc GetStreamInfo(GetStreamInfoRequest) returns (StreamInfo);
+  rpc GetManifest(GetManifestRequest) returns (GetManifestResponse);
+  rpc GetSegment(GetSegmentRequest) returns (stream GetSegmentResponse);
+  rpc StopStream(StopStreamRequest) returns (google.protobuf.Empty);
+
+  // Session management
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+  rpc UpdateSession(UpdateSessionRequest) returns (google.protobuf.Empty);
+  rpc EndSession(EndSessionRequest) returns (google.protobuf.Empty);
+  rpc GetActiveStreams(GetActiveStreamsRequest) returns (GetActiveStreamsResponse);
+
+  // Playback control
+  rpc ReportProgress(ReportProgressRequest) returns (google.protobuf.Empty);
+  rpc GetPlaybackPosition(GetPlaybackPositionRequest) returns (GetPlaybackPositionResponse);
+}
+
+// StreamProfile represents a streaming profile
+message StreamProfile {
+  string id = 1;
+  string name = 2;
+  string codec = 3;
+  string resolution = 4;
+  int32 bitrate = 5;
+  int32 framerate = 6;
+  string audio_codec = 7;
+  int32 audio_bitrate = 8;
+  int32 audio_channels = 9;
+}
+
+// StreamInfo contains information about a stream
+message StreamInfo {
+  string stream_id = 1;
+  string media_id = 2;
+  string manifest_url = 3;
+  repeated StreamProfile profiles = 4;
+  string streaming_protocol = 5; // "hls" or "dash"
+  int32 duration_seconds = 6;
+  google.protobuf.Timestamp created = 7;
+  google.protobuf.Timestamp expires = 8;
+}
+
+// StreamSession represents an active streaming session
+message StreamSession {
+  string session_id = 1;
+  string user_id = 2;
+  string stream_id = 3;
+  string media_id = 4;
+  string episode_id = 5;
+  string profile_id = 6;
+  int32 position_seconds = 7;
+  google.protobuf.Timestamp started = 8;
+  google.protobuf.Timestamp last_heartbeat = 9;
+  ClientInfo client_info = 10;
+}
+
+// ClientInfo contains information about the streaming client
+message ClientInfo {
+  string device_id = 1;
+  string device_type = 2;
+  string app_version = 3;
+  string ip_address = 4;
+  string user_agent = 5;
+}
+
+// Stream management requests/responses
+
+message CreateStreamRequest {
+  string media_id = 1;
+  string episode_id = 2;
+  string profile = 3; // Target profile (e.g., "1080p", "720p", "auto")
+  string protocol = 4; // "hls" or "dash"
+  map<string, string> options = 5; // Additional streaming options
+}
+
+message CreateStreamResponse {
+  StreamInfo stream_info = 1;
+  string session_id = 2;
+}
+
+message GetStreamInfoRequest {
+  string stream_id = 1;
+}
+
+message GetManifestRequest {
+  string stream_id = 1;
+  string profile_id = 2;
+}
+
+message GetManifestResponse {
+  string content_type = 1;
+  bytes content = 2;
+  map<string, string> headers = 3;
+}
+
+message GetSegmentRequest {
+  string stream_id = 1;
+  string segment_name = 2;
+  string profile_id = 3;
+}
+
+message GetSegmentResponse {
+  bytes chunk = 1;
+  bool is_last = 2;
+}
+
+message StopStreamRequest {
+  string stream_id = 1;
+  string session_id = 2;
+}
+
+// Session management requests/responses
+
+message StartSessionRequest {
+  string stream_id = 1;
+  string media_id = 2;
+  string episode_id = 3;
+  int32 start_position = 4;
+  ClientInfo client_info = 5;
+}
+
+message StartSessionResponse {
+  string session_id = 1;
+  StreamInfo stream_info = 2;
+}
+
+message UpdateSessionRequest {
+  string session_id = 1;
+  int32 position_seconds = 2;
+  string profile_id = 3;
+  bool is_paused = 4;
+}
+
+message EndSessionRequest {
+  string session_id = 1;
+  int32 final_position = 2;
+}
+
+message GetActiveStreamsRequest {
+  string user_id = 1;
+  string media_id = 2;
+}
+
+message GetActiveStreamsResponse {
+  repeated StreamSession sessions = 1;
+}
+
+// Playback control requests/responses
+
+message ReportProgressRequest {
+  string session_id = 1;
+  int32 position_seconds = 2;
+  int32 buffer_seconds = 3;
+  bool is_playing = 4;
+}
+
+message GetPlaybackPositionRequest {
+  string user_id = 1;
+  string media_id = 2;
+  string episode_id = 3;
+}
+
+message GetPlaybackPositionResponse {
+  int32 position_seconds = 1;
+  int32 duration_seconds = 2;
+  bool completed = 3;
+  google.protobuf.Timestamp last_watched = 4;
+}

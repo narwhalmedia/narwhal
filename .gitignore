@@ -1,54 +1,163 @@
-# Binaries for programs and plugins
+# Go binaries
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 bin/
+dist/
 
-# Test binary, built with `go test -c`
+# Go test files
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage/
+coverage.html
+coverage.txt
+*.coverprofile
 
-# Dependency directories (remove the comment below to include it)
+# Go workspace
+go.work
+go.work.sum
+
+# Dependencies
 vendor/
 
-# Go workspace file
-go.work
+# Build cache
+.cache/
 
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
+# IDE and editor files
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+.project
+.settings/
+*.sublime-*
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Generated files
-api/proto/gen/
-*.pb.go
-*.pb.gw.go
-
-# Build artifacts
-dist/
-build/
-
-# OS generated files
+# OS files
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs
+*.log
+logs/
+*.logs
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Protobuf generated files
+*.pb.go
+*_grpc.pb.go
+*.pb.gw.go
+*.swagger.json
+*.swagger.yaml
+# Keep proto files in api/proto directory
+!api/proto/**/*.pb.go
+!api/proto/**/*_grpc.pb.go
+
+# Mocks (usually generated)
+mocks/
+*_mock.go
+!test/mocks/**
+
+# Build artifacts
+build/
+target/
+*.tar.gz
+*.zip
+
+# Docker
+docker-volumes/
+.dockerignore.local
+*.pid
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Configuration overrides
+config.local.*
+!config.local.example.*
+secrets/
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+!test/fixtures/**/*.pem
+
+# Media files (for testing)
+test-media/
+*.mp4
+*.mkv
+*.avi
+*.mp3
+*.mov
+*.webm
+*.flac
+*.wav
+
+# Development tools
+.air/
+.air.*.toml
+!.air.toml
+!.air.*.toml.example
+
+# Go modules cache
+go.sum.backup
+
+# Profiling
+*.prof
+*.pprof
+*.mem
+
+# Documentation build
+docs/_build/
+docs/site/
+
+# Kubernetes
+*.kubeconfig
+!deployments/**/*.yaml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Test results
+test-results/
+*.xml
+report.xml
+
+# Benchmark results
+benchmarks/results/
+
+# Claude artifacts
+.claude/
+
+# macOS quarantine attributes
+com.apple.quarantine

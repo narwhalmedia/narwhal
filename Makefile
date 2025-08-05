@@ -1,123 +1,250 @@
-# Narwhal Media Server Makefile
-# This Makefile provides targets for building, testing, and managing the Narwhal Media Server project.
+.PHONY: all build test clean proto generate
 
-# -----------------------------------------------------------------------------
 # Variables
-# -----------------------------------------------------------------------------
+PROTO_DIR := api/proto
+PROTO_OUT_DIR := api/proto
+GO_MODULE := github.com/narwhalmedia/narwhal
 
-# Tool versions
-BUF_VERSION := 1.28.1
-PROTOC_VERSION := 25.1
-GATEWAY_VERSION := v2.14.7
-GOLANGCI_LINT_VERSION := 1.55.2
+# Build all services
+all: generate build
 
-# Build variables
-BINARY_DIR := bin
-PROTO_GEN_DIR := api/proto/gen
-SERVICES := media download transcode stream gateway
+# Database commands
+db-up:
+	@echo "Starting PostgreSQL and Redis..."
+	@cd deployments/docker && docker-compose -f docker-compose.dev.yml up -d
 
-# -----------------------------------------------------------------------------
-# Targets
-# -----------------------------------------------------------------------------
+db-down:
+	@echo "Stopping PostgreSQL and Redis..."
+	@cd deployments/docker && docker-compose -f docker-compose.dev.yml down
 
-.PHONY: all build test clean proto dev dev-down help tools lint deps
+db-reset: db-down
+	@echo "Resetting database..."
+	@cd deployments/docker && docker-compose -f docker-compose.dev.yml down -v
+	@$(MAKE) db-up
 
-# Default target
-all: deps proto build
+db-test:
+	@echo "Testing database connection and migrations..."
+	@go run cmd/dbtest/main.go
 
-# -----------------------------------------------------------------------------
-# Development Tools
-# -----------------------------------------------------------------------------
+db-psql:
+	@echo "Connecting to PostgreSQL..."
+	@docker exec -it narwhal-postgres psql -U narwhal -d narwhal_dev
 
-tools:
-	@echo "Installing development tools..."
-	go install github.com/bufbuild/buf/cmd/buf@v$(BUF_VERSION)
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v$(PROTOC_VERSION)
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$(PROTOC_VERSION)
-	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@$(GATEWAY_VERSION)
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
+# Migration commands
+migrate:
+	@echo "Running database migrations..."
+	@go run cmd/migrate/main.go
 
-# -----------------------------------------------------------------------------
-# Dependencies
-# -----------------------------------------------------------------------------
+migrate-status:
+	@echo "Checking migration status..."
+	@go run cmd/migrate/main.go -status
 
-deps:
-	@echo "Managing dependencies..."
-	go mod tidy
+migrate-dry-run:
+	@echo "Showing pending migrations..."
+	@go run cmd/migrate/main.go -dry-run
 
-# -----------------------------------------------------------------------------
-# Protobuf Generation
-# -----------------------------------------------------------------------------
+# Buf commands
+buf-lint:
+	@echo "Linting proto files..."
+	@buf lint
 
-proto:
-	@echo "Generating protobuf code..."
-	cd api/proto
-	buf generate
+buf-breaking:
+	@echo "Checking for breaking changes..."
+	@buf breaking --against '.git#branch=main'
 
-# -----------------------------------------------------------------------------
-# Build
-# -----------------------------------------------------------------------------
+buf-format:
+	@echo "Formatting proto files..."
+	@buf format -w
 
-build: $(SERVICES)
+buf-generate:
+	@echo "Generating code from proto files..."
+	@buf generate
 
-$(SERVICES):
-	@echo "Building $@ service..."
-	go build -o $(BINARY_DIR)/$@ ./cmd/$@
+# Generate protobuf files (using Buf)
+proto: buf-generate
 
-# -----------------------------------------------------------------------------
-# Testing and Linting
-# -----------------------------------------------------------------------------
+# Generate all code (proto, mocks, etc.)
+generate: proto
+	@echo "Generating mocks..."
+	go generate ./...
 
+# Build all services
+build:
+	@echo "Building services..."
+	go build -o bin/library ./cmd/library
+	go build -o bin/acquisition ./cmd/acquisition
+	go build -o bin/streaming ./cmd/streaming
+	go build -o bin/transcoding ./cmd/transcoding
+	go build -o bin/user ./cmd/user
+	go build -o bin/analytics ./cmd/analytics
+
+# Build specific service
+build-%:
+	go build -o bin/$* ./cmd/$*
+
+# Build specific service
+build-library:
+	go build -o bin/library ./cmd/library
+
+build-user:
+	go build -o bin/user ./cmd/user
+
+# Run services
+run-library: build-library
+	./bin/library
+
+run-user: build-user
+	./bin/user
+
+# Development with hot reload (requires air)
+dev-library:
+	air -c .air.library.toml
+
+dev-user:
+	air -c .air.user.toml
+
+
+# Run tests
 test:
-	@echo "Running tests..."
-	go test -v ./...
+	@echo "Running all tests..."
+	go test -v -race ./...
 
+# Run unit tests only (skip integration tests)
+test-unit:
+	@echo "Running unit tests..."
+	go test -v -race -short ./...
+
+# Run tests with coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Run integration tests
+test-integration:
+	@echo "Running integration tests..."
+	go test -v -race -run Integration ./...
+
+# Run tests for a specific package
+test-pkg:
+	@echo "Running tests for package $(PKG)..."
+	go test -v -race ./$(PKG)/...
+
+# Run benchmarks
+test-bench:
+	@echo "Running benchmarks..."
+	go test -bench=. -benchmem ./...
+
+# Run tests in watch mode (requires gotestsum)
+test-watch:
+	@which gotestsum > /dev/null || go install gotest.tools/gotestsum@latest
+	gotestsum --watch
+
+# Clean test artifacts
+test-clean:
+	rm -f coverage.out coverage.html
+
+# Run linters
 lint:
-	@echo "Running linter..."
 	golangci-lint run
 
-# -----------------------------------------------------------------------------
-# Cleanup
-# -----------------------------------------------------------------------------
+# Format code
+fmt:
+	go fmt ./...
+	gofmt -s -w .
 
+# Clean build artifacts
 clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf $(BINARY_DIR)/
-	rm -rf $(PROTO_GEN_DIR)/
+	rm -rf bin/
+	rm -f coverage.out coverage.html
 
-# -----------------------------------------------------------------------------
-# Development Environment
-# -----------------------------------------------------------------------------
+# Run specific service
+run-%:
+	go run ./cmd/$*/main.go
 
-dev:
-	@echo "Starting development environment..."
+# Docker commands
+docker-build:
+	docker-compose build
+
+docker-up:
 	docker-compose up -d
 
-dev-down:
-	@echo "Stopping development environment..."
+docker-down:
 	docker-compose down
 
-# -----------------------------------------------------------------------------
-# Help
-# -----------------------------------------------------------------------------
+docker-logs:
+	docker-compose logs -f
 
+# Development with hot reload (requires air)
+dev-%:
+	cd cmd/$* && air
+
+# Install development tools
+install-tools:
+	@echo "Installing Buf..."
+	@curl -sSL "https://github.com/bufbuild/buf/releases/download/v1.28.1/buf-$(shell uname -s)-$(shell uname -m)" -o /usr/local/bin/buf && chmod +x /usr/local/bin/buf || go install github.com/bufbuild/buf/cmd/buf@latest
+	@echo "Installing protoc plugins..."
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	@echo "Installing other tools..."
+	go install github.com/golang/mock/mockgen@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/cosmtrek/air@latest
+	go install gotest.tools/gotestsum@latest
+
+# Database migrations
+migrate-up:
+	migrate -path ./migrations -database "postgresql://localhost/narwhal?sslmode=disable" up
+
+migrate-down:
+	migrate -path ./migrations -database "postgresql://localhost/narwhal?sslmode=disable" down
+
+migrate-create:
+	migrate create -ext sql -dir ./migrations -seq $(name)
+
+# Help
 help:
-	@echo "Narwhal Media Server - Available targets:"
+	@echo "Available targets:"
 	@echo ""
-	@echo "Development:"
-	@echo "  tools     - Install development tools (buf, protoc, etc.)"
-	@echo "  deps      - Update and tidy Go dependencies"
-	@echo "  proto     - Generate protobuf code"
-	@echo "  build     - Build all services"
-	@echo "  test      - Run tests"
-	@echo "  lint      - Run linter"
+	@echo "Build & Run:"
+	@echo "  all              - Generate code and build all services"
+	@echo "  build            - Build all services"
+	@echo "  build-<service>  - Build specific service"
+	@echo "  run-<service>    - Run specific service"
+	@echo "  dev-<service>    - Run service with hot reload"
 	@echo ""
-	@echo "Environment:"
-	@echo "  dev       - Start development environment"
-	@echo "  dev-down  - Stop development environment"
+	@echo "Code Generation:"
+	@echo "  proto            - Generate protobuf files (using Buf)"
+	@echo "  generate         - Generate all code (proto, mocks, etc.)"
+	@echo "  buf-lint         - Lint proto files with Buf"
+	@echo "  buf-breaking     - Check for breaking proto changes"
+	@echo "  buf-format       - Format proto files"
 	@echo ""
-	@echo "Maintenance:"
-	@echo "  clean     - Clean build artifacts"
+	@echo "Testing:"
+	@echo "  test             - Run all tests"
+	@echo "  test-unit        - Run unit tests only"
+	@echo "  test-coverage    - Run tests with coverage"
+	@echo "  test-integration - Run integration tests"
+	@echo "  test-watch       - Run tests in watch mode"
 	@echo ""
-	@echo "Individual services can be built with: make <service>"
-	@echo "Available services: $(SERVICES)"
+	@echo "Database:"
+	@echo "  db-up            - Start PostgreSQL and Redis"
+	@echo "  db-down          - Stop databases"
+	@echo "  db-reset         - Reset databases"
+	@echo "  db-test          - Test database connection"
+	@echo "  migrate          - Run database migrations"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  lint             - Run linters"
+	@echo "  fmt              - Format code"
+	@echo ""
+	@echo "Docker:"
+	@echo "  docker-build     - Build Docker images"
+	@echo "  docker-up        - Start services with Docker Compose"
+	@echo "  docker-down      - Stop services"
+	@echo ""
+	@echo "Other:"
+	@echo "  clean            - Clean build artifacts"
+	@echo "  install-tools    - Install development tools"
+	@echo "  help             - Show this help message"

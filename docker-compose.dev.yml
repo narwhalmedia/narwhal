@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  library:
+    build:
+      context: .
+      dockerfile: deployments/docker/library/Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - LIBRARY_DATABASE_HOST=postgres
+      - LIBRARY_DATABASE_PASSWORD=narwhal_dev
+      - LIBRARY_REDIS_HOST=redis
+    ports:
+      - "8081:8081"   # HTTP/Health port
+      - "9091:9091"   # gRPC port
+      - "2112:2112"   # Metrics port
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./configs/library.dev.yaml:/app/configs/library.dev.yaml:ro
+    networks:
+      - narwhal
+
+  user:
+    build:
+      context: .
+      dockerfile: deployments/docker/user/Dockerfile
+    environment:
+      - ENVIRONMENT=dev
+      - USER_DATABASE_HOST=postgres
+      - USER_DATABASE_PASSWORD=narwhal_dev
+      - USER_REDIS_HOST=redis
+      - USER_AUTH_JWT_SECRET=development-secret-do-not-use-in-production
+    ports:
+      - "8082:8082"   # HTTP/Health port
+      - "9092:9092"   # gRPC port
+      - "2113:2113"   # Metrics port
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./configs/user.dev.yaml:/app/configs/user.dev.yaml:ro
+    networks:
+      - narwhal
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=narwhal
+      - POSTGRES_PASSWORD=narwhal_dev
+      - POSTGRES_DB=narwhal_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - narwhal
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - narwhal
+
+volumes:
+  postgres_data:
+
+networks:
+  narwhal:
+    driver: bridge

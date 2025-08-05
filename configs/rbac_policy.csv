@@ -1,0 +1,56 @@
+# Policies define what actions roles can perform on resources
+# Format: p, role, resource, action
+
+# Admin role - full access to everything
+p, admin, library, read
+p, admin, library, write
+p, admin, library, delete
+p, admin, library, admin
+p, admin, media, read
+p, admin, media, write
+p, admin, media, delete
+p, admin, media, admin
+p, admin, user, read
+p, admin, user, write
+p, admin, user, delete
+p, admin, user, admin
+p, admin, transcoding, read
+p, admin, transcoding, write
+p, admin, transcoding, delete
+p, admin, transcoding, admin
+p, admin, streaming, read
+p, admin, streaming, write
+p, admin, streaming, delete
+p, admin, streaming, admin
+p, admin, acquisition, read
+p, admin, acquisition, write
+p, admin, acquisition, delete
+p, admin, acquisition, admin
+p, admin, analytics, read
+p, admin, analytics, write
+p, admin, analytics, delete
+p, admin, analytics, admin
+p, admin, system, read
+p, admin, system, write
+p, admin, system, delete
+p, admin, system, admin
+
+# User role - standard user permissions
+p, user, library, read
+p, user, media, read
+p, user, media, write
+p, user, user, read
+p, user, user, write
+p, user, transcoding, read
+p, user, streaming, read
+p, user, acquisition, read
+p, user, analytics, read
+
+# Guest role - minimal permissions
+p, guest, library, read
+p, guest, media, read
+p, guest, streaming, read
+
+# Role assignments are done dynamically via g (group) policies
+# Example: g, alice, admin
+# This would be added when a user is assigned a role

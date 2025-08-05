@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package narwhal.common.v1;
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/common/v1;commonpb";
+
+// MediaType represents the type of media content
+enum MediaType {
+  MEDIA_TYPE_UNSPECIFIED = 0;
+  MEDIA_TYPE_MOVIE = 1;
+  MEDIA_TYPE_SERIES = 2;
+  MEDIA_TYPE_MUSIC = 3;
+}
+
+// UserRole represents the role of a user
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_GUEST = 1;
+  USER_ROLE_USER = 2;
+  USER_ROLE_ADMIN = 3;
+}
+
+// Pagination request parameters
+message PaginationRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+}
+
+// Pagination response metadata
+message PaginationResponse {
+  string next_page_token = 1;
+  int32 total_items = 2;
+}
+
+// Sort order
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
+}
+
+// Common error details
+message ErrorDetail {
+  string code = 1;
+  string message = 2;
+  map<string, string> metadata = 3;
+}

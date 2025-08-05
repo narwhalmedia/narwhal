@@ -1,0 +1,80 @@
+---
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: narwhal-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: narwhal
+      POSTGRES_PASSWORD: narwhal_dev
+      POSTGRES_DB: narwhal_dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U narwhal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: valkey/valkey:8-alpine
+    container_name: narwhal-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  library-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/library.Dockerfile
+    container_name: narwhal-library
+    ports:
+      - "50051:50051"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: narwhal
+      DB_PASSWORD: narwhal_dev
+      DB_NAME: narwhal_dev
+      GRPC_PORT: 50051
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - /media:/media:ro  # Mount media directory as read-only
+
+  user-service:
+    build:
+      context: .
+      dockerfile: deployments/docker/user.Dockerfile
+    container_name: narwhal-user
+    ports:
+      - "50052:50052"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: narwhal
+      DB_PASSWORD: narwhal_dev
+      DB_NAME: narwhal_dev
+      GRPC_PORT: 50052
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_access_secret_change_in_production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret_change_in_production}
+      JWT_ISSUER: narwhal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

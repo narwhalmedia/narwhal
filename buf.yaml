@@ -1,14 +1,34 @@
+# buf.yaml - Buf v2 configuration
+# https://buf.build/docs/configuration/v2/buf-yaml
 version: v2
+
+# Module configuration
 modules:
   - path: api/proto
-lint:
-  use:
-    - DEFAULT
-    - FILE_LOWER_SNAKE_CASE
+    name: buf.build/narwhalmedia/narwhal
+
+# Dependencies from Buf Schema Registry
+deps:
+  - buf.build/googleapis/googleapis
+
+# Breaking change detection
 breaking:
   use:
     - FILE
-deps:
-  - buf.build/googleapis/googleapis
-  - buf.build/grpc-ecosystem/grpc-gateway
-  - buf.build/envoyproxy/protoc-gen-validate
+  except:
+    - EXTENSION
+    - FIELD_SAME_DEFAULT
+
+# Lint configuration
+lint:
+  use:
+    - STANDARD
+    - COMMENTS
+    - UNARY_RPC
+  except:
+    - ENUM_ZERO_VALUE_SUFFIX
+    - SERVICE_SUFFIX
+  enum_zero_value_suffix: _UNSPECIFIED
+  rpc_allow_google_protobuf_empty_requests: true
+  rpc_allow_google_protobuf_empty_responses: true
+

@@ -1,64 +1,74 @@
-# Narwhal
+# Narwhal Media Platform
 
-A cloud-native microservices media server built with Go, TypeScript, gRPC, and Kubernetes.
-
-## Overview
-
-Narwhal is a modern media server that provides:
-- Media library management
-- Automated media downloading
-- HLS transcoding
-- Streaming capabilities
-- Web-based UI
+A unified media platform that combines the functionality of Sonarr, Radarr, and Plex into a microservices architecture built with Go.
 
 ## Architecture
 
-The system is built using a microservices architecture with the following key components:
+Narwhal is designed as a cloud-native microservices platform with the following core services:
 
-- Media Library Service: Manages media metadata and organization
-- Download Service: Handles media file downloads
-- Transcoding Service: Converts media to HLS format
-- Streaming Service: Serves HLS content
-- API Gateway: Exposes REST/gRPC endpoints
-- Web UI: TypeScript/React frontend
+- **Media Library Service**: Manages media files, metadata, and library organization
+- **Content Acquisition Service**: Handles searching indexers and managing downloads
+- **Streaming Service**: Provides HLS/DASH adaptive bitrate streaming
+- **Transcoding Service**: Handles video transcoding with hardware acceleration
+- **User Service**: Manages authentication, authorization, and user profiles
+- **Analytics Service**: Tracks viewing history and provides recommendations
 
-## Prerequisites
+## Technology Stack
 
-- Go 1.21+
-- Node.js 22+
-- Docker
-- Kubernetes cluster
-- NATS JetStream
-- PostgreSQL
-- Redis
+- **Language**: Go
+- **Communication**: gRPC (internal), REST/GraphQL (external)
+- **Streaming**: HLS/DASH with FFmpeg
+- **Container**: Docker & Kubernetes
+- **Database**: PostgreSQL (per-service databases)
+- **Caching**: Redis + in-memory
+- **Message Bus**: NATS/RabbitMQ for event-driven architecture
 
-## Development Setup
+## Getting Started
 
-1. Clone the repository:
+### Prerequisites
+
+- Go 1.21 or higher
+- Docker & Docker Compose
+- Protocol Buffers compiler (protoc)
+
+### Building
+
 ```bash
-git clone https://github.com/yourusername/narwhal.git
+# Clone the repository
+git clone https://github.com/narwhalmedia/narwhal.git
 cd narwhal
-```
 
-2. Install Go dependencies:
-```bash
+# Install dependencies
 go mod download
+
+# Build all services
+make build
+
+# Or build a specific service
+go build -o bin/library ./cmd/library
 ```
 
-3. Generate protobuf code (includes fetching Google API definitions):
+### Running
+
 ```bash
-make proto
+# Run with Docker Compose
+docker-compose up
+
+# Or run individual services
+./bin/library
 ```
 
-4. Install frontend dependencies:
-```bash
-cd web
-npm install
-```
+### Development
 
-5. Start development environment:
 ```bash
-make dev
+# Run tests
+go test ./...
+
+# Run with hot reload
+air -c .air.toml
+
+# Generate protobuf files
+make generate
 ```
 
 ## Project Structure
@@ -66,19 +76,32 @@ make dev
 ```
 narwhal/
 ├── cmd/                    # Service entry points
-├── internal/              # Private application code
-├── pkg/                   # Public libraries
-├── api/                   # Protocol buffers and API definitions
-├── web/                   # Frontend application
-├── deploy/               # Kubernetes manifests
-├── docs/                 # Documentation
-└── tools/                # Development tools
+│   ├── library/
+│   ├── acquisition/
+│   └── streaming/
+├── internal/              # Private service implementations
+│   └── library/
+│       ├── domain/       # Business logic
+│       ├── repository/   # Data access
+│       ├── service/      # Service layer
+│       └── handler/      # gRPC/HTTP handlers
+├── pkg/                   # Shared packages
+│   ├── models/           # Domain models
+│   ├── interfaces/       # Common interfaces
+│   ├── events/           # Event definitions
+│   └── utils/            # Utilities
+├── api/                   # API definitions
+│   ├── proto/            # gRPC protobuf files
+│   └── openapi/          # REST API specs
+└── deployments/          # Deployment configs
+    ├── docker/
+    └── kubernetes/
 ```
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+This project is currently in the planning and initial implementation phase. Contributions are welcome!
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+[License information to be added]

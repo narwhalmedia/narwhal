@@ -1,23 +1,43 @@
+# buf.gen.yaml - Buf code generation configuration
+# https://buf.build/docs/configuration/v2/buf-gen-yaml
 version: v2
+
+# Managed mode for consistent code generation
+managed:
+  enabled: true
+  override:
+    # Go package prefix override
+    - file_option: go_package_prefix
+      value: github.com/narwhalmedia/narwhal
+
+# Plugins for code generation
 plugins:
-  - remote: buf.build/protocolbuffers/go:v1.36.6
-    out: api/proto/gen
-    opt: paths=source_relative
-  - remote: buf.build/grpc-ecosystem/gateway:v2.26.3
-    out: api/proto/gen
-    opt: 
-      - paths=source_relative
-      - generate_unbound_methods=true
-  - remote: buf.build/bufbuild/validate-go:v1.2.1
-    out: api/proto/gen
+  # Protocol Buffers Go plugin
+  - remote: buf.build/protocolbuffers/go:v1.32.0
+    out: .
     opt:
       - paths=source_relative
-  - local: protoc-gen-go-grpc
-    out: api/proto/gen
+
+  # gRPC Go plugin
+  - remote: buf.build/grpc/go:v1.3.0
+    out: .
     opt:
       - paths=source_relative
-# managed:
-#   enabled: true
-#   override:
-#     - file_option: go_package_prefix
-#       value: github.com/narwhalmedia/narwhal/api/proto
+      - require_unimplemented_servers=false
+
+  # Optional: gRPC-Gateway for REST API
+  - remote: buf.build/grpc-ecosystem/gateway:v2.27.1
+    out: gen
+    opt:
+      - paths=source_relative
+
+  # Optional: OpenAPI v2 documentation
+  - remote: buf.build/grpc-ecosystem/openapiv2:v2.27.1
+    out: api/openapi
+    opt:
+      - simple_operation_ids=true
+      - json_names_for_fields=true
+
+# Input configuration
+inputs:
+  - directory: api/proto

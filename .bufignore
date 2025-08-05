@@ -1,0 +1,15 @@
+# .bufignore - Files to ignore for Buf operations
+# Generated files
+*.pb.go
+*_grpc.pb.go
+
+# Vendor and third-party
+vendor/
+third_party/
+
+# Test files
+*_test.proto
+
+# Temporary files
+*.tmp
+*.temp

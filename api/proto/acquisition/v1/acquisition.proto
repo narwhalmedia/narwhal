@@ -1,0 +1,254 @@
+syntax = "proto3";
+
+package narwhal.acquisition.v1;
+
+import "common/v1/common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/acquisition/v1;acquisitionpb";
+
+// AcquisitionService handles content discovery and downloading
+service AcquisitionService {
+  // Search operations
+  rpc SearchContent(SearchContentRequest) returns (SearchContentResponse);
+  rpc GetRelease(GetReleaseRequest) returns (Release);
+
+  // Download management
+  rpc AddDownload(AddDownloadRequest) returns (Download);
+  rpc GetDownload(GetDownloadRequest) returns (Download);
+  rpc ListDownloads(ListDownloadsRequest) returns (ListDownloadsResponse);
+  rpc CancelDownload(CancelDownloadRequest) returns (google.protobuf.Empty);
+  rpc RetryDownload(RetryDownloadRequest) returns (Download);
+  rpc GetDownloadHistory(GetDownloadHistoryRequest) returns (GetDownloadHistoryResponse);
+
+  // Quality profiles
+  rpc CreateQualityProfile(CreateQualityProfileRequest) returns (QualityProfile);
+  rpc GetQualityProfile(GetQualityProfileRequest) returns (QualityProfile);
+  rpc ListQualityProfiles(ListQualityProfilesRequest) returns (ListQualityProfilesResponse);
+  rpc UpdateQualityProfile(UpdateQualityProfileRequest) returns (QualityProfile);
+  rpc DeleteQualityProfile(DeleteQualityProfileRequest) returns (google.protobuf.Empty);
+
+  // Indexer management
+  rpc ListIndexers(ListIndexersRequest) returns (ListIndexersResponse);
+  rpc TestIndexer(TestIndexerRequest) returns (TestIndexerResponse);
+}
+
+// DownloadStatus represents the status of a download
+enum DownloadStatus {
+  DOWNLOAD_STATUS_UNSPECIFIED = 0;
+  DOWNLOAD_STATUS_PENDING = 1;
+  DOWNLOAD_STATUS_QUEUED = 2;
+  DOWNLOAD_STATUS_DOWNLOADING = 3;
+  DOWNLOAD_STATUS_COMPLETED = 4;
+  DOWNLOAD_STATUS_FAILED = 5;
+  DOWNLOAD_STATUS_CANCELLED = 6;
+}
+
+// Release represents a release from an indexer
+message Release {
+  string id = 1;
+  string title = 2;
+  string indexer_id = 3;
+  string indexer_name = 4;
+  int64 size_bytes = 5;
+  google.protobuf.Timestamp publish_date = 6;
+  string download_url = 7;
+  string info_url = 8;
+  int32 seeders = 9;
+  int32 leechers = 10;
+  Quality quality = 11;
+  bool scene_source = 12;
+  bool free_leech = 13;
+  map<string, string> attributes = 14;
+}
+
+// Quality represents the quality attributes of a release
+message Quality {
+  string resolution = 1;
+  string source = 2;
+  string codec = 3;
+  int32 bit_depth = 4;
+  bool hdr = 5;
+  int32 score = 6;
+}
+
+// Download represents a download task
+message Download {
+  string id = 1;
+  string title = 2;
+  narwhal.common.v1.MediaType type = 3;
+  string indexer_id = 4;
+  string download_url = 5;
+  int64 size_bytes = 6;
+  DownloadStatus status = 7;
+  float progress = 8;
+  int64 download_speed = 9;
+  int32 eta_seconds = 10;
+  string download_client = 11;
+  string output_path = 12;
+  int32 priority = 13;
+  int32 retry_count = 14;
+  string error = 15;
+  google.protobuf.Timestamp started = 16;
+  google.protobuf.Timestamp completed = 17;
+  google.protobuf.Timestamp created = 18;
+  google.protobuf.Timestamp updated = 19;
+}
+
+// QualityProfile represents a quality profile for automatic selection
+message QualityProfile {
+  string id = 1;
+  string name = 2;
+  int32 min_score = 3;
+  int32 max_score = 4;
+  int32 preferred_score = 5;
+  bool upgrade_allowed = 6;
+  repeated string preferred_keywords = 7;
+  repeated string required_keywords = 8;
+  repeated string ignored_keywords = 9;
+}
+
+// Indexer represents a content indexer
+message Indexer {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  bool enabled = 4;
+  map<string, string> settings = 5;
+  google.protobuf.Timestamp last_tested = 6;
+  bool is_healthy = 7;
+}
+
+// Search requests/responses
+
+message SearchContentRequest {
+  string query = 1;
+  narwhal.common.v1.MediaType type = 2;
+  repeated string indexer_ids = 3;
+  string quality_profile_id = 4;
+  int32 year = 5;
+  string imdb_id = 6;
+  string tmdb_id = 7;
+}
+
+message SearchContentResponse {
+  repeated Release releases = 1;
+  map<string, string> indexer_errors = 2;
+}
+
+message GetReleaseRequest {
+  string id = 1;
+  string indexer_id = 2;
+}
+
+// Download management requests/responses
+
+message AddDownloadRequest {
+  string release_id = 1;
+  string indexer_id = 2;
+  string title = 3;
+  string download_url = 4;
+  string quality_profile_id = 5;
+  string output_path = 6;
+  int32 priority = 7;
+}
+
+message GetDownloadRequest {
+  string id = 1;
+}
+
+message ListDownloadsRequest {
+  narwhal.common.v1.PaginationRequest pagination = 1;
+  DownloadStatus status_filter = 2;
+  string sort_by = 3;
+  narwhal.common.v1.SortOrder sort_order = 4;
+}
+
+message ListDownloadsResponse {
+  repeated Download downloads = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+}
+
+message CancelDownloadRequest {
+  string id = 1;
+  bool remove_files = 2;
+}
+
+message RetryDownloadRequest {
+  string id = 1;
+}
+
+message GetDownloadHistoryRequest {
+  string download_id = 1;
+  narwhal.common.v1.PaginationRequest pagination = 2;
+}
+
+message GetDownloadHistoryResponse {
+  message HistoryEntry {
+    string id = 1;
+    string download_id = 2;
+    DownloadStatus status = 3;
+    string message = 4;
+    google.protobuf.Timestamp timestamp = 5;
+  }
+  repeated HistoryEntry entries = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+}
+
+// Quality profile requests/responses
+
+message CreateQualityProfileRequest {
+  string name = 1;
+  int32 min_score = 2;
+  int32 max_score = 3;
+  int32 preferred_score = 4;
+  bool upgrade_allowed = 5;
+  repeated string preferred_keywords = 6;
+  repeated string required_keywords = 7;
+  repeated string ignored_keywords = 8;
+}
+
+message GetQualityProfileRequest {
+  string id = 1;
+}
+
+message ListQualityProfilesRequest {
+  narwhal.common.v1.PaginationRequest pagination = 1;
+}
+
+message ListQualityProfilesResponse {
+  repeated QualityProfile profiles = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+}
+
+message UpdateQualityProfileRequest {
+  string id = 1;
+  QualityProfile profile = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteQualityProfileRequest {
+  string id = 1;
+}
+
+// Indexer management requests/responses
+
+message ListIndexersRequest {
+  bool enabled_only = 1;
+}
+
+message ListIndexersResponse {
+  repeated Indexer indexers = 1;
+}
+
+message TestIndexerRequest {
+  string id = 1;
+}
+
+message TestIndexerResponse {
+  bool success = 1;
+  string message = 2;
+  int32 response_time_ms = 3;
+}

@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+package narwhal.library.v1;
+
+import "common/v1/common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/narwhalmedia/narwhal/api/proto/library/v1;librarypb";
+
+// LibraryService provides media library management functionality
+service LibraryService {
+  // Library management
+  rpc CreateLibrary(CreateLibraryRequest) returns (Library);
+  rpc GetLibrary(GetLibraryRequest) returns (Library);
+  rpc ListLibraries(ListLibrariesRequest) returns (ListLibrariesResponse);
+  rpc UpdateLibrary(UpdateLibraryRequest) returns (Library);
+  rpc DeleteLibrary(DeleteLibraryRequest) returns (google.protobuf.Empty);
+  rpc ScanLibrary(ScanLibraryRequest) returns (ScanLibraryResponse);
+
+  // Media management
+  rpc GetMedia(GetMediaRequest) returns (Media);
+  rpc ListMedia(ListMediaRequest) returns (ListMediaResponse);
+  rpc SearchMedia(SearchMediaRequest) returns (SearchMediaResponse);
+  rpc UpdateMedia(UpdateMediaRequest) returns (Media);
+  rpc DeleteMedia(DeleteMediaRequest) returns (google.protobuf.Empty);
+
+  // Metadata management
+  rpc GetMetadata(GetMetadataRequest) returns (Metadata);
+  rpc UpdateMetadata(UpdateMetadataRequest) returns (Metadata);
+  rpc RefreshMetadata(RefreshMetadataRequest) returns (RefreshMetadataResponse);
+}
+
+// Library represents a media library location
+message Library {
+  string id = 1;
+  string name = 2;
+  string path = 3;
+  narwhal.common.v1.MediaType type = 4;
+  bool auto_scan = 5;
+  int32 scan_interval_minutes = 6;
+  google.protobuf.Timestamp last_scanned = 7;
+  google.protobuf.Timestamp created = 8;
+  google.protobuf.Timestamp updated = 9;
+}
+
+// Media represents a media item in the library
+message Media {
+  string id = 1;
+  string title = 2;
+  narwhal.common.v1.MediaType type = 3;
+  string path = 4;
+  int64 size_bytes = 5;
+  int32 duration_seconds = 6;
+  string resolution = 7;
+  string codec = 8;
+  int32 bitrate = 9;
+  google.protobuf.Timestamp added = 10;
+  google.protobuf.Timestamp modified = 11;
+  google.protobuf.Timestamp last_scanned = 12;
+  Metadata metadata = 13;
+  repeated Episode episodes = 14; // For series
+}
+
+// Episode represents an episode of a series
+message Episode {
+  string id = 1;
+  string media_id = 2;
+  int32 season_number = 3;
+  int32 episode_number = 4;
+  string title = 5;
+  string path = 6;
+  int32 duration_seconds = 7;
+  google.protobuf.Timestamp air_date = 8;
+  google.protobuf.Timestamp added = 9;
+}
+
+// Metadata contains enriched metadata for media items
+message Metadata {
+  string id = 1;
+  string media_id = 2;
+  string imdb_id = 3;
+  string tmdb_id = 4;
+  string tvdb_id = 5;
+  string description = 6;
+  google.protobuf.Timestamp release_date = 7;
+  float rating = 8;
+  repeated string genres = 9;
+  repeated string cast = 10;
+  repeated string directors = 11;
+  string poster_url = 12;
+  string backdrop_url = 13;
+  string trailer_url = 14;
+  google.protobuf.Timestamp last_updated = 15;
+}
+
+// Library management requests/responses
+
+message CreateLibraryRequest {
+  string name = 1;
+  string path = 2;
+  narwhal.common.v1.MediaType type = 3;
+  bool auto_scan = 4;
+  int32 scan_interval_minutes = 5;
+}
+
+message GetLibraryRequest {
+  string id = 1;
+}
+
+message ListLibrariesRequest {
+  narwhal.common.v1.PaginationRequest pagination = 1;
+  narwhal.common.v1.MediaType type_filter = 2;
+}
+
+message ListLibrariesResponse {
+  repeated Library libraries = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+}
+
+message UpdateLibraryRequest {
+  string id = 1;
+  Library library = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteLibraryRequest {
+  string id = 1;
+}
+
+message ScanLibraryRequest {
+  string id = 1;
+  bool force = 2; // Force rescan even if recently scanned
+}
+
+message ScanLibraryResponse {
+  string scan_id = 1;
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_STARTED = 1;
+    STATUS_IN_PROGRESS = 2;
+    STATUS_COMPLETED = 3;
+    STATUS_FAILED = 4;
+  }
+  Status status = 2;
+  string message = 3;
+}
+
+// Media management requests/responses
+
+message GetMediaRequest {
+  string id = 1;
+  bool include_metadata = 2;
+  bool include_episodes = 3;
+}
+
+message ListMediaRequest {
+  narwhal.common.v1.PaginationRequest pagination = 1;
+  string library_id = 2;
+  narwhal.common.v1.MediaType type_filter = 3;
+  string sort_by = 4; // "title", "added", "modified", "size"
+  narwhal.common.v1.SortOrder sort_order = 5;
+}
+
+message ListMediaResponse {
+  repeated Media media = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+}
+
+message SearchMediaRequest {
+  string query = 1;
+  narwhal.common.v1.PaginationRequest pagination = 2;
+  narwhal.common.v1.MediaType type_filter = 3;
+  repeated string genre_filter = 4;
+  int32 min_year = 5;
+  int32 max_year = 6;
+  float min_rating = 7;
+}
+
+message SearchMediaResponse {
+  repeated Media results = 1;
+  narwhal.common.v1.PaginationResponse pagination = 2;
+  int32 total_results = 3;
+}
+
+message UpdateMediaRequest {
+  string id = 1;
+  Media media = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteMediaRequest {
+  string id = 1;
+  bool delete_file = 2; // Also delete the physical file
+}
+
+// Metadata management requests/responses
+
+message GetMetadataRequest {
+  string media_id = 1;
+}
+
+message UpdateMetadataRequest {
+  string media_id = 1;
+  Metadata metadata = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message RefreshMetadataRequest {
+  string media_id = 1;
+  repeated string providers = 2; // Specific providers to use
+  bool override_existing = 3;
+}
+
+message RefreshMetadataResponse {
+  Metadata metadata = 1;
+  repeated string updated_fields = 2;
+  map<string, string> provider_results = 3; // provider -> status/error
+}
