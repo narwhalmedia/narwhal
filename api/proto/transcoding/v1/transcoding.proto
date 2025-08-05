@@ -523,8 +523,10 @@ message HardwareCapabilities {
   // GPU devices
   repeated GPUDevice gpu_devices = 2;
 
-  // Supported codecs per codec type
-  // Key is the CodecType enum value cast to int32
+  // Map of supported codecs and their capabilities
+  // Key: The numeric value of CodecType enum (e.g., 1 = CODEC_TYPE_H264, 2 = CODEC_TYPE_H265)
+  // Value: CodecSupport message containing capabilities for that codec
+  // Example: codec_support[1] = CodecSupport for H.264
   map<int32, CodecSupport> codec_support = 3;
 
   // Maximum concurrent sessions
