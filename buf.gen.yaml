@@ -14,13 +14,13 @@ managed:
 plugins:
   # Protocol Buffers Go plugin
   - remote: buf.build/protocolbuffers/go:v1.32.0
-    out: .
+    out: pkg
     opt:
       - paths=source_relative
 
   # gRPC Go plugin
   - remote: buf.build/grpc/go:v1.3.0
-    out: .
+    out: pkg
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
