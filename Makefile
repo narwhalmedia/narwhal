@@ -113,9 +113,9 @@ dev-library:
 dev-user:
 	air -c .air.user.toml
 
-
 # Run tests
 test:
+	$(MAKE) test-workflows
 	@echo "Running all tests..."
 	go test -v -race ./...
 
@@ -215,46 +215,47 @@ migrate-create:
 
 # Help
 help:
-	@echo "Available targets:"
-	@echo ""
-	@echo "Build & Run:"
-	@echo "  all              - Generate code and build all services"
-	@echo "  build            - Build all services"
-	@echo "  build-<service>  - Build specific service"
-	@echo "  run-<service>    - Run specific service"
-	@echo "  dev-<service>    - Run service with hot reload"
-	@echo ""
-	@echo "Code Generation:"
-	@echo "  proto            - Generate protobuf files (using Buf)"
-	@echo "  generate         - Generate all code (proto, mocks, etc.)"
-	@echo "  buf-lint         - Lint proto files with Buf"
-	@echo "  buf-breaking     - Check for breaking proto changes"
-	@echo "  buf-format       - Format proto files"
-	@echo ""
-	@echo "Testing:"
-	@echo "  test             - Run all tests"
-	@echo "  test-unit        - Run unit tests only"
-	@echo "  test-coverage    - Run tests with coverage"
-	@echo "  test-integration - Run integration tests"
-	@echo "  test-watch       - Run tests in watch mode"
-	@echo ""
-	@echo "Database:"
-	@echo "  db-up            - Start PostgreSQL and Redis"
-	@echo "  db-down          - Stop databases"
-	@echo "  db-reset         - Reset databases"
-	@echo "  db-test          - Test database connection"
-	@echo "  migrate          - Run database migrations"
-	@echo ""
-	@echo "Code Quality:"
-	@echo "  lint             - Run linters"
-	@echo "  fmt              - Format code"
-	@echo ""
-	@echo "Docker:"
-	@echo "  docker-build     - Build Docker images"
-	@echo "  docker-up        - Start services with Docker Compose"
-	@echo "  docker-down      - Stop services"
-	@echo ""
-	@echo "Other:"
-	@echo "  clean            - Clean build artifacts"
-	@echo "  install-tools    - Install development tools"
-	@echo "  help             - Show this help message"
+	@printf "\
+Available targets:\n\
+\n\
+  all              - Generate code and build all services\n\
+  build            - Build all services\n\
+  build-<service>  - Build specific service\n\
+  run-<service>    - Run specific service\n\
+  dev-<service>    - Run service with hot reload\n\
+\n\
+  proto            - Generate protobuf files (using Buf)\n\
+  generate         - Generate all code (proto, mocks, etc.)\n\
+  buf-lint         - Lint proto files with Buf\n\
+  buf-breaking     - Check for breaking proto changes\n\
+  buf-format       - Format proto files\n\
+\n\
+  test             - Run all tests\n\
+  test-unit        - Run unit tests only\n\
+  test-coverage    - Run tests with coverage\n\
+  test-integration - Run integration tests\n\
+  test-watch       - Run tests in watch mode\n\
+\n\
+  db-up            - Start PostgreSQL and Redis\n\
+  db-down          - Stop databases\n\
+  db-reset         - Reset databases\n\
+  db-test          - Test database connection\n\
+  migrate          - Run database migrations\n\
+\n\
+  lint             - Run linters\n\
+  fmt              - Format code\n\
+\n\
+  docker-build     - Build Docker images\n\
+  docker-up        - Start services with Docker Compose\n\
+  docker-down      - Stop services\n\
+\n\
+  clean            - Clean build artifacts\n\
+  install-tools    - Install development tools\n\
+  help             - Show this help message\n"
+
+.PHONY: test-workflows
+
+test-workflows:
+	cd .github/workflows/test && go test -v ./...
+
+# Add workflow tests to main test target
