@@ -5,13 +5,14 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/narwhalmedia/narwhal/internal/library/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// convertMediaType converts proto media type to string
+// convertMediaType converts proto media type to string.
 func convertMediaType(t commonpb.MediaType) string {
 	switch t {
 	case commonpb.MediaType_MEDIA_TYPE_MOVIE:
@@ -25,7 +26,7 @@ func convertMediaType(t commonpb.MediaType) string {
 	}
 }
 
-// convertMediaTypeToProto converts string media type to proto media type
+// convertMediaTypeToProto converts string media type to proto media type.
 func convertMediaTypeToProto(t string) commonpb.MediaType {
 	switch t {
 	case "movie":
@@ -39,7 +40,7 @@ func convertMediaTypeToProto(t string) commonpb.MediaType {
 	}
 }
 
-// convertDomainLibraryToProto converts domain library to proto library
+// convertDomainLibraryToProto converts domain library to proto library.
 func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
 	proto := &librarypb.Library{
 		Id:                  lib.ID.String(),
@@ -47,7 +48,7 @@ func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
 		Path:                lib.Path,
 		Type:                convertMediaTypeToProto(lib.Type),
 		AutoScan:            lib.Enabled,
-		ScanIntervalMinutes: int32(lib.ScanInterval / 60), // Convert from seconds to minutes
+		ScanIntervalMinutes: int32(lib.ScanInterval / constants.SecondsToMinutes), // Convert from seconds to minutes
 		Created:             timestamppb.New(lib.CreatedAt),
 		Updated:             timestamppb.New(lib.UpdatedAt),
 	}
@@ -59,7 +60,7 @@ func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
 	return proto
 }
 
-// convertMediaToProto converts domain media to proto media
+// convertMediaToProto converts domain media to proto media.
 func convertMediaToProto(media *models.Media, includeMetadata, includeEpisodes bool) *librarypb.Media {
 	protoMedia := &librarypb.Media{
 		Id:              media.ID.String(),
@@ -90,7 +91,7 @@ func convertMediaToProto(media *models.Media, includeMetadata, includeEpisodes b
 	return protoMedia
 }
 
-// convertMediaTypeToProtoFromMediaType converts models.MediaType to proto
+// convertMediaTypeToProtoFromMediaType converts models.MediaType to proto.
 func convertMediaTypeToProtoFromMediaType(t models.MediaType) commonpb.MediaType {
 	switch t {
 	case models.MediaTypeMovie:
@@ -104,7 +105,7 @@ func convertMediaTypeToProtoFromMediaType(t models.MediaType) commonpb.MediaType
 	}
 }
 
-// convertMetadataToProto converts domain metadata to proto metadata
+// convertMetadataToProto converts domain metadata to proto metadata.
 func convertMetadataToProto(metadata *models.Metadata) *librarypb.Metadata {
 	proto := &librarypb.Metadata{
 		Id:          metadata.ID.String(),
@@ -136,7 +137,7 @@ func convertMetadataToProto(metadata *models.Metadata) *librarypb.Metadata {
 	return proto
 }
 
-// convertEpisodeToProto converts domain episode to proto episode
+// convertEpisodeToProto converts domain episode to proto episode.
 func convertEpisodeToProto(episode *models.Episode) *librarypb.Episode {
 	proto := &librarypb.Episode{
 		Id:              episode.ID.String(),

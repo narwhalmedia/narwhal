@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/pkg/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
-// MockMetadataProvider is a mock implementation of a metadata provider
+// MockMetadataProvider is a mock implementation of a metadata provider.
 type MockMetadataProvider struct {
 	mock.Mock
 }
@@ -60,7 +60,11 @@ func (m *MockMetadataProvider) GetTVDetails(ctx context.Context, providerID stri
 	return args.Get(0).(*models.Metadata), args.Error(1)
 }
 
-func (m *MockMetadataProvider) GetEpisodeDetails(ctx context.Context, providerID string, season, episode int) (*models.EpisodeMetadata, error) {
+func (m *MockMetadataProvider) GetEpisodeDetails(
+	ctx context.Context,
+	providerID string,
+	season, episode int,
+) (*models.EpisodeMetadata, error) {
 	args := m.Called(ctx, providerID, season, episode)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -70,6 +74,7 @@ func (m *MockMetadataProvider) GetEpisodeDetails(ctx context.Context, providerID
 
 type MetadataFetcherTestSuite struct {
 	suite.Suite
+
 	ctx          context.Context
 	fetcher      *domain.MetadataFetcher
 	mockProvider *MockMetadataProvider
@@ -129,11 +134,11 @@ func (suite *MetadataFetcherTestSuite) TestFetchMovieMetadata_Success() {
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), metadata)
-	assert.Equal(suite.T(), expectedMetadata.Title, metadata.Title)
-	assert.Equal(suite.T(), expectedMetadata.Description, metadata.Description)
-	assert.Equal(suite.T(), expectedMetadata.TMDBID, metadata.TMDBID)
+	suite.Require().NoError(err)
+	suite.NotNil(metadata)
+	suite.Equal(expectedMetadata.Title, metadata.Title)
+	suite.Equal(expectedMetadata.Description, metadata.Description)
+	suite.Equal(expectedMetadata.TMDBID, metadata.TMDBID)
 }
 
 func (suite *MetadataFetcherTestSuite) TestFetchTVMetadata_Success() {
@@ -173,10 +178,10 @@ func (suite *MetadataFetcherTestSuite) TestFetchTVMetadata_Success() {
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), metadata)
-	assert.Equal(suite.T(), expectedMetadata.Title, metadata.Title)
-	assert.Equal(suite.T(), expectedMetadata.TVDBID, metadata.TVDBID)
+	suite.Require().NoError(err)
+	suite.NotNil(metadata)
+	suite.Equal(expectedMetadata.Title, metadata.Title)
+	suite.Equal(expectedMetadata.TVDBID, metadata.TVDBID)
 }
 
 func (suite *MetadataFetcherTestSuite) TestFetchMetadata_NoResults() {
@@ -195,9 +200,9 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_NoResults() {
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), metadata)
-	assert.Contains(suite.T(), err.Error(), "no metadata found")
+	suite.Require().Error(err)
+	suite.Nil(metadata)
+	suite.Contains(err.Error(), "no metadata found")
 }
 
 func (suite *MetadataFetcherTestSuite) TestFetchMetadata_InvalidMediaType() {
@@ -212,9 +217,9 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_InvalidMediaType() {
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), metadata)
-	assert.Contains(suite.T(), err.Error(), "unsupported media type")
+	suite.Require().Error(err)
+	suite.Nil(metadata)
+	suite.Contains(err.Error(), "unsupported media type")
 }
 
 func (suite *MetadataFetcherTestSuite) TestFetchEpisodeMetadata_Success() {
@@ -240,10 +245,10 @@ func (suite *MetadataFetcherTestSuite) TestFetchEpisodeMetadata_Success() {
 	episodeMetadata, err := suite.fetcher.FetchEpisodeMetadata(suite.ctx, seriesMetadata, 1, 1)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), episodeMetadata)
-	assert.Equal(suite.T(), expectedEpisodeMetadata.Title, episodeMetadata.Title)
-	assert.Equal(suite.T(), expectedEpisodeMetadata.Description, episodeMetadata.Description)
+	suite.Require().NoError(err)
+	suite.NotNil(episodeMetadata)
+	suite.Equal(expectedEpisodeMetadata.Title, episodeMetadata.Title)
+	suite.Equal(expectedEpisodeMetadata.Description, episodeMetadata.Description)
 }
 
 func (suite *MetadataFetcherTestSuite) TestGetProviders() {
@@ -254,8 +259,8 @@ func (suite *MetadataFetcherTestSuite) TestGetProviders() {
 	providers := suite.fetcher.GetProviders()
 
 	// Assert
-	assert.Len(suite.T(), providers, 1)
-	assert.Equal(suite.T(), "TestProvider", providers[0].GetName())
+	suite.Len(providers, 1)
+	suite.Equal("TestProvider", providers[0].GetName())
 }
 
 func (suite *MetadataFetcherTestSuite) TestRegisterProvider_Duplicate() {
@@ -269,7 +274,7 @@ func (suite *MetadataFetcherTestSuite) TestRegisterProvider_Duplicate() {
 
 	// Assert - Should still only have one provider
 	providers := suite.fetcher.GetProviders()
-	assert.Len(suite.T(), providers, 1)
+	suite.Len(providers, 1)
 }
 
 func (suite *MetadataFetcherTestSuite) TestFetchMetadata_MultipleProviders() {
@@ -316,9 +321,9 @@ func (suite *MetadataFetcherTestSuite) TestFetchMetadata_MultipleProviders() {
 	metadata, err := suite.fetcher.FetchMetadata(suite.ctx, media)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), metadata)
-	assert.Equal(suite.T(), expectedMetadata.Title, metadata.Title)
+	suite.Require().NoError(err)
+	suite.NotNil(metadata)
+	suite.Equal(expectedMetadata.Title, metadata.Title)
 
 	// Cleanup
 	mockProvider2.AssertExpectations(suite.T())

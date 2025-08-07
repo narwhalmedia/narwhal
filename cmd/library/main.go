@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/narwhalmedia/narwhal/cmd/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
@@ -116,14 +117,14 @@ func main() {
 	if cfg.Pagination.CursorEncryptionKey != "" {
 		// Ensure key is 32 bytes
 		key := []byte(cfg.Pagination.CursorEncryptionKey)
-		if len(key) < 32 {
+		if len(key) < constants.EncryptionKeySize {
 			// Pad with zeros if too short
-			padded := make([]byte, 32)
+			padded := make([]byte, constants.EncryptionKeySize)
 			copy(padded, key)
 			key = padded
-		} else if len(key) > 32 {
+		} else if len(key) > constants.EncryptionKeySize {
 			// Truncate if too long
-			key = key[:32]
+			key = key[:constants.EncryptionKeySize]
 		}
 
 		encoder, err := pagination.NewCursorEncoder(key)
@@ -172,14 +173,16 @@ func main() {
 	logger.Info("Shutting down...")
 
 	// Graceful shutdown with timeout
-	_, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	_, shutdownCancel := context.WithTimeout(context.Background(), constants.ShutdownTimeout)
 	defer shutdownCancel()
 
 	// Stop gRPC server
 	grpcServer.GracefulStop()
 
 	// Stop event bus
-	eventBus.Stop()
+	if err := eventBus.Stop(); err != nil {
+		logger.Error("Failed to stop event bus", interfaces.Error(err))
+	}
 
 	// Close database connection
 	sqlDB, _ := db.DB()
@@ -195,7 +198,7 @@ func startMetricsServer(cfg config.MetricsConfig, log interfaces.Logger) {
 	mux.HandleFunc(cfg.Path, func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Implement Prometheus metrics
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("# Metrics endpoint\n"))
+		_, _ = w.Write([]byte("# Metrics endpoint\n"))
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
@@ -213,7 +216,7 @@ func startHealthServer(port int, log interfaces.Logger) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy"}`))
+		_, _ = w.Write([]byte(`{"status":"healthy"}`))
 	})
 
 	// Readiness check endpoint
@@ -221,7 +224,7 @@ func startHealthServer(port int, log interfaces.Logger) {
 		// TODO: Check database connection, etc.
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ready"}`))
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
 
 	addr := fmt.Sprintf(":%d", port)

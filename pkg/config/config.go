@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,12 +16,12 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
-// Config is the interface that all service configs must implement
+// Config is the interface that all service configs must implement.
 type Config interface {
 	Validate() error
 }
 
-// BaseConfig contains common configuration for all services
+// BaseConfig contains common configuration for all services.
 type BaseConfig struct {
 	Service    ServiceConfig    `koanf:"service"`
 	Database   DatabaseConfig   `koanf:"database"`
@@ -32,7 +33,7 @@ type BaseConfig struct {
 	Pagination PaginationConfig `koanf:"pagination"`
 }
 
-// ServiceConfig contains service-specific metadata
+// ServiceConfig contains service-specific metadata.
 type ServiceConfig struct {
 	Name        string `koanf:"name"`
 	Version     string `koanf:"version"`
@@ -41,7 +42,7 @@ type ServiceConfig struct {
 	GRPCPort    int    `koanf:"grpc_port"`
 }
 
-// AuthConfig contains authentication configuration shared across services
+// AuthConfig contains authentication configuration shared across services.
 type AuthConfig struct {
 	JWTSecret            string        `koanf:"jwt_secret"`
 	AccessTokenDuration  time.Duration `koanf:"access_token_duration"`
@@ -51,7 +52,7 @@ type AuthConfig struct {
 	RBACPolicyPath       string        `koanf:"rbac_policy_path"`
 }
 
-// PaginationConfig contains pagination configuration
+// PaginationConfig contains pagination configuration.
 type PaginationConfig struct {
 	CursorEncryptionKey string        `koanf:"cursor_encryption_key"`
 	MaxPageSize         int           `koanf:"max_page_size"`
@@ -59,7 +60,7 @@ type PaginationConfig struct {
 	CursorExpiration    time.Duration `koanf:"cursor_expiration"`
 }
 
-// DatabaseConfig contains database connection settings
+// DatabaseConfig contains database connection settings.
 type DatabaseConfig struct {
 	Host            string        `koanf:"host"`
 	Port            int           `koanf:"port"`
@@ -73,7 +74,7 @@ type DatabaseConfig struct {
 	MaxConnIdleTime time.Duration `koanf:"max_conn_idle_time"`
 }
 
-// RedisConfig contains Redis connection settings
+// RedisConfig contains Redis connection settings.
 type RedisConfig struct {
 	Host         string        `koanf:"host"`
 	Port         int           `koanf:"port"`
@@ -87,7 +88,7 @@ type RedisConfig struct {
 	MinIdleConns int           `koanf:"min_idle_conns"`
 }
 
-// LoggerConfig contains logging configuration
+// LoggerConfig contains logging configuration.
 type LoggerConfig struct {
 	Level       string `koanf:"level"`  // debug, info, warn, error
 	Format      string `koanf:"format"` // json, console
@@ -95,7 +96,7 @@ type LoggerConfig struct {
 	OutputPath  string `koanf:"output_path"` // stdout, stderr, or file path
 }
 
-// MetricsConfig contains metrics configuration
+// MetricsConfig contains metrics configuration.
 type MetricsConfig struct {
 	Enabled  bool   `koanf:"enabled"`
 	Path     string `koanf:"path"`     // /metrics
@@ -103,7 +104,7 @@ type MetricsConfig struct {
 	Interval int    `koanf:"interval"` // collection interval in seconds
 }
 
-// TracingConfig contains distributed tracing configuration
+// TracingConfig contains distributed tracing configuration.
 type TracingConfig struct {
 	Enabled      bool    `koanf:"enabled"`
 	Provider     string  `koanf:"provider"` // jaeger, zipkin, otlp
@@ -111,14 +112,14 @@ type TracingConfig struct {
 	SamplingRate float64 `koanf:"sampling_rate"` // 0.0 to 1.0
 }
 
-// Manager handles configuration loading and parsing
+// Manager handles configuration loading and parsing.
 type Manager struct {
 	k           *koanf.Koanf
 	serviceName string
 	configPaths []string
 }
 
-// NewManager creates a new configuration manager
+// NewManager creates a new configuration manager.
 func NewManager(serviceName string) *Manager {
 	return &Manager{
 		k:           koanf.New("."),
@@ -127,7 +128,7 @@ func NewManager(serviceName string) *Manager {
 	}
 }
 
-// LoadConfig loads configuration from all sources
+// LoadConfig loads configuration from all sources.
 func (m *Manager) LoadConfig(cfg Config) error {
 	// 1. Load defaults from struct tags
 	if err := m.loadDefaults(cfg); err != nil {
@@ -162,32 +163,32 @@ func (m *Manager) LoadConfig(cfg Config) error {
 	return nil
 }
 
-// Get returns a value for the given key
+// Get returns a value for the given key.
 func (m *Manager) Get(key string) interface{} {
 	return m.k.Get(key)
 }
 
-// GetString returns a string value for the given key
+// GetString returns a string value for the given key.
 func (m *Manager) GetString(key string) string {
 	return m.k.String(key)
 }
 
-// GetInt returns an int value for the given key
+// GetInt returns an int value for the given key.
 func (m *Manager) GetInt(key string) int {
 	return m.k.Int(key)
 }
 
-// GetBool returns a bool value for the given key
+// GetBool returns a bool value for the given key.
 func (m *Manager) GetBool(key string) bool {
 	return m.k.Bool(key)
 }
 
-// loadDefaults loads default values from struct
+// loadDefaults loads default values from struct.
 func (m *Manager) loadDefaults(cfg Config) error {
 	return m.k.Load(structs.Provider(cfg, "koanf"), nil)
 }
 
-// loadFromFile loads configuration from a file
+// loadFromFile loads configuration from a file.
 func (m *Manager) loadFromFile(path string) error {
 	// Check if file exists
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -209,7 +210,7 @@ func (m *Manager) loadFromFile(path string) error {
 	return m.k.Load(file.Provider(path), parser)
 }
 
-// loadFromEnv loads configuration from environment variables
+// loadFromEnv loads configuration from environment variables.
 func (m *Manager) loadFromEnv() error {
 	// Convert service name to uppercase for env prefix
 	prefix := strings.ToUpper(m.serviceName) + "_"
@@ -221,7 +222,7 @@ func (m *Manager) loadFromEnv() error {
 	}), nil)
 }
 
-// getDefaultConfigPaths returns the default config paths to check
+// getDefaultConfigPaths returns the default config paths to check.
 func getDefaultConfigPaths(serviceName string) []string {
 	paths := []string{
 		// Current directory
@@ -249,7 +250,7 @@ func getDefaultConfigPaths(serviceName string) []string {
 	return paths
 }
 
-// getEnvironment returns the current environment
+// getEnvironment returns the current environment.
 func getEnvironment() string {
 	if env := os.Getenv("ENVIRONMENT"); env != "" {
 		return env
@@ -260,59 +261,59 @@ func getEnvironment() string {
 	return "dev"
 }
 
-// Validate validates the base configuration
+// Validate validates the base configuration.
 func (c *BaseConfig) Validate() error {
 	if c.Service.Name == "" {
-		return fmt.Errorf("service name is required")
+		return errors.New("service name is required")
 	}
 	if c.Service.Port <= 0 || c.Service.Port > 65535 {
 		return fmt.Errorf("invalid service port: %d", c.Service.Port)
 	}
 	if c.Database.Host == "" {
-		return fmt.Errorf("database host is required")
+		return errors.New("database host is required")
 	}
 	if c.Database.Port <= 0 || c.Database.Port > 65535 {
 		return fmt.Errorf("invalid database port: %d", c.Database.Port)
 	}
 	if c.Auth.JWTSecret == "" {
-		return fmt.Errorf("JWT secret is required (set via LIBRARY_AUTH_JWT_SECRET env var or config)")
+		return errors.New("JWT secret is required (set via LIBRARY_AUTH_JWT_SECRET env var or config)")
 	}
 	if c.Auth.AccessTokenDuration < time.Minute {
-		return fmt.Errorf("access token duration must be at least 1 minute")
+		return errors.New("access token duration must be at least 1 minute")
 	}
 	return nil
 }
 
-// GetDefaults returns default configuration values
+// GetDefaults returns default configuration values.
 func GetDefaults() *BaseConfig {
 	return &BaseConfig{
 		Service: ServiceConfig{
 			Environment: "dev",
-			Port:        8080,
-			GRPCPort:    9090,
+			Port:        DefaultHTTPPort,
+			GRPCPort:    DefaultGRPCPort,
 		},
 		Database: DatabaseConfig{
 			Host:            "localhost",
-			Port:            5432,
+			Port:            DefaultPostgresPort,
 			User:            "narwhal",
 			Password:        "narwhal_dev",
 			Database:        "narwhal_dev",
 			SSLMode:         "disable",
-			MaxConnections:  25,
-			MinConnections:  5,
+			MaxConnections:  DefaultMaxConnections,
+			MinConnections:  DefaultMinConnections,
 			MaxConnLifetime: time.Hour,
-			MaxConnIdleTime: 30 * time.Minute,
+			MaxConnIdleTime: DefaultMaxConnIdleTime,
 		},
 		Redis: RedisConfig{
 			Host:         "localhost",
-			Port:         6379,
+			Port:         DefaultRedisPort,
 			DB:           0,
-			MaxRetries:   3,
-			DialTimeout:  5 * time.Second,
-			ReadTimeout:  3 * time.Second,
-			WriteTimeout: 3 * time.Second,
-			PoolSize:     10,
-			MinIdleConns: 2,
+			MaxRetries:   DefaultMaxRetries,
+			DialTimeout:  DefaultDialTimeout,
+			ReadTimeout:  DefaultReadTimeout,
+			WriteTimeout: DefaultWriteTimeout,
+			PoolSize:     DefaultPoolSize,
+			MinIdleConns: DefaultMinIdleConns,
 		},
 		Logger: LoggerConfig{
 			Level:       "info",
@@ -323,18 +324,18 @@ func GetDefaults() *BaseConfig {
 		Metrics: MetricsConfig{
 			Enabled:  true,
 			Path:     "/metrics",
-			Port:     2112,
-			Interval: 10,
+			Port:     DefaultTelemetryPort,
+			Interval: DefaultTelemetryInterval,
 		},
 		Tracing: TracingConfig{
 			Enabled:      false,
 			Provider:     "otlp",
 			Endpoint:     "localhost:4317",
-			SamplingRate: 0.1,
+			SamplingRate: DefaultSamplingRate,
 		},
 		Auth: AuthConfig{
 			JWTSecret:            "", // Must be set via env or config
-			AccessTokenDuration:  15 * time.Minute,
+			AccessTokenDuration:  DefaultAccessTokenDuration,
 			RefreshTokenDuration: 7 * 24 * time.Hour,
 			RBACType:             "casbin",
 			RBACModelPath:        "configs/rbac_model.conf",

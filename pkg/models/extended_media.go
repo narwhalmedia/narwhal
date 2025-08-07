@@ -7,9 +7,10 @@ import (
 )
 
 // ExtendedMedia represents a more detailed media item structure
-// This extends the basic Media type with additional fields for the GORM implementation
+// This extends the basic Media type with additional fields for the GORM implementation.
 type ExtendedMedia struct {
 	Media
+
 	LibraryID      uuid.UUID  `json:"library_id"`
 	OriginalTitle  string     `json:"original_title,omitempty"`
 	Status         string     `json:"status"` // pending, available, missing, error
@@ -33,9 +34,10 @@ type ExtendedMedia struct {
 	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
-// ExtendedEpisode represents a more detailed episode structure
+// ExtendedEpisode represents a more detailed episode structure.
 type ExtendedEpisode struct {
 	Episode
+
 	Description string    `json:"description,omitempty"`
 	Runtime     int       `json:"runtime,omitempty"` // minutes
 	FileSize    int64     `json:"file_size,omitempty"`

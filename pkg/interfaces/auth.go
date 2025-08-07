@@ -6,7 +6,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// AuthService handles authentication operations
+// AuthService handles authentication operations.
 type AuthService interface {
 	// Authenticate validates user credentials and returns a token
 	Authenticate(ctx context.Context, username, password string) (string, error)
@@ -27,7 +27,7 @@ type AuthService interface {
 	UpdatePassword(ctx context.Context, userID, oldPassword, newPassword string) error
 }
 
-// TokenClaims represents JWT token claims
+// TokenClaims represents JWT token claims.
 type TokenClaims struct {
 	UserID    string   `json:"sub"`
 	Username  string   `json:"username"`
@@ -38,7 +38,7 @@ type TokenClaims struct {
 	ExpiresAt int64    `json:"exp"`
 }
 
-// AuthorizationService handles authorization operations
+// AuthorizationService handles authorization operations.
 type AuthorizationService interface {
 	// Authorize checks if a user can perform an action on a resource
 	Authorize(ctx context.Context, userID, resource, action string) error
@@ -53,7 +53,7 @@ type AuthorizationService interface {
 	RevokePermission(ctx context.Context, userID string, permission Permission) error
 }
 
-// Permission represents a permission
+// Permission represents a permission.
 type Permission struct {
 	Resource string `json:"resource"`
 	Action   string `json:"action"`

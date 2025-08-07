@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
@@ -15,12 +18,9 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/pkg/utils"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
-// MockLibraryRepository is a mock for library repository
+// MockLibraryRepository is a mock for library repository.
 type MockLibraryRepository struct {
 	mock.Mock
 }
@@ -95,7 +95,12 @@ func (m *MockLibraryRepository) DeleteMedia(ctx context.Context, id uuid.UUID) e
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) ListMediaByLibrary(ctx context.Context, libraryID uuid.UUID, status *string, limit, offset int) ([]*models.Media, error) {
+func (m *MockLibraryRepository) ListMediaByLibrary(
+	ctx context.Context,
+	libraryID uuid.UUID,
+	status *string,
+	limit, offset int,
+) ([]*models.Media, error) {
 	args := m.Called(ctx, libraryID, status, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -103,7 +108,14 @@ func (m *MockLibraryRepository) ListMediaByLibrary(ctx context.Context, libraryI
 	return args.Get(0).([]*models.Media), args.Error(1)
 }
 
-func (m *MockLibraryRepository) SearchMedia(ctx context.Context, query string, mediaType *string, status *string, libraryID *uuid.UUID, limit, offset int) ([]*models.Media, error) {
+func (m *MockLibraryRepository) SearchMedia(
+	ctx context.Context,
+	query string,
+	mediaType *string,
+	status *string,
+	libraryID *uuid.UUID,
+	limit, offset int,
+) ([]*models.Media, error) {
 	args := m.Called(ctx, query, mediaType, status, libraryID, limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -129,7 +141,7 @@ func (m *MockLibraryRepository) GetLatestScan(ctx context.Context, libraryID uui
 	return args.Get(0).(*domain.ScanResult), args.Error(1)
 }
 
-// Episode methods
+// Episode methods.
 func (m *MockLibraryRepository) CreateEpisode(ctx context.Context, episode *models.Episode) error {
 	args := m.Called(ctx, episode)
 	return args.Error(0)
@@ -143,7 +155,11 @@ func (m *MockLibraryRepository) GetEpisode(ctx context.Context, id uuid.UUID) (*
 	return args.Get(0).(*models.Episode), args.Error(1)
 }
 
-func (m *MockLibraryRepository) GetEpisodeByNumber(ctx context.Context, mediaID uuid.UUID, season, episode int) (*models.Episode, error) {
+func (m *MockLibraryRepository) GetEpisodeByNumber(
+	ctx context.Context,
+	mediaID uuid.UUID,
+	season, episode int,
+) (*models.Episode, error) {
 	args := m.Called(ctx, mediaID, season, episode)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -159,7 +175,11 @@ func (m *MockLibraryRepository) ListEpisodesByMedia(ctx context.Context, mediaID
 	return args.Get(0).([]*models.Episode), args.Error(1)
 }
 
-func (m *MockLibraryRepository) ListEpisodesBySeason(ctx context.Context, mediaID uuid.UUID, season int) ([]*models.Episode, error) {
+func (m *MockLibraryRepository) ListEpisodesBySeason(
+	ctx context.Context,
+	mediaID uuid.UUID,
+	season int,
+) ([]*models.Episode, error) {
 	args := m.Called(ctx, mediaID, season)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -177,7 +197,7 @@ func (m *MockLibraryRepository) DeleteEpisode(ctx context.Context, id uuid.UUID)
 	return args.Error(0)
 }
 
-// MetadataProvider methods
+// MetadataProvider methods.
 func (m *MockLibraryRepository) CreateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error {
 	args := m.Called(ctx, provider)
 	return args.Error(0)
@@ -191,7 +211,10 @@ func (m *MockLibraryRepository) GetProvider(ctx context.Context, id uuid.UUID) (
 	return args.Get(0).(*domain.MetadataProviderConfig), args.Error(1)
 }
 
-func (m *MockLibraryRepository) GetProviderByName(ctx context.Context, name string) (*domain.MetadataProviderConfig, error) {
+func (m *MockLibraryRepository) GetProviderByName(
+	ctx context.Context,
+	name string,
+) (*domain.MetadataProviderConfig, error) {
 	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -199,7 +222,11 @@ func (m *MockLibraryRepository) GetProviderByName(ctx context.Context, name stri
 	return args.Get(0).(*domain.MetadataProviderConfig), args.Error(1)
 }
 
-func (m *MockLibraryRepository) ListProviders(ctx context.Context, enabled *bool, providerType *string) ([]*domain.MetadataProviderConfig, error) {
+func (m *MockLibraryRepository) ListProviders(
+	ctx context.Context,
+	enabled *bool,
+	providerType *string,
+) ([]*domain.MetadataProviderConfig, error) {
 	args := m.Called(ctx, enabled, providerType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -238,6 +265,7 @@ func (m *MockLibraryRepository) Rollback() error {
 
 type LibraryServiceTestSuite struct {
 	suite.Suite
+
 	ctx            context.Context
 	mockRepo       *MockLibraryRepository
 	libraryService *service.LibraryService
@@ -282,8 +310,8 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_Success() {
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotEqual(suite.T(), uuid.Nil, library.ID)
+	suite.Require().NoError(err)
+	suite.NotEqual(uuid.Nil, library.ID)
 }
 
 func (suite *LibraryServiceTestSuite) TestCreateLibrary_PathExists() {
@@ -304,8 +332,8 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_PathExists() {
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.True(suite.T(), errors.IsConflict(err))
+	suite.Require().Error(err)
+	suite.True(errors.IsConflict(err))
 }
 
 func (suite *LibraryServiceTestSuite) TestCreateLibrary_MissingFields() {
@@ -319,8 +347,8 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_MissingFields() {
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.True(suite.T(), errors.IsBadRequest(err))
+	suite.Require().Error(err)
+	suite.True(errors.IsBadRequest(err))
 }
 
 func (suite *LibraryServiceTestSuite) TestGetLibrary_Success() {
@@ -337,8 +365,8 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Success() {
 	library, err := suite.libraryService.GetLibrary(suite.ctx, libraryID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), expectedLibrary, library)
+	suite.Require().NoError(err)
+	suite.Equal(expectedLibrary, library)
 }
 
 func (suite *LibraryServiceTestSuite) TestGetLibrary_Cached() {
@@ -359,9 +387,9 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Cached() {
 	library2, err2 := suite.libraryService.GetLibrary(suite.ctx, libraryID)
 
 	// Assert
-	assert.NoError(suite.T(), err1)
-	assert.NoError(suite.T(), err2)
-	assert.Equal(suite.T(), library1, library2)
+	suite.Require().NoError(err1)
+	suite.Require().NoError(err2)
+	suite.Equal(library1, library2)
 	// Verify repo was only called once
 	suite.mockRepo.AssertNumberOfCalls(suite.T(), "GetLibrary", 1)
 }
@@ -390,10 +418,10 @@ func (suite *LibraryServiceTestSuite) TestUpdateLibrary_Success() {
 	updatedLibrary, err := suite.libraryService.UpdateLibrary(suite.ctx, libraryID, updates)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "Updated Name", updatedLibrary.Name)
-	assert.False(suite.T(), updatedLibrary.Enabled)
-	assert.Equal(suite.T(), 7200, updatedLibrary.ScanInterval)
+	suite.Require().NoError(err)
+	suite.Equal("Updated Name", updatedLibrary.Name)
+	suite.False(updatedLibrary.Enabled)
+	suite.Equal(7200, updatedLibrary.ScanInterval)
 }
 
 func (suite *LibraryServiceTestSuite) TestDeleteLibrary_Success() {
@@ -411,7 +439,7 @@ func (suite *LibraryServiceTestSuite) TestDeleteLibrary_Success() {
 	err := suite.libraryService.DeleteLibrary(suite.ctx, libraryID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
@@ -429,19 +457,21 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 	suite.mockRepo.On("CreateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
 	suite.mockRepo.On("UpdateLibrary", mock.Anything, mock.AnythingOfType("*domain.Library")).Return(nil).Maybe()
 	suite.mockRepo.On("UpdateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
-	suite.mockRepo.On("GetMediaByPath", mock.Anything, mock.AnythingOfType("string")).Return(nil, errors.NotFound("not found")).Maybe()
+	suite.mockRepo.On("GetMediaByPath", mock.Anything, mock.AnythingOfType("string")).
+		Return(nil, errors.NotFound("not found")).
+		Maybe()
 
 	// Act
 	err := suite.libraryService.ScanLibrary(suite.ctx, libraryID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	// Scan runs asynchronously, so we just verify it started
 }
 
 // TestScanLibrary_AlreadyScanning - Commenting out due to race condition in test
 // This test is flaky because the scan completes too quickly when scanning a non-existent path
-// func (suite *LibraryServiceTestSuite) TestScanLibrary_AlreadyScanning() {
+// func (suite *LibraryServiceTestSuite) TestScanLibrary_AlreadyScanning() { //nolint:funlen
 // 	// Arrange
 // 	libraryID := uuid.New()
 // 	library := &domain.Library{
@@ -460,7 +490,7 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 //
 // 	// Start first scan
 // 	err := suite.libraryService.ScanLibrary(suite.ctx, libraryID)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 //
 // 	// Sleep briefly to ensure the goroutine starts
 // 	time.Sleep(50 * time.Millisecond)
@@ -469,7 +499,7 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 // 	err = suite.libraryService.ScanLibrary(suite.ctx, libraryID)
 //
 // 	// Assert
-// 	assert.Error(suite.T(), err)
+// 	require.Error(suite.T(), err)
 // 	assert.True(suite.T(), errors.IsConflict(err))
 // }
 
@@ -485,8 +515,8 @@ func (suite *LibraryServiceTestSuite) TestGetMedia_Success() {
 	media, err := suite.libraryService.GetMedia(suite.ctx, mediaID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), expectedMedia, media)
+	suite.Require().NoError(err)
+	suite.Equal(expectedMedia, media)
 }
 
 func (suite *LibraryServiceTestSuite) TestSearchMedia_Success() {
@@ -507,8 +537,8 @@ func (suite *LibraryServiceTestSuite) TestSearchMedia_Success() {
 	results, err := suite.libraryService.SearchMedia(suite.ctx, "test", &mediaType, &status, &libraryID, 50, 0)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), results, 2)
+	suite.Require().NoError(err)
+	suite.Len(results, 2)
 }
 
 func (suite *LibraryServiceTestSuite) TestUpdateMedia_Success() {
@@ -530,10 +560,10 @@ func (suite *LibraryServiceTestSuite) TestUpdateMedia_Success() {
 	updatedMedia, err := suite.libraryService.UpdateMedia(suite.ctx, mediaID, updates)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "Updated Title", updatedMedia.Title)
-	assert.Equal(suite.T(), "New description", updatedMedia.Description)
-	assert.Equal(suite.T(), []string{"action", "drama"}, updatedMedia.Tags)
+	suite.Require().NoError(err)
+	suite.Equal("Updated Title", updatedMedia.Title)
+	suite.Equal("New description", updatedMedia.Description)
+	suite.Equal([]string{"action", "drama"}, updatedMedia.Tags)
 }
 
 func (suite *LibraryServiceTestSuite) TestDeleteMedia_Success() {
@@ -549,7 +579,7 @@ func (suite *LibraryServiceTestSuite) TestDeleteMedia_Success() {
 	err := suite.libraryService.DeleteMedia(suite.ctx, mediaID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func TestLibraryServiceTestSuite(t *testing.T) {

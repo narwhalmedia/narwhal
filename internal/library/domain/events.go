@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// LibraryCreatedEvent is published when a library is created
+// LibraryCreatedEvent is published when a library is created.
 type LibraryCreatedEvent struct {
 	Library   *Library
 	timestamp int64
@@ -32,7 +33,7 @@ func (e *LibraryCreatedEvent) AggregateID() string {
 	return e.Library.ID.String()
 }
 
-// LibraryUpdatedEvent is published when a library is updated
+// LibraryUpdatedEvent is published when a library is updated.
 type LibraryUpdatedEvent struct {
 	Library   *Library
 	timestamp int64
@@ -57,7 +58,7 @@ func (e *LibraryUpdatedEvent) AggregateID() string {
 	return e.Library.ID.String()
 }
 
-// LibraryDeletedEvent is published when a library is deleted
+// LibraryDeletedEvent is published when a library is deleted.
 type LibraryDeletedEvent struct {
 	LibraryID uuid.UUID
 	timestamp int64
@@ -82,7 +83,7 @@ func (e *LibraryDeletedEvent) AggregateID() string {
 	return e.LibraryID.String()
 }
 
-// LibraryScanCompletedEvent is published when a library scan is completed
+// LibraryScanCompletedEvent is published when a library scan is completed.
 type LibraryScanCompletedEvent struct {
 	Library      *Library
 	NewFiles     int
@@ -111,7 +112,7 @@ func (e *LibraryScanCompletedEvent) AggregateID() string {
 	return e.Library.ID.String()
 }
 
-// MediaAddedEvent is published when a media item is added
+// MediaAddedEvent is published when a media item is added.
 type MediaAddedEvent struct {
 	Media     *models.Media
 	timestamp int64
@@ -136,7 +137,7 @@ func (e *MediaAddedEvent) AggregateID() string {
 	return e.Media.ID.String()
 }
 
-// MediaUpdatedEvent is published when a media item is updated
+// MediaUpdatedEvent is published when a media item is updated.
 type MediaUpdatedEvent struct {
 	Media     *models.Media
 	timestamp int64
@@ -161,7 +162,7 @@ func (e *MediaUpdatedEvent) AggregateID() string {
 	return e.Media.ID.String()
 }
 
-// MediaDeletedEvent is published when a media item is deleted
+// MediaDeletedEvent is published when a media item is deleted.
 type MediaDeletedEvent struct {
 	MediaID   string
 	timestamp int64

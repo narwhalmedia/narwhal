@@ -12,6 +12,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/reflection"
+	"gorm.io/gorm"
+
+	"github.com/narwhalmedia/narwhal/cmd/constants"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/handler"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
@@ -25,11 +32,6 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/pkg/middleware"
 	"github.com/narwhalmedia/narwhal/pkg/utils"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
-	"google.golang.org/grpc/reflection"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -119,7 +121,7 @@ func main() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			ctx, cancel := context.WithTimeout(context.Background(), constants.MigrationTimeout)
 			if err := authService.CleanupExpiredSessions(ctx); err != nil {
 				log.Error("Failed to cleanup expired sessions", interfaces.Error(err))
 			}
@@ -159,7 +161,7 @@ func main() {
 	log.Info("Shutting down user service...")
 
 	// Graceful shutdown with timeout
-	_, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	_, shutdownCancel := context.WithTimeout(context.Background(), constants.ShutdownTimeout)
 	defer shutdownCancel()
 
 	// Stop gRPC server
@@ -179,7 +181,7 @@ func startMetricsServer(cfg config.MetricsConfig, log interfaces.Logger) {
 	mux.HandleFunc(cfg.Path, func(w http.ResponseWriter, r *http.Request) {
 		// TODO: Implement Prometheus metrics
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("# Metrics endpoint\n"))
+		_, _ = w.Write([]byte("# Metrics endpoint\n"))
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.Port)
@@ -197,7 +199,7 @@ func startHealthServer(port int, db *gorm.DB, log interfaces.Logger) {
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"healthy"}`))
+		_, _ = w.Write([]byte(`{"status":"healthy"}`))
 	})
 
 	// Readiness check endpoint
@@ -207,13 +209,13 @@ func startHealthServer(port int, db *gorm.DB, log interfaces.Logger) {
 		if err != nil || sqlDB.Ping() != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte(`{"status":"not ready"}`))
+			_, _ = w.Write([]byte(`{"status":"not ready"}`))
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ready"}`))
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
 	})
 
 	addr := fmt.Sprintf(":%d", port)
@@ -224,7 +226,7 @@ func startHealthServer(port int, db *gorm.DB, log interfaces.Logger) {
 	}
 }
 
-// seedInitialData creates initial roles and permissions
+// seedInitialData creates initial roles and permissions.
 func seedInitialData(db *gorm.DB) error {
 	ctx := context.Background()
 	repo := repository.NewGormRepository(db)
@@ -327,7 +329,7 @@ func seedInitialData(db *gorm.DB) error {
 			// Find specific permissions
 			for _, permStr := range r.permissions {
 				parts := strings.Split(permStr, ":")
-				if len(parts) == 2 {
+				if len(parts) == constants.ArgumentSeparatorParts {
 					for _, p := range permissions {
 						if p.Resource == parts[0] && p.Action == parts[1] {
 							role.Permissions = append(role.Permissions, p)

@@ -7,20 +7,22 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
+
+	"github.com/narwhalmedia/narwhal/internal/library/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/encryption"
 	pkgerrors "github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/models"
-	"gorm.io/gorm"
 )
 
-// GormRepository implements the repository interfaces using GORM
+// GormRepository implements the repository interfaces using GORM.
 type GormRepository struct {
 	db        *gorm.DB
 	encryptor *encryption.Encryptor
 }
 
-// NewGormRepository creates a new GORM repository
+// NewGormRepository creates a new GORM repository.
 func NewGormRepository(db *gorm.DB) (*GormRepository, error) {
 	// Get encryption key from environment variable
 	encryptionKey := os.Getenv("NARWHAL_ENCRYPTION_KEY")
@@ -40,7 +42,7 @@ func NewGormRepository(db *gorm.DB) (*GormRepository, error) {
 	}, nil
 }
 
-// CreateLibrary creates a new library
+// CreateLibrary creates a new library.
 func (r *GormRepository) CreateLibrary(ctx context.Context, library *domain.Library) error {
 	model := &Library{
 		Name:         library.Name,
@@ -60,7 +62,7 @@ func (r *GormRepository) CreateLibrary(ctx context.Context, library *domain.Libr
 	return nil
 }
 
-// GetLibrary retrieves a library by ID
+// GetLibrary retrieves a library by ID.
 func (r *GormRepository) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error) {
 	var model Library
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
@@ -73,7 +75,7 @@ func (r *GormRepository) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.
 	return r.toDomainLibrary(&model), nil
 }
 
-// GetLibraryByPath retrieves a library by path
+// GetLibraryByPath retrieves a library by path.
 func (r *GormRepository) GetLibraryByPath(ctx context.Context, path string) (*domain.Library, error) {
 	var model Library
 	if err := r.db.WithContext(ctx).First(&model, "path = ?", path).Error; err != nil {
@@ -86,7 +88,7 @@ func (r *GormRepository) GetLibraryByPath(ctx context.Context, path string) (*do
 	return r.toDomainLibrary(&model), nil
 }
 
-// UpdateLibrary updates a library
+// UpdateLibrary updates a library.
 func (r *GormRepository) UpdateLibrary(ctx context.Context, library *domain.Library) error {
 	updates := map[string]interface{}{
 		"name":          library.Name,
@@ -111,7 +113,7 @@ func (r *GormRepository) UpdateLibrary(ctx context.Context, library *domain.Libr
 	return nil
 }
 
-// DeleteLibrary deletes a library
+// DeleteLibrary deletes a library.
 func (r *GormRepository) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	result := r.db.WithContext(ctx).Delete(&Library{}, "id = ?", id)
 	if result.Error != nil {
@@ -125,7 +127,7 @@ func (r *GormRepository) DeleteLibrary(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-// ListLibraries lists all libraries
+// ListLibraries lists all libraries.
 func (r *GormRepository) ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error) {
 	query := r.db.WithContext(ctx)
 	if enabled != nil {
@@ -145,7 +147,7 @@ func (r *GormRepository) ListLibraries(ctx context.Context, enabled *bool) ([]*d
 	return libraries, nil
 }
 
-// CreateMedia creates a new media item
+// CreateMedia creates a new media item.
 func (r *GormRepository) CreateMedia(ctx context.Context, media *models.Media) error {
 	model := &MediaItem{
 		LibraryID:      media.LibraryID,
@@ -157,7 +159,7 @@ func (r *GormRepository) CreateMedia(ctx context.Context, media *models.Media) e
 		FileModifiedAt: media.FileModifiedAt,
 		Description:    media.Description,
 		ReleaseDate:    &media.ReleaseDate,
-		Runtime:        media.Duration / 60, // Convert seconds to minutes
+		Runtime:        media.Duration / constants.SecondsToMinutes, // Convert seconds to minutes
 		Genres:         media.Genres,
 		Tags:           media.Tags,
 		TMDBID:         media.TMDBID,
@@ -179,7 +181,7 @@ func (r *GormRepository) CreateMedia(ctx context.Context, media *models.Media) e
 	return nil
 }
 
-// GetMedia retrieves a media item by ID
+// GetMedia retrieves a media item by ID.
 func (r *GormRepository) GetMedia(ctx context.Context, id uuid.UUID) (*models.Media, error) {
 	var model MediaItem
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
@@ -192,7 +194,7 @@ func (r *GormRepository) GetMedia(ctx context.Context, id uuid.UUID) (*models.Me
 	return r.toDomainMedia(&model), nil
 }
 
-// GetMediaByPath retrieves a media item by file path
+// GetMediaByPath retrieves a media item by file path.
 func (r *GormRepository) GetMediaByPath(ctx context.Context, path string) (*models.Media, error) {
 	var model MediaItem
 	if err := r.db.WithContext(ctx).First(&model, "file_path = ?", path).Error; err != nil {
@@ -205,8 +207,15 @@ func (r *GormRepository) GetMediaByPath(ctx context.Context, path string) (*mode
 	return r.toDomainMedia(&model), nil
 }
 
-// SearchMedia searches for media items
-func (r *GormRepository) SearchMedia(ctx context.Context, query string, mediaType *string, status *string, libraryID *uuid.UUID, limit, offset int) ([]*models.Media, error) {
+// SearchMedia searches for media items.
+func (r *GormRepository) SearchMedia(
+	ctx context.Context,
+	query string,
+	mediaType *string,
+	status *string,
+	libraryID *uuid.UUID,
+	limit, offset int,
+) ([]*models.Media, error) {
 	q := r.db.WithContext(ctx).Model(&MediaItem{})
 
 	// Search in title and original title
@@ -247,7 +256,7 @@ func (r *GormRepository) SearchMedia(ctx context.Context, query string, mediaTyp
 	return media, nil
 }
 
-// UpdateMedia updates a media item
+// UpdateMedia updates a media item.
 func (r *GormRepository) UpdateMedia(ctx context.Context, media *models.Media) error {
 	updates := map[string]interface{}{
 		"title":            media.Title,
@@ -257,7 +266,7 @@ func (r *GormRepository) UpdateMedia(ctx context.Context, media *models.Media) e
 		"file_modified_at": media.FileModifiedAt,
 		"description":      media.Description,
 		"release_date":     media.ReleaseDate,
-		"runtime":          media.Duration / 60, // Convert seconds to minutes
+		"runtime":          media.Duration / constants.SecondsToMinutes, // Convert seconds to minutes
 		"genres":           media.Genres,
 		"tags":             media.Tags,
 		"tmdb_id":          media.TMDBID,
@@ -280,7 +289,7 @@ func (r *GormRepository) UpdateMedia(ctx context.Context, media *models.Media) e
 	return nil
 }
 
-// DeleteMedia deletes a media item
+// DeleteMedia deletes a media item.
 func (r *GormRepository) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	result := r.db.WithContext(ctx).Delete(&MediaItem{}, "id = ?", id)
 	if result.Error != nil {
@@ -294,8 +303,13 @@ func (r *GormRepository) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// ListMediaByLibrary lists media items by library
-func (r *GormRepository) ListMediaByLibrary(ctx context.Context, libraryID uuid.UUID, status *string, limit, offset int) ([]*models.Media, error) {
+// ListMediaByLibrary lists media items by library.
+func (r *GormRepository) ListMediaByLibrary(
+	ctx context.Context,
+	libraryID uuid.UUID,
+	status *string,
+	limit, offset int,
+) ([]*models.Media, error) {
 	q := r.db.WithContext(ctx).Model(&MediaItem{}).Where("library_id = ?", libraryID)
 
 	if status != nil && *status != "" {
@@ -315,7 +329,7 @@ func (r *GormRepository) ListMediaByLibrary(ctx context.Context, libraryID uuid.
 	return media, nil
 }
 
-// CreateScanHistory creates a new scan history record
+// CreateScanHistory creates a new scan history record.
 func (r *GormRepository) CreateScanHistory(ctx context.Context, scan *domain.ScanResult) error {
 	model := &ScanHistory{
 		LibraryID:    scan.LibraryID,
@@ -336,7 +350,7 @@ func (r *GormRepository) CreateScanHistory(ctx context.Context, scan *domain.Sca
 	return nil
 }
 
-// UpdateScanHistory updates a scan history record
+// UpdateScanHistory updates a scan history record.
 func (r *GormRepository) UpdateScanHistory(ctx context.Context, scan *domain.ScanResult) error {
 	updates := map[string]interface{}{
 		"completed_at":  scan.CompletedAt,
@@ -355,7 +369,7 @@ func (r *GormRepository) UpdateScanHistory(ctx context.Context, scan *domain.Sca
 	return nil
 }
 
-// GetLatestScan gets the latest scan for a library
+// GetLatestScan gets the latest scan for a library.
 func (r *GormRepository) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error) {
 	var model ScanHistory
 	if err := r.db.WithContext(ctx).Where("library_id = ?", libraryID).Order("started_at DESC").First(&model).Error; err != nil {
@@ -368,7 +382,7 @@ func (r *GormRepository) GetLatestScan(ctx context.Context, libraryID uuid.UUID)
 	return r.toDomainScanResult(&model), nil
 }
 
-// CreateEpisode creates a new episode
+// CreateEpisode creates a new episode.
 func (r *GormRepository) CreateEpisode(ctx context.Context, episode *models.Episode) error {
 	model := &Episode{
 		MediaID:       episode.MediaID,
@@ -376,7 +390,7 @@ func (r *GormRepository) CreateEpisode(ctx context.Context, episode *models.Epis
 		EpisodeNumber: episode.EpisodeNumber,
 		Title:         episode.Title,
 		AirDate:       &episode.AirDate,
-		Runtime:       episode.Duration / 60, // Convert seconds to minutes
+		Runtime:       episode.Duration / constants.SecondsToMinutes, // Convert seconds to minutes
 		FilePath:      episode.Path,
 		Status:        "available", // Default status
 	}
@@ -390,7 +404,7 @@ func (r *GormRepository) CreateEpisode(ctx context.Context, episode *models.Epis
 	return nil
 }
 
-// GetEpisode retrieves an episode by ID
+// GetEpisode retrieves an episode by ID.
 func (r *GormRepository) GetEpisode(ctx context.Context, id uuid.UUID) (*models.Episode, error) {
 	var model Episode
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
@@ -403,8 +417,12 @@ func (r *GormRepository) GetEpisode(ctx context.Context, id uuid.UUID) (*models.
 	return r.toDomainEpisode(&model), nil
 }
 
-// GetEpisodeByNumber retrieves an episode by media ID, season and episode number
-func (r *GormRepository) GetEpisodeByNumber(ctx context.Context, mediaID uuid.UUID, season, episode int) (*models.Episode, error) {
+// GetEpisodeByNumber retrieves an episode by media ID, season and episode number.
+func (r *GormRepository) GetEpisodeByNumber(
+	ctx context.Context,
+	mediaID uuid.UUID,
+	season, episode int,
+) (*models.Episode, error) {
 	var model Episode
 	if err := r.db.WithContext(ctx).Where("media_id = ? AND season_number = ? AND episode_number = ?", mediaID, season, episode).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -416,7 +434,7 @@ func (r *GormRepository) GetEpisodeByNumber(ctx context.Context, mediaID uuid.UU
 	return r.toDomainEpisode(&model), nil
 }
 
-// ListEpisodesByMedia lists all episodes for a media item
+// ListEpisodesByMedia lists all episodes for a media item.
 func (r *GormRepository) ListEpisodesByMedia(ctx context.Context, mediaID uuid.UUID) ([]*models.Episode, error) {
 	var items []Episode
 	if err := r.db.WithContext(ctx).Where("media_id = ?", mediaID).Order("season_number, episode_number").Find(&items).Error; err != nil {
@@ -431,8 +449,12 @@ func (r *GormRepository) ListEpisodesByMedia(ctx context.Context, mediaID uuid.U
 	return episodes, nil
 }
 
-// ListEpisodesBySeason lists all episodes for a specific season
-func (r *GormRepository) ListEpisodesBySeason(ctx context.Context, mediaID uuid.UUID, season int) ([]*models.Episode, error) {
+// ListEpisodesBySeason lists all episodes for a specific season.
+func (r *GormRepository) ListEpisodesBySeason(
+	ctx context.Context,
+	mediaID uuid.UUID,
+	season int,
+) ([]*models.Episode, error) {
 	var items []Episode
 	if err := r.db.WithContext(ctx).Where("media_id = ? AND season_number = ?", mediaID, season).Order("episode_number").Find(&items).Error; err != nil {
 		return nil, fmt.Errorf("failed to list episodes by season: %w", err)
@@ -446,12 +468,12 @@ func (r *GormRepository) ListEpisodesBySeason(ctx context.Context, mediaID uuid.
 	return episodes, nil
 }
 
-// UpdateEpisode updates an episode
+// UpdateEpisode updates an episode.
 func (r *GormRepository) UpdateEpisode(ctx context.Context, episode *models.Episode) error {
 	updates := map[string]interface{}{
 		"title":     episode.Title,
 		"air_date":  episode.AirDate,
-		"runtime":   episode.Duration / 60, // Convert seconds to minutes
+		"runtime":   episode.Duration / constants.SecondsToMinutes, // Convert seconds to minutes
 		"file_path": episode.Path,
 		"status":    "available", // Default status
 	}
@@ -468,7 +490,7 @@ func (r *GormRepository) UpdateEpisode(ctx context.Context, episode *models.Epis
 	return nil
 }
 
-// DeleteEpisode deletes an episode
+// DeleteEpisode deletes an episode.
 func (r *GormRepository) DeleteEpisode(ctx context.Context, id uuid.UUID) error {
 	result := r.db.WithContext(ctx).Delete(&Episode{}, "id = ?", id)
 	if result.Error != nil {
@@ -482,7 +504,7 @@ func (r *GormRepository) DeleteEpisode(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-// CreateProvider creates a new metadata provider
+// CreateProvider creates a new metadata provider.
 func (r *GormRepository) CreateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error {
 	// Encrypt the API key before storing
 	encryptedKey, err := r.encryptor.Encrypt(provider.APIKey)
@@ -508,7 +530,7 @@ func (r *GormRepository) CreateProvider(ctx context.Context, provider *domain.Me
 	return nil
 }
 
-// GetProvider retrieves a metadata provider by ID
+// GetProvider retrieves a metadata provider by ID.
 func (r *GormRepository) GetProvider(ctx context.Context, id uuid.UUID) (*domain.MetadataProviderConfig, error) {
 	var model MetadataProvider
 	if err := r.db.WithContext(ctx).First(&model, "id = ?", id).Error; err != nil {
@@ -521,7 +543,7 @@ func (r *GormRepository) GetProvider(ctx context.Context, id uuid.UUID) (*domain
 	return r.toDomainProvider(&model), nil
 }
 
-// GetProviderByName retrieves a metadata provider by name
+// GetProviderByName retrieves a metadata provider by name.
 func (r *GormRepository) GetProviderByName(ctx context.Context, name string) (*domain.MetadataProviderConfig, error) {
 	var model MetadataProvider
 	if err := r.db.WithContext(ctx).First(&model, "name = ?", name).Error; err != nil {
@@ -534,8 +556,12 @@ func (r *GormRepository) GetProviderByName(ctx context.Context, name string) (*d
 	return r.toDomainProvider(&model), nil
 }
 
-// ListProviders lists metadata providers
-func (r *GormRepository) ListProviders(ctx context.Context, enabled *bool, providerType *string) ([]*domain.MetadataProviderConfig, error) {
+// ListProviders lists metadata providers.
+func (r *GormRepository) ListProviders(
+	ctx context.Context,
+	enabled *bool,
+	providerType *string,
+) ([]*domain.MetadataProviderConfig, error) {
 	query := r.db.WithContext(ctx)
 
 	if enabled != nil {
@@ -559,7 +585,7 @@ func (r *GormRepository) ListProviders(ctx context.Context, enabled *bool, provi
 	return providers, nil
 }
 
-// UpdateProvider updates a metadata provider
+// UpdateProvider updates a metadata provider.
 func (r *GormRepository) UpdateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error {
 	// Encrypt the API key before storing
 	encryptedKey, err := r.encryptor.Encrypt(provider.APIKey)
@@ -587,7 +613,7 @@ func (r *GormRepository) UpdateProvider(ctx context.Context, provider *domain.Me
 	return nil
 }
 
-// DeleteProvider deletes a metadata provider
+// DeleteProvider deletes a metadata provider.
 func (r *GormRepository) DeleteProvider(ctx context.Context, id uuid.UUID) error {
 	result := r.db.WithContext(ctx).Delete(&MetadataProvider{}, "id = ?", id)
 	if result.Error != nil {
@@ -601,7 +627,7 @@ func (r *GormRepository) DeleteProvider(ctx context.Context, id uuid.UUID) error
 	return nil
 }
 
-// Transaction support
+// Transaction support.
 func (r *GormRepository) BeginTx(ctx context.Context) (Repository, error) {
 	tx := r.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
@@ -619,7 +645,7 @@ func (r *GormRepository) Rollback() error {
 	return r.db.Rollback().Error
 }
 
-// Helper methods to convert between database and domain models
+// Helper methods to convert between database and domain models.
 func (r *GormRepository) toDomainLibrary(model *Library) *domain.Library {
 	lib := &domain.Library{
 		ID:           model.ID,
@@ -647,7 +673,7 @@ func (r *GormRepository) toDomainMedia(model *MediaItem) *models.Media {
 		Type:           models.MediaType(model.MediaType),
 		Path:           model.FilePath,
 		Size:           model.FileSize,
-		Duration:       model.Runtime * 60, // Convert minutes to seconds
+		Duration:       model.Runtime * constants.SecondsToMinutes, // Convert minutes to seconds
 		Resolution:     model.Resolution,
 		Codec:          model.VideoCodec,
 		Bitrate:        model.Bitrate,
@@ -697,7 +723,7 @@ func (r *GormRepository) toDomainEpisode(model *Episode) *models.Episode {
 		EpisodeNumber: model.EpisodeNumber,
 		Title:         model.Title,
 		Path:          model.FilePath,
-		Duration:      model.Runtime * 60, // Convert minutes to seconds
+		Duration:      model.Runtime * constants.SecondsToMinutes, // Convert minutes to seconds
 		Added:         model.CreatedAt,
 	}
 

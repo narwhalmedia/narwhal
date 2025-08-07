@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
@@ -12,13 +15,11 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/utils"
 	"github.com/narwhalmedia/narwhal/test/mocks"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type UserServiceTestSuite struct {
 	suite.Suite
+
 	ctx         context.Context
 	mockRepo    *mocks.MockRepository
 	userService *service.UserService
@@ -56,15 +57,15 @@ func (suite *UserServiceTestSuite) TestCreateUser_Success() {
 	user, err := suite.userService.CreateUser(suite.ctx, "testuser", "test@example.com", "password123", "Test User")
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), user)
-	assert.Equal(suite.T(), "testuser", user.Username)
-	assert.Equal(suite.T(), "test@example.com", user.Email)
-	assert.Equal(suite.T(), "Test User", user.DisplayName)
-	assert.True(suite.T(), user.IsActive)
-	assert.False(suite.T(), user.IsVerified)
-	assert.Len(suite.T(), user.Roles, 1)
-	assert.Equal(suite.T(), domain.RoleUser, user.Roles[0].Name)
+	suite.Require().NoError(err)
+	suite.NotNil(user)
+	suite.Equal("testuser", user.Username)
+	suite.Equal("test@example.com", user.Email)
+	suite.Equal("Test User", user.DisplayName)
+	suite.True(user.IsActive)
+	suite.False(user.IsVerified)
+	suite.Len(user.Roles, 1)
+	suite.Equal(domain.RoleUser, user.Roles[0].Name)
 }
 
 func (suite *UserServiceTestSuite) TestCreateUser_UserExists() {
@@ -75,9 +76,9 @@ func (suite *UserServiceTestSuite) TestCreateUser_UserExists() {
 	user, err := suite.userService.CreateUser(suite.ctx, "testuser", "test@example.com", "password123", "Test User")
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), user)
-	assert.True(suite.T(), errors.IsConflict(err))
+	suite.Require().Error(err)
+	suite.Nil(user)
+	suite.True(errors.IsConflict(err))
 }
 
 func (suite *UserServiceTestSuite) TestCreateUser_MissingFields() {
@@ -85,9 +86,9 @@ func (suite *UserServiceTestSuite) TestCreateUser_MissingFields() {
 	user, err := suite.userService.CreateUser(suite.ctx, "", "", "", "")
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), user)
-	assert.True(suite.T(), errors.IsBadRequest(err))
+	suite.Require().Error(err)
+	suite.Nil(user)
+	suite.True(errors.IsBadRequest(err))
 }
 
 func (suite *UserServiceTestSuite) TestGetUser_Success() {
@@ -100,10 +101,10 @@ func (suite *UserServiceTestSuite) TestGetUser_Success() {
 	user, err := suite.userService.GetUser(suite.ctx, expectedUser.ID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), user)
-	assert.Equal(suite.T(), expectedUser.ID, user.ID)
-	assert.Equal(suite.T(), expectedUser.Username, user.Username)
+	suite.Require().NoError(err)
+	suite.NotNil(user)
+	suite.Equal(expectedUser.ID, user.ID)
+	suite.Equal(expectedUser.Username, user.Username)
 }
 
 func (suite *UserServiceTestSuite) TestGetUser_Cached() {
@@ -120,9 +121,9 @@ func (suite *UserServiceTestSuite) TestGetUser_Cached() {
 	user2, err2 := suite.userService.GetUser(suite.ctx, expectedUser.ID)
 
 	// Assert
-	assert.NoError(suite.T(), err1)
-	assert.NoError(suite.T(), err2)
-	assert.Equal(suite.T(), user1.ID, user2.ID)
+	suite.Require().NoError(err1)
+	suite.Require().NoError(err2)
+	suite.Equal(user1.ID, user2.ID)
 	// Verify repo was only called once
 	suite.mockRepo.AssertNumberOfCalls(suite.T(), "GetUser", 1)
 }
@@ -142,10 +143,10 @@ func (suite *UserServiceTestSuite) TestUpdateUser_Success() {
 	updatedUser, err := suite.userService.UpdateUser(suite.ctx, user.ID, updates)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), updatedUser)
-	assert.Equal(suite.T(), "Updated Name", updatedUser.DisplayName)
-	assert.Equal(suite.T(), "https://example.com/avatar.jpg", updatedUser.Avatar)
+	suite.Require().NoError(err)
+	suite.NotNil(updatedUser)
+	suite.Equal("Updated Name", updatedUser.DisplayName)
+	suite.Equal("https://example.com/avatar.jpg", updatedUser.Avatar)
 }
 
 func (suite *UserServiceTestSuite) TestChangePassword_Success() {
@@ -161,7 +162,7 @@ func (suite *UserServiceTestSuite) TestChangePassword_Success() {
 	err := suite.userService.ChangePassword(suite.ctx, user.ID, "oldpassword", "newpassword")
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *UserServiceTestSuite) TestChangePassword_WrongOldPassword() {
@@ -175,8 +176,8 @@ func (suite *UserServiceTestSuite) TestChangePassword_WrongOldPassword() {
 	err := suite.userService.ChangePassword(suite.ctx, user.ID, "wrongpassword", "newpassword")
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.True(suite.T(), errors.IsUnauthorized(err))
+	suite.Require().Error(err)
+	suite.True(errors.IsUnauthorized(err))
 }
 
 func (suite *UserServiceTestSuite) TestDeleteUser_Success() {
@@ -191,7 +192,7 @@ func (suite *UserServiceTestSuite) TestDeleteUser_Success() {
 	err := suite.userService.DeleteUser(suite.ctx, user.ID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *UserServiceTestSuite) TestListUsers_Success() {
@@ -208,9 +209,9 @@ func (suite *UserServiceTestSuite) TestListUsers_Success() {
 	result, total, err := suite.userService.ListUsers(suite.ctx, 0, 0)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), result, 2)
-	assert.Equal(suite.T(), int64(2), total)
+	suite.Require().NoError(err)
+	suite.Len(result, 2)
+	suite.Equal(int64(2), total)
 }
 
 func (suite *UserServiceTestSuite) TestAssignRole_Success() {
@@ -228,7 +229,7 @@ func (suite *UserServiceTestSuite) TestAssignRole_Success() {
 	err := suite.userService.AssignRole(suite.ctx, user.ID, domain.RoleAdmin)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *UserServiceTestSuite) TestAssignRole_AlreadyHasRole() {
@@ -243,7 +244,7 @@ func (suite *UserServiceTestSuite) TestAssignRole_AlreadyHasRole() {
 	err := suite.userService.AssignRole(suite.ctx, user.ID, domain.RoleAdmin)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	// Should not call GetRoleByName or UpdateUser since user already has the role
 	suite.mockRepo.AssertNotCalled(suite.T(), "GetRoleByName")
 	suite.mockRepo.AssertNotCalled(suite.T(), "UpdateUser")
@@ -264,7 +265,7 @@ func (suite *UserServiceTestSuite) TestRemoveRole_Success() {
 	err := suite.userService.RemoveRole(suite.ctx, user.ID, domain.RoleAdmin)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *UserServiceTestSuite) TestSetUserActive_Deactivate() {
@@ -280,7 +281,7 @@ func (suite *UserServiceTestSuite) TestSetUserActive_Deactivate() {
 	err := suite.userService.SetUserActive(suite.ctx, user.ID, false)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func TestUserServiceTestSuite(t *testing.T) {

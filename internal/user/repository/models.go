@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// User represents a user in the database
+// User represents a user in the database.
 type User struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Username     string    `gorm:"uniqueIndex;not null"`
@@ -36,7 +36,7 @@ type User struct {
 	Sessions []Session `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE"`
 }
 
-// Role represents a user role in the database
+// Role represents a user role in the database.
 type Role struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name        string    `gorm:"uniqueIndex;not null"`
@@ -49,7 +49,7 @@ type Role struct {
 	Users       []User       `gorm:"many2many:user_roles;"`
 }
 
-// Permission represents a system permission in the database
+// Permission represents a system permission in the database.
 type Permission struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Resource    string    `gorm:"not null;index:idx_permission_resource_action"` // e.g., "library", "media", "user"
@@ -62,7 +62,7 @@ type Permission struct {
 	Roles []Role `gorm:"many2many:role_permissions;"`
 }
 
-// Session represents an active user session in the database
+// Session represents an active user session in the database.
 type Session struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID       uuid.UUID `gorm:"not null;index"`
@@ -78,21 +78,21 @@ type Session struct {
 	User User `gorm:"foreignKey:UserID"`
 }
 
-// UserRole represents the many-to-many relationship between users and roles
+// UserRole represents the many-to-many relationship between users and roles.
 type UserRole struct {
 	UserID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey"`
 	CreatedAt time.Time
 }
 
-// RolePermission represents the many-to-many relationship between roles and permissions
+// RolePermission represents the many-to-many relationship between roles and permissions.
 type RolePermission struct {
 	RoleID       uuid.UUID `gorm:"type:uuid;primaryKey"`
 	PermissionID uuid.UUID `gorm:"type:uuid;primaryKey"`
 	CreatedAt    time.Time
 }
 
-// TableName customizations
+// TableName customizations.
 func (User) TableName() string {
 	return "users"
 }

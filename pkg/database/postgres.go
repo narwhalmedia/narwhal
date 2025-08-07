@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"log"
+	"log" //nolint:depguard // required by GORM logger
 	"os"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// PostgresConfig holds PostgreSQL connection configuration
+// PostgresConfig holds PostgreSQL connection configuration.
 type PostgresConfig struct {
 	Host            string
 	Port            int
@@ -26,7 +26,7 @@ type PostgresConfig struct {
 	LogLevel        logger.LogLevel
 }
 
-// DefaultPostgresConfig returns a default PostgreSQL configuration
+// DefaultPostgresConfig returns a default PostgreSQL configuration.
 func DefaultPostgresConfig() *PostgresConfig {
 	return &PostgresConfig{
 		Host:            "localhost",
@@ -43,7 +43,7 @@ func DefaultPostgresConfig() *PostgresConfig {
 	}
 }
 
-// NewGormDB creates a new GORM database connection
+// NewGormDB creates a new GORM database connection.
 func NewGormDB(cfg *PostgresConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.Database, cfg.SSLMode)
@@ -92,7 +92,7 @@ func NewGormDB(cfg *PostgresConfig) (*gorm.DB, error) {
 }
 
 // MigrateDatabase runs GORM auto-migrations for the given models (deprecated)
-// Use RunMigrations instead for versioned migrations
+// Use RunMigrations instead for versioned migrations.
 func MigrateDatabase(db *gorm.DB, models ...interface{}) error {
 	// Enable UUID extension for PostgreSQL
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
@@ -107,13 +107,13 @@ func MigrateDatabase(db *gorm.DB, models ...interface{}) error {
 	return nil
 }
 
-// RunMigrations runs all pending database migrations
+// RunMigrations runs all pending database migrations.
 func RunMigrations(db *gorm.DB) error {
 	migrator := NewMigrator(db)
 	return migrator.Migrate()
 }
 
-// GetPendingMigrations returns a list of migrations that haven't been applied yet
+// GetPendingMigrations returns a list of migrations that haven't been applied yet.
 func GetPendingMigrations(db *gorm.DB) ([]MigrationEntry, error) {
 	migrator := NewMigrator(db)
 	return migrator.GetPendingMigrations()

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 )
 
-// UserRepository defines methods for user operations
+// UserRepository defines methods for user operations.
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User) error
 	GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error)
@@ -20,7 +21,7 @@ type UserRepository interface {
 	UserExists(ctx context.Context, username, email string) (bool, error)
 }
 
-// RoleRepository defines methods for role operations
+// RoleRepository defines methods for role operations.
 type RoleRepository interface {
 	CreateRole(ctx context.Context, role *domain.Role) error
 	GetRole(ctx context.Context, id uuid.UUID) (*domain.Role, error)
@@ -32,7 +33,7 @@ type RoleRepository interface {
 	RemovePermissionsFromRole(ctx context.Context, roleID uuid.UUID, permissionIDs []uuid.UUID) error
 }
 
-// PermissionRepository defines methods for permission operations
+// PermissionRepository defines methods for permission operations.
 type PermissionRepository interface {
 	CreatePermission(ctx context.Context, permission *domain.Permission) error
 	GetPermission(ctx context.Context, id uuid.UUID) (*domain.Permission, error)
@@ -42,7 +43,7 @@ type PermissionRepository interface {
 	ListPermissions(ctx context.Context) ([]*domain.Permission, error)
 }
 
-// SessionRepository defines methods for session operations
+// SessionRepository defines methods for session operations.
 type SessionRepository interface {
 	CreateSession(ctx context.Context, session *domain.Session) error
 	GetSession(ctx context.Context, id uuid.UUID) (*domain.Session, error)
@@ -54,7 +55,7 @@ type SessionRepository interface {
 	ListUserSessions(ctx context.Context, userID uuid.UUID) ([]*domain.Session, error)
 }
 
-// Repository aggregates all user-related repositories
+// Repository aggregates all user-related repositories.
 type Repository interface {
 	UserRepository
 	RoleRepository

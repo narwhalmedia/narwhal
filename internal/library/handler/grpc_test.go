@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
@@ -27,6 +26,7 @@ import (
 
 type GRPCHandlerTestSuite struct {
 	suite.Suite
+
 	ctx           context.Context
 	mockService   *mocks.MockLibraryService
 	handler       *handler.GRPCHandler
@@ -75,11 +75,12 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_Success() {
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), resp)
-	assert.Equal(suite.T(), library.ID.String(), resp.Id)
-	assert.Equal(suite.T(), library.Name, resp.Name)
-	assert.Equal(suite.T(), library.Path, resp.Path)
+	suite.Require().NoError(err)
+	suite.NotNil(resp)
+	suite.NotNil(resp.GetLibrary())
+	suite.Equal(library.ID.String(), resp.GetLibrary().GetId())
+	suite.Equal(library.Name, resp.GetLibrary().GetName())
+	suite.Equal(library.Path, resp.GetLibrary().GetPath())
 }
 
 func (suite *GRPCHandlerTestSuite) TestGetLibrary_NotFound() {
@@ -92,11 +93,11 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_NotFound() {
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
 
 	// Assert
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.NotFound, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.NotFound, st.Code())
 }
 
 func (suite *GRPCHandlerTestSuite) TestGetLibrary_InvalidID() {
@@ -105,11 +106,11 @@ func (suite *GRPCHandlerTestSuite) TestGetLibrary_InvalidID() {
 	resp, err := suite.handler.GetLibrary(suite.ctx, req)
 
 	// Assert
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.InvalidArgument, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.InvalidArgument, st.Code())
 }
 
 func (suite *GRPCHandlerTestSuite) TestListLibraries_Success() {
@@ -146,11 +147,11 @@ func (suite *GRPCHandlerTestSuite) TestListLibraries_Success() {
 	resp, err := suite.handler.ListLibraries(suite.ctx, req)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), resp)
-	assert.Len(suite.T(), resp.Libraries, 2)
-	assert.Equal(suite.T(), "Movies", resp.Libraries[0].Name)
-	assert.Equal(suite.T(), "TV Shows", resp.Libraries[1].Name)
+	suite.Require().NoError(err)
+	suite.NotNil(resp)
+	suite.Len(resp.GetLibraries(), 2)
+	suite.Equal("Movies", resp.GetLibraries()[0].GetName())
+	suite.Equal("TV Shows", resp.GetLibraries()[1].GetName())
 }
 
 func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
@@ -167,7 +168,8 @@ func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
 
 	suite.mockService.On("UpdateLibrary", suite.ctx, suite.testLibraryID, mock.MatchedBy(func(u map[string]interface{}) bool {
 		return u["name"] == "Updated Name" && u["enabled"] == false
-	})).Return(updatedLibrary, nil)
+	})).
+		Return(updatedLibrary, nil)
 
 	// Act
 	req := &librarypb.UpdateLibraryRequest{
@@ -180,10 +182,11 @@ func (suite *GRPCHandlerTestSuite) TestUpdateLibrary_Success() {
 	resp, err := suite.handler.UpdateLibrary(suite.ctx, req)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), resp)
-	assert.Equal(suite.T(), "Updated Name", resp.Name)
-	assert.False(suite.T(), resp.AutoScan)
+	suite.Require().NoError(err)
+	suite.NotNil(resp)
+	suite.NotNil(resp.GetLibrary())
+	suite.Equal("Updated Name", resp.GetLibrary().GetName())
+	suite.False(resp.GetLibrary().GetAutoScan())
 }
 
 func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_Success() {
@@ -195,8 +198,8 @@ func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_Success() {
 	resp, err := suite.handler.DeleteLibrary(suite.ctx, req)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), resp)
+	suite.Require().NoError(err)
+	suite.NotNil(resp)
 }
 
 func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_NotFound() {
@@ -209,11 +212,11 @@ func (suite *GRPCHandlerTestSuite) TestDeleteLibrary_NotFound() {
 	resp, err := suite.handler.DeleteLibrary(suite.ctx, req)
 
 	// Assert
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.NotFound, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.NotFound, st.Code())
 }
 
 func TestGRPCHandlerTestSuite(t *testing.T) {

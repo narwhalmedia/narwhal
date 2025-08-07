@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Library represents a media library in the database
+// Library represents a media library in the database.
 type Library struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name         string    `gorm:"uniqueIndex;not null"`
@@ -25,7 +25,7 @@ type Library struct {
 	ScanHistory []ScanHistory `gorm:"foreignKey:LibraryID;constraint:OnDelete:CASCADE"`
 }
 
-// MediaItem represents a media file in the database
+// MediaItem represents a media file in the database.
 type MediaItem struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	LibraryID      uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -69,7 +69,7 @@ type MediaItem struct {
 	Episodes []Episode `gorm:"foreignKey:MediaID;constraint:OnDelete:CASCADE"`
 }
 
-// Episode represents a TV show episode
+// Episode represents a TV show episode.
 type Episode struct {
 	ID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	MediaID       uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -97,7 +97,7 @@ type Episode struct {
 	Media MediaItem `gorm:"foreignKey:MediaID"`
 }
 
-// MetadataProvider represents a metadata provider configuration
+// MetadataProvider represents a metadata provider configuration.
 type MetadataProvider struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name         string    `gorm:"uniqueIndex;not null"`
@@ -110,7 +110,7 @@ type MetadataProvider struct {
 	DeletedAt    gorm.DeletedAt `gorm:"index"`
 }
 
-// ScanHistory represents a library scan event
+// ScanHistory represents a library scan event.
 type ScanHistory struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	LibraryID    uuid.UUID `gorm:"type:uuid;not null;index"`
@@ -126,13 +126,13 @@ type ScanHistory struct {
 	Library Library `gorm:"foreignKey:LibraryID"`
 }
 
-// BeforeCreate hook for Episode to ensure unique constraint
+// BeforeCreate hook for Episode to ensure unique constraint.
 func (e *Episode) BeforeCreate(tx *gorm.DB) error {
 	// GORM doesn't support composite unique indexes well, so we'll handle it in the migration
 	return nil
 }
 
-// TableName customizations if needed
+// TableName customizations if needed.
 func (Library) TableName() string {
 	return "libraries"
 }

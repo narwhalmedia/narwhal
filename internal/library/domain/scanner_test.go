@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 )
 
 type ScannerTestSuite struct {
 	suite.Suite
+
 	ctx     context.Context
 	scanner *domain.Scanner
 	tempDir string
@@ -71,13 +72,13 @@ func (suite *ScannerTestSuite) TestScanPath_MovieLibrary() {
 	result, err := suite.scanner.ScanPath(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
-	assert.Equal(suite.T(), library.ID, result.LibraryID)
-	assert.Equal(suite.T(), "completed", result.Status)
-	assert.Equal(suite.T(), 3, result.FilesFound)
-	assert.Equal(suite.T(), 0, result.Errors)
-	assert.True(suite.T(), result.Duration >= 0)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(library.ID, result.LibraryID)
+	suite.Equal("completed", result.Status)
+	suite.Equal(3, result.FilesFound)
+	suite.Equal(0, result.Errors)
+	suite.GreaterOrEqual(result.Duration, 0)
 }
 
 func (suite *ScannerTestSuite) TestScanPath_TVLibrary() {
@@ -102,10 +103,10 @@ func (suite *ScannerTestSuite) TestScanPath_TVLibrary() {
 	result, err := suite.scanner.ScanPath(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
-	assert.Equal(suite.T(), 3, result.FilesFound)
-	assert.Equal(suite.T(), "completed", result.Status)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(3, result.FilesFound)
+	suite.Equal("completed", result.Status)
 }
 
 func (suite *ScannerTestSuite) TestScanPath_EmptyDirectory() {
@@ -120,10 +121,10 @@ func (suite *ScannerTestSuite) TestScanPath_EmptyDirectory() {
 	result, err := suite.scanner.ScanPath(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
-	assert.Equal(suite.T(), 0, result.FilesFound)
-	assert.Equal(suite.T(), "completed", result.Status)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal(0, result.FilesFound)
+	suite.Equal("completed", result.Status)
 }
 
 func (suite *ScannerTestSuite) TestScanPath_NonExistentPath() {
@@ -138,11 +139,11 @@ func (suite *ScannerTestSuite) TestScanPath_NonExistentPath() {
 	result, err := suite.scanner.ScanPath(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
-	assert.Equal(suite.T(), "failed", result.Status)
-	assert.Equal(suite.T(), 0, result.FilesFound)
-	assert.True(suite.T(), result.Errors > 0)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
+	suite.Equal("failed", result.Status)
+	suite.Equal(0, result.FilesFound)
+	suite.Positive(result.Errors)
 }
 
 func (suite *ScannerTestSuite) TestScanPath_ContextCancellation() {
@@ -154,7 +155,7 @@ func (suite *ScannerTestSuite) TestScanPath_ContextCancellation() {
 	}
 
 	// Create many files to ensure scan takes some time
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		suite.createTestFile(fmt.Sprintf("movie%d.mp4", i), "fake video content")
 	}
 
@@ -180,10 +181,10 @@ func (suite *ScannerTestSuite) TestScanPath_ContextCancellation() {
 	err := <-errChan
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), result)
+	suite.Require().NoError(err)
+	suite.NotNil(result)
 	// Status might be "completed" if scan finished before cancellation
-	assert.Contains(suite.T(), []string{"completed", "cancelled"}, result.Status)
+	suite.Contains([]string{"completed", "cancelled"}, result.Status)
 }
 
 func (suite *ScannerTestSuite) TestIsVideoFile() {
@@ -202,7 +203,7 @@ func (suite *ScannerTestSuite) TestIsVideoFile() {
 	}
 
 	for _, ext := range validExtensions {
-		assert.True(suite.T(), suite.scanner.IsVideoFile("test"+ext), "Extension %s should be valid", ext)
+		suite.True(suite.scanner.IsVideoFile("test"+ext), "Extension %s should be valid", ext)
 	}
 
 	// Test invalid extensions
@@ -211,7 +212,7 @@ func (suite *ScannerTestSuite) TestIsVideoFile() {
 	}
 
 	for _, ext := range invalidExtensions {
-		assert.False(suite.T(), suite.scanner.IsVideoFile("test"+ext), "Extension %s should be invalid", ext)
+		suite.False(suite.scanner.IsVideoFile("test"+ext), "Extension %s should be invalid", ext)
 	}
 }
 
@@ -220,15 +221,15 @@ func (suite *ScannerTestSuite) TestIsScanning() {
 	libraryID := uuid.New().String()
 
 	// Initially should not be scanning
-	assert.False(suite.T(), suite.scanner.IsScanning(libraryID))
+	suite.False(suite.scanner.IsScanning(libraryID))
 
 	// Set scanning
 	suite.scanner.SetScanning(libraryID, true)
-	assert.True(suite.T(), suite.scanner.IsScanning(libraryID))
+	suite.True(suite.scanner.IsScanning(libraryID))
 
 	// Unset scanning
 	suite.scanner.SetScanning(libraryID, false)
-	assert.False(suite.T(), suite.scanner.IsScanning(libraryID))
+	suite.False(suite.scanner.IsScanning(libraryID))
 }
 
 func (suite *ScannerTestSuite) TestConcurrentScanning() {
@@ -271,10 +272,10 @@ func (suite *ScannerTestSuite) TestConcurrentScanning() {
 	result1 := <-result1Chan
 	result2 := <-result2Chan
 
-	assert.Equal(suite.T(), "completed", result1.Status)
-	assert.Equal(suite.T(), "completed", result2.Status)
-	assert.Equal(suite.T(), 1, result1.FilesFound)
-	assert.Equal(suite.T(), 1, result2.FilesFound)
+	suite.Equal("completed", result1.Status)
+	suite.Equal("completed", result2.Status)
+	suite.Equal(1, result1.FilesFound)
+	suite.Equal(1, result2.FilesFound)
 }
 
 func TestScannerTestSuite(t *testing.T) {

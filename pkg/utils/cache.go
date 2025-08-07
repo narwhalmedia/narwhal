@@ -12,19 +12,19 @@ var (
 	ErrExpired   = errors.New("cache entry expired")
 )
 
-// CacheEntry represents a cached value with expiration
+// CacheEntry represents a cached value with expiration.
 type CacheEntry struct {
 	Value      interface{}
 	Expiration time.Time
 }
 
-// InMemoryCache is a simple in-memory cache implementation
+// InMemoryCache is a simple in-memory cache implementation.
 type InMemoryCache struct {
 	entries map[string]*CacheEntry
 	mu      sync.RWMutex
 }
 
-// NewInMemoryCache creates a new in-memory cache
+// NewInMemoryCache creates a new in-memory cache.
 func NewInMemoryCache() *InMemoryCache {
 	cache := &InMemoryCache{
 		entries: make(map[string]*CacheEntry),
@@ -36,7 +36,7 @@ func NewInMemoryCache() *InMemoryCache {
 	return cache
 }
 
-// Get retrieves a value from the cache
+// Get retrieves a value from the cache.
 func (c *InMemoryCache) Get(ctx context.Context, key string) (interface{}, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -53,7 +53,7 @@ func (c *InMemoryCache) Get(ctx context.Context, key string) (interface{}, error
 	return entry.Value, nil
 }
 
-// Set stores a value in the cache with a TTL
+// Set stores a value in the cache with a TTL.
 func (c *InMemoryCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -66,7 +66,7 @@ func (c *InMemoryCache) Set(ctx context.Context, key string, value interface{}, 
 	return nil
 }
 
-// Delete removes a value from the cache
+// Delete removes a value from the cache.
 func (c *InMemoryCache) Delete(ctx context.Context, key string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -75,7 +75,7 @@ func (c *InMemoryCache) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// Clear removes all values from the cache
+// Clear removes all values from the cache.
 func (c *InMemoryCache) Clear(ctx context.Context) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -84,7 +84,7 @@ func (c *InMemoryCache) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Exists checks if a key exists in the cache
+// Exists checks if a key exists in the cache.
 func (c *InMemoryCache) Exists(ctx context.Context, key string) (bool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -101,7 +101,7 @@ func (c *InMemoryCache) Exists(ctx context.Context, key string) (bool, error) {
 	return true, nil
 }
 
-// TTL returns the remaining TTL for a key
+// TTL returns the remaining TTL for a key.
 func (c *InMemoryCache) TTL(ctx context.Context, key string) (time.Duration, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -119,7 +119,7 @@ func (c *InMemoryCache) TTL(ctx context.Context, key string) (time.Duration, err
 	return ttl, nil
 }
 
-// cleanup periodically removes expired entries
+// cleanup periodically removes expired entries.
 func (c *InMemoryCache) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()

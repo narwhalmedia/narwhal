@@ -4,6 +4,11 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
@@ -11,22 +16,18 @@ import (
 	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// GRPCHandler implements the AuthService gRPC interface
+// GRPCHandler implements the AuthService gRPC interface.
 type GRPCHandler struct {
 	authpb.UnimplementedAuthServiceServer
+
 	authService *service.AuthService
 	userService *service.UserService
 	logger      interfaces.Logger
 }
 
-// NewGRPCHandler creates a new gRPC handler
+// NewGRPCHandler creates a new gRPC handler.
 func NewGRPCHandler(
 	authService *service.AuthService,
 	userService *service.UserService,
@@ -39,7 +40,7 @@ func NewGRPCHandler(
 	}
 }
 
-// Login authenticates a user and returns tokens
+// Login authenticates a user and returns tokens.
 func (h *GRPCHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*authpb.LoginResponse, error) {
 	// Extract client info from context
 	md, _ := metadata.FromIncomingContext(ctx)
@@ -47,13 +48,20 @@ func (h *GRPCHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*aut
 	userAgent := extractMetadataValue(md, "user-agent")
 
 	// Perform login
-	tokens, err := h.authService.Login(ctx, req.Username, req.Password, req.DeviceName, ipAddress, userAgent)
+	tokens, err := h.authService.Login(
+		ctx,
+		req.GetUsername(),
+		req.GetPassword(),
+		req.GetDeviceName(),
+		ipAddress,
+		userAgent,
+	)
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
 
 	// Get user info
-	user, err := h.userService.GetUserByUsername(ctx, req.Username)
+	user, err := h.userService.GetUserByUsername(ctx, req.GetUsername())
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -67,8 +75,8 @@ func (h *GRPCHandler) Login(ctx context.Context, req *authpb.LoginRequest) (*aut
 	}, nil
 }
 
-// Logout logs out a user
-func (h *GRPCHandler) Logout(ctx context.Context, req *authpb.LogoutRequest) (*emptypb.Empty, error) {
+// Logout logs out a user.
+func (h *GRPCHandler) Logout(ctx context.Context, req *authpb.LogoutRequest) (*authpb.LogoutResponse, error) {
 	// Get user ID from context
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
@@ -78,7 +86,7 @@ func (h *GRPCHandler) Logout(ctx context.Context, req *authpb.LogoutRequest) (*e
 	// Get session ID from context
 	sessionID := getSessionIDFromContext(ctx)
 
-	if req.AllDevices {
+	if req.GetAllDevices() {
 		err = h.authService.LogoutAll(ctx, userID)
 	} else {
 		err = h.authService.Logout(ctx, userID, sessionID)
@@ -88,12 +96,15 @@ func (h *GRPCHandler) Logout(ctx context.Context, req *authpb.LogoutRequest) (*e
 		return nil, toGRPCError(err)
 	}
 
-	return &emptypb.Empty{}, nil
+	return &authpb.LogoutResponse{}, nil
 }
 
-// RefreshToken generates new tokens using a refresh token
-func (h *GRPCHandler) RefreshToken(ctx context.Context, req *authpb.RefreshTokenRequest) (*authpb.RefreshTokenResponse, error) {
-	tokens, err := h.authService.RefreshToken(ctx, req.RefreshToken)
+// RefreshToken generates new tokens using a refresh token.
+func (h *GRPCHandler) RefreshToken(
+	ctx context.Context,
+	req *authpb.RefreshTokenRequest,
+) (*authpb.RefreshTokenResponse, error) {
+	tokens, err := h.authService.RefreshToken(ctx, req.GetRefreshToken())
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
@@ -106,9 +117,12 @@ func (h *GRPCHandler) RefreshToken(ctx context.Context, req *authpb.RefreshToken
 	}, nil
 }
 
-// ValidateToken validates an access token
-func (h *GRPCHandler) ValidateToken(ctx context.Context, req *authpb.ValidateTokenRequest) (*authpb.ValidateTokenResponse, error) {
-	claims, err := h.authService.ValidateToken(ctx, req.AccessToken)
+// ValidateToken validates an access token.
+func (h *GRPCHandler) ValidateToken(
+	ctx context.Context,
+	req *authpb.ValidateTokenRequest,
+) (*authpb.ValidateTokenResponse, error) {
+	claims, err := h.authService.ValidateToken(ctx, req.GetAccessToken())
 	if err != nil {
 		return &authpb.ValidateTokenResponse{Valid: false}, nil
 	}
@@ -135,34 +149,39 @@ func (h *GRPCHandler) ValidateToken(ctx context.Context, req *authpb.ValidateTok
 	}, nil
 }
 
-// CreateUser creates a new user
-func (h *GRPCHandler) CreateUser(ctx context.Context, req *authpb.CreateUserRequest) (*authpb.User, error) {
+// CreateUser creates a new user.
+func (h *GRPCHandler) CreateUser(
+	ctx context.Context,
+	req *authpb.CreateUserRequest,
+) (*authpb.CreateUserResponse, error) {
 	// Verify caller has admin permissions
 	if err := h.requireAdmin(ctx); err != nil {
 		return nil, err
 	}
 
 	// Create user
-	user, err := h.userService.CreateUser(ctx, req.Username, req.Email, req.Password, req.Username)
+	user, err := h.userService.CreateUser(ctx, req.GetUsername(), req.GetEmail(), req.GetPassword(), req.GetUsername())
 	if err != nil {
 		return nil, toGRPCError(err)
 	}
 
 	// Assign role if specified
-	if req.Role != commonpb.UserRole_USER_ROLE_UNSPECIFIED {
-		roleName := protoRoleToString(req.Role)
+	if req.GetRole() != commonpb.UserRole_USER_ROLE_UNSPECIFIED {
+		roleName := protoRoleToString(req.GetRole())
 		if err := h.userService.AssignRole(ctx, user.ID, roleName); err != nil {
 			h.logger.Error("Failed to assign role", interfaces.Error(err))
 		}
 	}
 
-	return domainUserToProto(user), nil
+	return &authpb.CreateUserResponse{
+		User: domainUserToProto(user),
+	}, nil
 }
 
-// GetUser retrieves a user by ID
-func (h *GRPCHandler) GetUser(ctx context.Context, req *authpb.GetUserRequest) (*authpb.User, error) {
+// GetUser retrieves a user by ID.
+func (h *GRPCHandler) GetUser(ctx context.Context, req *authpb.GetUserRequest) (*authpb.GetUserResponse, error) {
 	// Parse user ID
-	userID, err := uuid.Parse(req.Id)
+	userID, err := uuid.Parse(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}
@@ -173,11 +192,16 @@ func (h *GRPCHandler) GetUser(ctx context.Context, req *authpb.GetUserRequest) (
 		return nil, toGRPCError(err)
 	}
 
-	return domainUserToProto(user), nil
+	return &authpb.GetUserResponse{
+		User: domainUserToProto(user),
+	}, nil
 }
 
-// GetCurrentUser retrieves the current authenticated user
-func (h *GRPCHandler) GetCurrentUser(ctx context.Context, _ *emptypb.Empty) (*authpb.User, error) {
+// GetCurrentUser retrieves the current authenticated user.
+func (h *GRPCHandler) GetCurrentUser(
+	ctx context.Context,
+	req *authpb.GetCurrentUserRequest,
+) (*authpb.GetCurrentUserResponse, error) {
 	// Get user ID from context
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
@@ -190,13 +214,18 @@ func (h *GRPCHandler) GetCurrentUser(ctx context.Context, _ *emptypb.Empty) (*au
 		return nil, toGRPCError(err)
 	}
 
-	return domainUserToProto(user), nil
+	return &authpb.GetCurrentUserResponse{
+		User: domainUserToProto(user),
+	}, nil
 }
 
-// UpdateUser updates a user
-func (h *GRPCHandler) UpdateUser(ctx context.Context, req *authpb.UpdateUserRequest) (*authpb.User, error) {
+// UpdateUser updates a user.
+func (h *GRPCHandler) UpdateUser(
+	ctx context.Context,
+	req *authpb.UpdateUserRequest,
+) (*authpb.UpdateUserResponse, error) {
 	// Parse user ID
-	userID, err := uuid.Parse(req.Id)
+	userID, err := uuid.Parse(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}
@@ -213,25 +242,25 @@ func (h *GRPCHandler) UpdateUser(ctx context.Context, req *authpb.UpdateUserRequ
 	// Prepare updates
 	updates := make(map[string]interface{})
 
-	if req.UpdateMask != nil {
-		for _, path := range req.UpdateMask.Paths {
+	if req.GetUpdateMask() != nil {
+		for _, path := range req.GetUpdateMask().GetPaths() {
 			switch path {
 			case "preferences.language":
-				if req.User.Preferences != nil {
+				if req.GetUser().GetPreferences() != nil {
 					prefs := domain.UserPreferences{
-						Language: req.User.Preferences.Language,
+						Language: req.GetUser().GetPreferences().GetLanguage(),
 					}
 					updates["preferences"] = prefs
 				}
 			case "preferences.theme":
-				if req.User.Preferences != nil {
+				if req.GetUser().GetPreferences() != nil {
 					prefs := domain.UserPreferences{
-						Theme: req.User.Preferences.Theme,
+						Theme: req.GetUser().GetPreferences().GetTheme(),
 					}
 					updates["preferences"] = prefs
 				}
 			case "email":
-				updates["email"] = req.User.Email
+				updates["email"] = req.GetUser().GetEmail()
 			}
 		}
 	}
@@ -242,18 +271,23 @@ func (h *GRPCHandler) UpdateUser(ctx context.Context, req *authpb.UpdateUserRequ
 		return nil, toGRPCError(err)
 	}
 
-	return domainUserToProto(user), nil
+	return &authpb.UpdateUserResponse{
+		User: domainUserToProto(user),
+	}, nil
 }
 
-// DeleteUser deletes a user
-func (h *GRPCHandler) DeleteUser(ctx context.Context, req *authpb.DeleteUserRequest) (*emptypb.Empty, error) {
+// DeleteUser deletes a user.
+func (h *GRPCHandler) DeleteUser(
+	ctx context.Context,
+	req *authpb.DeleteUserRequest,
+) (*authpb.DeleteUserResponse, error) {
 	// Verify caller has admin permissions
 	if err := h.requireAdmin(ctx); err != nil {
 		return nil, err
 	}
 
 	// Parse user ID
-	userID, err := uuid.Parse(req.Id)
+	userID, err := uuid.Parse(req.GetId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}
@@ -263,13 +297,16 @@ func (h *GRPCHandler) DeleteUser(ctx context.Context, req *authpb.DeleteUserRequ
 		return nil, toGRPCError(err)
 	}
 
-	return &emptypb.Empty{}, nil
+	return &authpb.DeleteUserResponse{}, nil
 }
 
-// ChangePassword changes a user's password
-func (h *GRPCHandler) ChangePassword(ctx context.Context, req *authpb.ChangePasswordRequest) (*emptypb.Empty, error) {
+// ChangePassword changes a user's password.
+func (h *GRPCHandler) ChangePassword(
+	ctx context.Context,
+	req *authpb.ChangePasswordRequest,
+) (*authpb.ChangePasswordResponse, error) {
 	// Parse user ID
-	userID, err := uuid.Parse(req.UserId)
+	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}
@@ -281,17 +318,20 @@ func (h *GRPCHandler) ChangePassword(ctx context.Context, req *authpb.ChangePass
 	}
 
 	// Change password
-	if err := h.userService.ChangePassword(ctx, userID, req.CurrentPassword, req.NewPassword); err != nil {
+	if err := h.userService.ChangePassword(ctx, userID, req.GetCurrentPassword(), req.GetNewPassword()); err != nil {
 		return nil, toGRPCError(err)
 	}
 
-	return &emptypb.Empty{}, nil
+	return &authpb.ChangePasswordResponse{}, nil
 }
 
-// CheckPermission checks if a user has a specific permission
-func (h *GRPCHandler) CheckPermission(ctx context.Context, req *authpb.CheckPermissionRequest) (*authpb.CheckPermissionResponse, error) {
+// CheckPermission checks if a user has a specific permission.
+func (h *GRPCHandler) CheckPermission(
+	ctx context.Context,
+	req *authpb.CheckPermissionRequest,
+) (*authpb.CheckPermissionResponse, error) {
 	// Parse user ID
-	userID, err := uuid.Parse(req.UserId)
+	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}
@@ -303,7 +343,7 @@ func (h *GRPCHandler) CheckPermission(ctx context.Context, req *authpb.CheckPerm
 	}
 
 	// Check permission
-	allowed := user.HasPermission(req.Resource, req.Action)
+	allowed := user.HasPermission(req.GetResource(), req.GetAction())
 
 	response := &authpb.CheckPermissionResponse{
 		Allowed: allowed,
@@ -316,10 +356,13 @@ func (h *GRPCHandler) CheckPermission(ctx context.Context, req *authpb.CheckPerm
 	return response, nil
 }
 
-// GetUserPermissions gets all permissions for a user
-func (h *GRPCHandler) GetUserPermissions(ctx context.Context, req *authpb.GetUserPermissionsRequest) (*authpb.GetUserPermissionsResponse, error) {
+// GetUserPermissions gets all permissions for a user.
+func (h *GRPCHandler) GetUserPermissions(
+	ctx context.Context,
+	req *authpb.GetUserPermissionsRequest,
+) (*authpb.GetUserPermissionsResponse, error) {
 	// Parse user ID
-	userID, err := uuid.Parse(req.UserId)
+	userID, err := uuid.Parse(req.GetUserId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid user ID")
 	}

@@ -11,33 +11,33 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ContextKey is a type for context keys
+// ContextKey is a type for context keys.
 type ContextKey string
 
 const (
-	// ContextKeyClaims is the context key for JWT claims
+	// ContextKeyClaims is the context key for JWT claims.
 	ContextKeyClaims ContextKey = "claims"
-	// ContextKeyUserID is the context key for user ID
+	// ContextKeyUserID is the context key for user ID.
 	ContextKeyUserID ContextKey = "user_id"
-	// ContextKeyRoles is the context key for user roles
+	// ContextKeyRoles is the context key for user roles.
 	ContextKeyRoles ContextKey = "roles"
 )
 
-// AuthInterceptor provides authentication and authorization for gRPC
+// AuthInterceptor provides authentication and authorization for gRPC.
 type AuthInterceptor struct {
 	jwtManager *JWTManager
 	rbac       RBACInterface
 	enforcer   PolicyEnforcerInterface
 }
 
-// PolicyEnforcerInterface defines the interface for policy enforcement
+// PolicyEnforcerInterface defines the interface for policy enforcement.
 type PolicyEnforcerInterface interface {
 	Enforce(roles []string, resource, action string) error
 	EnforceAny(roles []string, permissions ...Permission) error
 	EnforceAll(roles []string, permissions ...Permission) error
 }
 
-// NewAuthInterceptor creates a new auth interceptor
+// NewAuthInterceptor creates a new auth interceptor.
 func NewAuthInterceptor(jwtManager *JWTManager, rbac RBACInterface) *AuthInterceptor {
 	var enforcer PolicyEnforcerInterface
 
@@ -59,12 +59,12 @@ func NewAuthInterceptor(jwtManager *JWTManager, rbac RBACInterface) *AuthInterce
 	}
 }
 
-// GenericPolicyEnforcer provides a generic policy enforcer for any RBAC implementation
+// GenericPolicyEnforcer provides a generic policy enforcer for any RBAC implementation.
 type GenericPolicyEnforcer struct {
 	rbac RBACInterface
 }
 
-// Enforce checks if the given roles satisfy the permission requirement
+// Enforce checks if the given roles satisfy the permission requirement.
 func (p *GenericPolicyEnforcer) Enforce(roles []string, resource, action string) error {
 	if !p.rbac.CheckPermissions(roles, resource, action) {
 		return fmt.Errorf("permission denied: %s:%s", resource, action)
@@ -72,7 +72,7 @@ func (p *GenericPolicyEnforcer) Enforce(roles []string, resource, action string)
 	return nil
 }
 
-// EnforceAny checks if the given roles satisfy any of the permission requirements
+// EnforceAny checks if the given roles satisfy any of the permission requirements.
 func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -87,7 +87,7 @@ func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...Permis
 	return fmt.Errorf("permission denied: requires any of [%s]", strings.Join(permStrs, ", "))
 }
 
-// EnforceAll checks if the given roles satisfy all permission requirements
+// EnforceAll checks if the given roles satisfy all permission requirements.
 func (p *GenericPolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -97,7 +97,7 @@ func (p *GenericPolicyEnforcer) EnforceAll(roles []string, permissions ...Permis
 	return nil
 }
 
-// UnaryServerInterceptor returns a gRPC unary interceptor for authentication
+// UnaryServerInterceptor returns a gRPC unary interceptor for authentication.
 func (a *AuthInterceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// Skip auth for certain methods (like login)
@@ -120,7 +120,7 @@ func (a *AuthInterceptor) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamServerInterceptor returns a gRPC stream interceptor for authentication
+// StreamServerInterceptor returns a gRPC stream interceptor for authentication.
 func (a *AuthInterceptor) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// Skip auth for certain methods
@@ -149,7 +149,7 @@ func (a *AuthInterceptor) StreamServerInterceptor() grpc.StreamServerInterceptor
 	}
 }
 
-// authenticate extracts and validates the JWT token from the request
+// authenticate extracts and validates the JWT token from the request.
 func (a *AuthInterceptor) authenticate(ctx context.Context) (context.Context, error) {
 	token, err := a.extractToken(ctx)
 	if err != nil {
@@ -169,7 +169,7 @@ func (a *AuthInterceptor) authenticate(ctx context.Context) (context.Context, er
 	return ctx, nil
 }
 
-// authorize checks if the user has permission to access the method
+// authorize checks if the user has permission to access the method.
 func (a *AuthInterceptor) authorize(ctx context.Context, method string) error {
 	// Get required permissions for the method
 	resource, action := a.getMethodPermissions(method)
@@ -190,7 +190,7 @@ func (a *AuthInterceptor) authorize(ctx context.Context, method string) error {
 	return nil
 }
 
-// extractToken extracts the token from the authorization header
+// extractToken extracts the token from the authorization header.
 func (a *AuthInterceptor) extractToken(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -209,7 +209,7 @@ func (a *AuthInterceptor) extractToken(ctx context.Context) (string, error) {
 	return token, nil
 }
 
-// skipAuth returns true if the method should skip authentication
+// skipAuth returns true if the method should skip authentication.
 func (a *AuthInterceptor) skipAuth(method string) bool {
 	// List of methods that don't require authentication
 	skipMethods := []string{
@@ -231,7 +231,7 @@ func (a *AuthInterceptor) skipAuth(method string) bool {
 	return false
 }
 
-// getMethodPermissions returns the required resource and action for a gRPC method
+// getMethodPermissions returns the required resource and action for a gRPC method.
 func (a *AuthInterceptor) getMethodPermissions(method string) (resource, action string) {
 	// Define permission requirements for each service method
 	permissions := map[string]struct{ Resource, Action string }{
@@ -274,9 +274,10 @@ func (a *AuthInterceptor) getMethodPermissions(method string) (resource, action 
 	return "", ""
 }
 
-// wrappedServerStream wraps a grpc.ServerStream with a custom context
+// wrappedServerStream wraps a grpc.ServerStream with a custom context.
 type wrappedServerStream struct {
 	grpc.ServerStream
+
 	ctx context.Context
 }
 
@@ -284,25 +285,25 @@ func (w *wrappedServerStream) Context() context.Context {
 	return w.ctx
 }
 
-// GetClaimsFromContext extracts JWT claims from context
+// GetClaimsFromContext extracts JWT claims from context.
 func GetClaimsFromContext(ctx context.Context) (*CustomClaims, bool) {
 	claims, ok := ctx.Value(ContextKeyClaims).(*CustomClaims)
 	return claims, ok
 }
 
-// GetUserIDFromContext extracts user ID from context
+// GetUserIDFromContext extracts user ID from context.
 func GetUserIDFromContext(ctx context.Context) (string, bool) {
 	userID, ok := ctx.Value(ContextKeyUserID).(string)
 	return userID, ok
 }
 
-// GetRolesFromContext extracts roles from context
+// GetRolesFromContext extracts roles from context.
 func GetRolesFromContext(ctx context.Context) ([]string, bool) {
 	roles, ok := ctx.Value(ContextKeyRoles).([]string)
 	return roles, ok
 }
 
-// RequirePermission creates a function that checks for a specific permission
+// RequirePermission creates a function that checks for a specific permission.
 func (a *AuthInterceptor) RequirePermission(resource, action string) func(context.Context) error {
 	return func(ctx context.Context) error {
 		roles, ok := GetRolesFromContext(ctx)
@@ -314,7 +315,7 @@ func (a *AuthInterceptor) RequirePermission(resource, action string) func(contex
 	}
 }
 
-// RequireAnyPermission creates a function that checks for any of the given permissions
+// RequireAnyPermission creates a function that checks for any of the given permissions.
 func (a *AuthInterceptor) RequireAnyPermission(permissions ...Permission) func(context.Context) error {
 	return func(ctx context.Context) error {
 		roles, ok := GetRolesFromContext(ctx)
@@ -326,7 +327,7 @@ func (a *AuthInterceptor) RequireAnyPermission(permissions ...Permission) func(c
 	}
 }
 
-// RequireAllPermissions creates a function that checks for all of the given permissions
+// RequireAllPermissions creates a function that checks for all of the given permissions.
 func (a *AuthInterceptor) RequireAllPermissions(permissions ...Permission) func(context.Context) error {
 	return func(ctx context.Context) error {
 		roles, ok := GetRolesFromContext(ctx)

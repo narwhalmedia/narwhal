@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// CreateTestUser creates a test user with default values
+// CreateTestUser creates a test user with default values.
 func CreateTestUser(username, email string) *domain.User {
 	user := &domain.User{
 		ID:          uuid.New(),
@@ -33,7 +34,7 @@ func CreateTestUser(username, email string) *domain.User {
 	return user
 }
 
-// CreateTestRole creates a test role
+// CreateTestRole creates a test role.
 func CreateTestRole(name, description string) *domain.Role {
 	return &domain.Role{
 		ID:          uuid.New(),
@@ -44,7 +45,7 @@ func CreateTestRole(name, description string) *domain.Role {
 	}
 }
 
-// CreateTestPermission creates a test permission
+// CreateTestPermission creates a test permission.
 func CreateTestPermission(resource, action, description string) *domain.Permission {
 	return &domain.Permission{
 		ID:          uuid.New(),
@@ -56,7 +57,7 @@ func CreateTestPermission(resource, action, description string) *domain.Permissi
 	}
 }
 
-// CreateTestSession creates a test session
+// CreateTestSession creates a test session.
 func CreateTestSession(userID uuid.UUID) *domain.Session {
 	return &domain.Session{
 		ID:           uuid.New(),
@@ -71,7 +72,7 @@ func CreateTestSession(userID uuid.UUID) *domain.Session {
 	}
 }
 
-// CreateTestLibrary creates a test library
+// CreateTestLibrary creates a test library.
 func CreateTestLibrary(name, path string, mediaType models.MediaType) *models.Library {
 	return &models.Library{
 		ID:           uuid.New(),
@@ -86,7 +87,7 @@ func CreateTestLibrary(name, path string, mediaType models.MediaType) *models.Li
 	}
 }
 
-// CreateTestMedia creates a test media item
+// CreateTestMedia creates a test media item.
 func CreateTestMedia(libraryID uuid.UUID, title string, mediaType models.MediaType) *models.Media {
 	return &models.Media{
 		ID:          uuid.New(),
@@ -108,7 +109,7 @@ func CreateTestMedia(libraryID uuid.UUID, title string, mediaType models.MediaTy
 	}
 }
 
-// CreateTestMetadata creates test metadata for a media item
+// CreateTestMetadata creates test metadata for a media item.
 func CreateTestMetadata(mediaID uuid.UUID) *models.Metadata {
 	return &models.Metadata{
 		ID:          uuid.New(),
@@ -128,7 +129,7 @@ func CreateTestMetadata(mediaID uuid.UUID) *models.Metadata {
 	}
 }
 
-// CreateTestEpisode creates a test episode
+// CreateTestEpisode creates a test episode.
 func CreateTestEpisode(mediaID uuid.UUID, season, episode int, title string) *models.Episode {
 	return &models.Episode{
 		ID:            uuid.New(),

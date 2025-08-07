@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// LoggingInterceptor creates a new unary logging interceptor
+// LoggingInterceptor creates a new unary logging interceptor.
 func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
@@ -71,7 +71,7 @@ func LoggingInterceptor(logger *zap.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-// StreamLoggingInterceptor creates a new stream logging interceptor
+// StreamLoggingInterceptor creates a new stream logging interceptor.
 func StreamLoggingInterceptor(logger *zap.Logger) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		start := time.Now()
@@ -121,9 +121,10 @@ func StreamLoggingInterceptor(logger *zap.Logger) grpc.StreamServerInterceptor {
 	}
 }
 
-// loggingServerStream wraps grpc.ServerStream to add logging
+// loggingServerStream wraps grpc.ServerStream to add logging.
 type loggingServerStream struct {
 	grpc.ServerStream
+
 	logger *zap.Logger
 }
 
@@ -147,7 +148,7 @@ func (s *loggingServerStream) RecvMsg(m interface{}) error {
 	return err
 }
 
-// extractRequestID extracts request ID from context metadata
+// extractRequestID extracts request ID from context metadata.
 func extractRequestID(ctx context.Context) string {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -162,7 +163,7 @@ func extractRequestID(ctx context.Context) string {
 	return ""
 }
 
-// extractRequestIDFromStream extracts request ID from stream context
+// extractRequestIDFromStream extracts request ID from stream context.
 func extractRequestIDFromStream(ctx context.Context) string {
 	return extractRequestID(ctx)
 }

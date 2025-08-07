@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// BaseEvent is a basic implementation of the Event interface
+// BaseEvent is a basic implementation of the Event interface.
 type BaseEvent struct {
 	Type  string                 `json:"type"`
 	Time  int64                  `json:"timestamp"`
@@ -12,7 +12,7 @@ type BaseEvent struct {
 	Data  map[string]interface{} `json:"data"`
 }
 
-// NewEvent creates a new event
+// NewEvent creates a new event.
 func NewEvent(eventType string, data map[string]interface{}) *BaseEvent {
 	return &BaseEvent{
 		Type:  eventType,
@@ -22,7 +22,7 @@ func NewEvent(eventType string, data map[string]interface{}) *BaseEvent {
 	}
 }
 
-// NewAggregateEvent creates a new event with an aggregate ID
+// NewAggregateEvent creates a new event with an aggregate ID.
 func NewAggregateEvent(eventType string, aggregateID string, data map[string]interface{}) *BaseEvent {
 	return &BaseEvent{
 		Type:  eventType,
@@ -32,17 +32,17 @@ func NewAggregateEvent(eventType string, aggregateID string, data map[string]int
 	}
 }
 
-// EventType returns the type of the event
+// EventType returns the type of the event.
 func (e *BaseEvent) EventType() string {
 	return e.Type
 }
 
-// Timestamp returns when the event occurred
+// Timestamp returns when the event occurred.
 func (e *BaseEvent) Timestamp() int64 {
 	return e.Time
 }
 
-// AggregateID returns the ID of the aggregate that produced the event
+// AggregateID returns the ID of the aggregate that produced the event.
 func (e *BaseEvent) AggregateID() string {
 	return e.AggID
 }

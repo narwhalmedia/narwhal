@@ -2,18 +2,19 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 )
 
-// RBAC provides role-based access control functionality
+// RBAC provides role-based access control functionality.
 type RBAC struct {
 	permissions map[string]map[string][]string // role -> resource -> actions
 }
 
-// NewRBAC creates a new RBAC instance with default permissions
+// NewRBAC creates a new RBAC instance with default permissions.
 func NewRBAC() *RBAC {
 	rbac := &RBAC{
 		permissions: make(map[string]map[string][]string),
@@ -22,7 +23,7 @@ func NewRBAC() *RBAC {
 	return rbac
 }
 
-// initializeDefaultPermissions sets up the default permission structure
+// initializeDefaultPermissions sets up the default permission structure.
 func (r *RBAC) initializeDefaultPermissions() {
 	// Admin role - full access to everything
 	r.permissions[domain.RoleAdmin] = map[string][]string{
@@ -61,7 +62,7 @@ func (r *RBAC) initializeDefaultPermissions() {
 	}
 }
 
-// CheckPermission checks if a role has permission to perform an action on a resource
+// CheckPermission checks if a role has permission to perform an action on a resource.
 func (r *RBAC) CheckPermission(role, resource, action string) bool {
 	if resourcePerms, ok := r.permissions[role]; ok {
 		if actions, ok := resourcePerms[resource]; ok {
@@ -75,7 +76,7 @@ func (r *RBAC) CheckPermission(role, resource, action string) bool {
 	return false
 }
 
-// CheckPermissions checks if any of the roles have permission to perform an action on a resource
+// CheckPermissions checks if any of the roles have permission to perform an action on a resource.
 func (r *RBAC) CheckPermissions(roles []string, resource, action string) bool {
 	for _, role := range roles {
 		if r.CheckPermission(role, resource, action) {
@@ -85,7 +86,7 @@ func (r *RBAC) CheckPermissions(roles []string, resource, action string) bool {
 	return false
 }
 
-// GetRolePermissions returns all permissions for a role
+// GetRolePermissions returns all permissions for a role.
 func (r *RBAC) GetRolePermissions(role string) map[string][]string {
 	if perms, ok := r.permissions[role]; ok {
 		// Return a copy to prevent modification
@@ -98,7 +99,7 @@ func (r *RBAC) GetRolePermissions(role string) map[string][]string {
 	return nil
 }
 
-// AddPermission adds a permission to a role
+// AddPermission adds a permission to a role.
 func (r *RBAC) AddPermission(role, resource, action string) {
 	if _, ok := r.permissions[role]; !ok {
 		r.permissions[role] = make(map[string][]string)
@@ -118,7 +119,7 @@ func (r *RBAC) AddPermission(role, resource, action string) {
 	r.permissions[role][resource] = append(r.permissions[role][resource], action)
 }
 
-// RemovePermission removes a permission from a role
+// RemovePermission removes a permission from a role.
 func (r *RBAC) RemovePermission(role, resource, action string) {
 	if resourcePerms, ok := r.permissions[role]; ok {
 		if actions, ok := resourcePerms[resource]; ok {
@@ -133,30 +134,30 @@ func (r *RBAC) RemovePermission(role, resource, action string) {
 	}
 }
 
-// Middleware provides context-aware permission checking
+// Middleware provides context-aware permission checking.
 type Middleware interface {
 	RequirePermission(resource, action string) func(context.Context) error
 	RequireAnyPermission(permissions ...Permission) func(context.Context) error
 	RequireAllPermissions(permissions ...Permission) func(context.Context) error
 }
 
-// Permission represents a resource-action pair
+// Permission represents a resource-action pair.
 type Permission struct {
 	Resource string
 	Action   string
 }
 
-// PolicyEnforcer provides policy-based access control
+// PolicyEnforcer provides policy-based access control.
 type PolicyEnforcer struct {
 	rbac *RBAC
 }
 
-// NewPolicyEnforcer creates a new policy enforcer
+// NewPolicyEnforcer creates a new policy enforcer.
 func NewPolicyEnforcer(rbac *RBAC) *PolicyEnforcer {
 	return &PolicyEnforcer{rbac: rbac}
 }
 
-// Enforce checks if the given roles satisfy the permission requirement
+// Enforce checks if the given roles satisfy the permission requirement.
 func (p *PolicyEnforcer) Enforce(roles []string, resource, action string) error {
 	if !p.rbac.CheckPermissions(roles, resource, action) {
 		return fmt.Errorf("permission denied: %s:%s", resource, action)
@@ -164,7 +165,7 @@ func (p *PolicyEnforcer) Enforce(roles []string, resource, action string) error 
 	return nil
 }
 
-// EnforceAny checks if the given roles satisfy any of the permission requirements
+// EnforceAny checks if the given roles satisfy any of the permission requirements.
 func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -179,7 +180,7 @@ func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) e
 	return fmt.Errorf("permission denied: requires any of [%s]", strings.Join(permStrs, ", "))
 }
 
-// EnforceAll checks if the given roles satisfy all permission requirements
+// EnforceAll checks if the given roles satisfy all permission requirements.
 func (p *PolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -189,14 +190,19 @@ func (p *PolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) e
 	return nil
 }
 
-// ResourceOwnership defines ownership rules for resources
+// ResourceOwnership defines ownership rules for resources.
 type ResourceOwnership struct {
 	UserIDField string // Field name containing the owner's user ID
 	AllowAdmin  bool   // Whether admins can bypass ownership checks
 }
 
-// CheckOwnership verifies if a user owns a resource
-func (p *PolicyEnforcer) CheckOwnership(userID string, resourceUserID string, roles []string, ownership ResourceOwnership) error {
+// CheckOwnership verifies if a user owns a resource.
+func (p *PolicyEnforcer) CheckOwnership(
+	userID string,
+	resourceUserID string,
+	roles []string,
+	ownership ResourceOwnership,
+) error {
 	// Check if user is the owner
 	if userID == resourceUserID {
 		return nil
@@ -211,10 +217,10 @@ func (p *PolicyEnforcer) CheckOwnership(userID string, resourceUserID string, ro
 		}
 	}
 
-	return fmt.Errorf("permission denied: not the resource owner")
+	return errors.New("permission denied: not the resource owner")
 }
 
-// DefaultPermissions returns the default permission set for initial setup
+// DefaultPermissions returns the default permission set for initial setup.
 func DefaultPermissions() []domain.Permission {
 	return []domain.Permission{
 		// Library permissions
@@ -267,7 +273,7 @@ func DefaultPermissions() []domain.Permission {
 	}
 }
 
-// DefaultRoles returns the default roles for initial setup
+// DefaultRoles returns the default roles for initial setup.
 func DefaultRoles() []domain.Role {
 	return []domain.Role{
 		{

@@ -1,17 +1,18 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
-// LibraryConfig extends BaseConfig with library-specific settings
+// LibraryConfig extends BaseConfig with library-specific settings.
 type LibraryConfig struct {
 	BaseConfig `koanf:",squash"`
-	Library    LibrarySettings `koanf:"library"`
+
+	Library LibrarySettings `koanf:"library"`
 }
 
-// LibrarySettings contains library service specific settings
+// LibrarySettings contains library service specific settings.
 type LibrarySettings struct {
 	ScanInterval      time.Duration `koanf:"scan_interval"`
 	MaxConcurrentScan int           `koanf:"max_concurrent_scan"`
@@ -21,27 +22,28 @@ type LibrarySettings struct {
 	EnableAutoScan    bool          `koanf:"enable_auto_scan"`
 }
 
-// Validate validates the library configuration
+// Validate validates the library configuration.
 func (c *LibraryConfig) Validate() error {
 	if err := c.BaseConfig.Validate(); err != nil {
 		return err
 	}
 	if c.Library.ScanInterval < time.Minute {
-		return fmt.Errorf("scan interval must be at least 1 minute")
+		return errors.New("scan interval must be at least 1 minute")
 	}
 	if c.Library.MaxConcurrentScan < 1 {
-		return fmt.Errorf("max concurrent scan must be at least 1")
+		return errors.New("max concurrent scan must be at least 1")
 	}
 	return nil
 }
 
-// UserConfig extends BaseConfig with user/auth-specific settings
+// UserConfig extends BaseConfig with user/auth-specific settings.
 type UserConfig struct {
 	BaseConfig `koanf:",squash"`
-	Auth       AuthSettings `koanf:"auth"`
+
+	Auth AuthSettings `koanf:"auth"`
 }
 
-// AuthSettings contains authentication specific settings
+// AuthSettings contains authentication specific settings.
 type AuthSettings struct {
 	JWTSecret          string        `koanf:"jwt_secret"`
 	JWTAccessExpiry    time.Duration `koanf:"jwt_access_expiry"`
@@ -56,30 +58,31 @@ type AuthSettings struct {
 	OAuthProviders     []string      `koanf:"oauth_providers"`
 }
 
-// Validate validates the user configuration
+// Validate validates the user configuration.
 func (c *UserConfig) Validate() error {
 	if err := c.BaseConfig.Validate(); err != nil {
 		return err
 	}
 	if c.Auth.JWTSecret == "" {
-		return fmt.Errorf("JWT secret is required")
+		return errors.New("JWT secret is required")
 	}
 	if c.Auth.JWTAccessExpiry < time.Minute {
-		return fmt.Errorf("JWT access expiry must be at least 1 minute")
+		return errors.New("JWT access expiry must be at least 1 minute")
 	}
 	if c.Auth.BCryptCost < 10 || c.Auth.BCryptCost > 31 {
-		return fmt.Errorf("bcrypt cost must be between 10 and 31")
+		return errors.New("bcrypt cost must be between 10 and 31")
 	}
 	return nil
 }
 
-// StreamingConfig extends BaseConfig with streaming-specific settings
+// StreamingConfig extends BaseConfig with streaming-specific settings.
 type StreamingConfig struct {
 	BaseConfig `koanf:",squash"`
-	Streaming  StreamingSettings `koanf:"streaming"`
+
+	Streaming StreamingSettings `koanf:"streaming"`
 }
 
-// StreamingSettings contains streaming service specific settings
+// StreamingSettings contains streaming service specific settings.
 type StreamingSettings struct {
 	TranscodingEnabled   bool               `koanf:"transcoding_enabled"`
 	TranscodingProfiles  []TranscodeProfile `koanf:"transcoding_profiles"`
@@ -93,7 +96,7 @@ type StreamingSettings struct {
 	HardwareAccel        string             `koanf:"hardware_accel"` // none, nvidia, intel, amd
 }
 
-// TranscodeProfile defines a transcoding profile
+// TranscodeProfile defines a transcoding profile.
 type TranscodeProfile struct {
 	Name       string `koanf:"name"`
 	VideoCodec string `koanf:"video_codec"`
@@ -103,27 +106,28 @@ type TranscodeProfile struct {
 	Preset     string `koanf:"preset"`
 }
 
-// Validate validates the streaming configuration
+// Validate validates the streaming configuration.
 func (c *StreamingConfig) Validate() error {
 	if err := c.BaseConfig.Validate(); err != nil {
 		return err
 	}
 	if c.Streaming.SegmentDuration < time.Second {
-		return fmt.Errorf("segment duration must be at least 1 second")
+		return errors.New("segment duration must be at least 1 second")
 	}
 	if c.Streaming.MaxConcurrentStreams < 1 {
-		return fmt.Errorf("max concurrent streams must be at least 1")
+		return errors.New("max concurrent streams must be at least 1")
 	}
 	return nil
 }
 
-// AcquisitionConfig extends BaseConfig with acquisition-specific settings
+// AcquisitionConfig extends BaseConfig with acquisition-specific settings.
 type AcquisitionConfig struct {
-	BaseConfig  `koanf:",squash"`
+	BaseConfig `koanf:",squash"`
+
 	Acquisition AcquisitionSettings `koanf:"acquisition"`
 }
 
-// AcquisitionSettings contains acquisition service specific settings
+// AcquisitionSettings contains acquisition service specific settings.
 type AcquisitionSettings struct {
 	Indexers           []IndexerConfig `koanf:"indexers"`
 	DownloadPath       string          `koanf:"download_path"`
@@ -138,7 +142,7 @@ type AcquisitionSettings struct {
 	RequiredKeywords   []string        `koanf:"required_keywords"`
 }
 
-// IndexerConfig contains indexer configuration
+// IndexerConfig contains indexer configuration.
 type IndexerConfig struct {
 	Name      string `koanf:"name"`
 	Type      string `koanf:"type"` // torrent, usenet, etc
@@ -149,21 +153,21 @@ type IndexerConfig struct {
 	RateLimit int    `koanf:"rate_limit"` // requests per minute
 }
 
-// Validate validates the acquisition configuration
+// Validate validates the acquisition configuration.
 func (c *AcquisitionConfig) Validate() error {
 	if err := c.BaseConfig.Validate(); err != nil {
 		return err
 	}
 	if c.Acquisition.DownloadPath == "" {
-		return fmt.Errorf("download path is required")
+		return errors.New("download path is required")
 	}
 	if c.Acquisition.MaxActiveDownloads < 1 {
-		return fmt.Errorf("max active downloads must be at least 1")
+		return errors.New("max active downloads must be at least 1")
 	}
 	return nil
 }
 
-// GetDefaultLibraryConfig returns default library configuration
+// GetDefaultLibraryConfig returns default library configuration.
 func GetDefaultLibraryConfig() *LibraryConfig {
 	base := GetDefaults()
 	base.Service.Name = "library"
@@ -175,15 +179,26 @@ func GetDefaultLibraryConfig() *LibraryConfig {
 		Library: LibrarySettings{
 			ScanInterval:      30 * time.Minute,
 			MaxConcurrentScan: 2,
-			FileExtensions:    []string{".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mpg", ".mpeg"},
-			IgnorePatterns:    []string{"sample", "trailer", "extra"},
-			ThumbnailSize:     320,
-			EnableAutoScan:    true,
+			FileExtensions: []string{
+				".mp4",
+				".mkv",
+				".avi",
+				".mov",
+				".wmv",
+				".flv",
+				".webm",
+				".m4v",
+				".mpg",
+				".mpeg",
+			},
+			IgnorePatterns: []string{"sample", "trailer", "extra"},
+			ThumbnailSize:  320,
+			EnableAutoScan: true,
 		},
 	}
 }
 
-// GetDefaultUserConfig returns default user configuration
+// GetDefaultUserConfig returns default user configuration.
 func GetDefaultUserConfig() *UserConfig {
 	base := GetDefaults()
 	base.Service.Name = "user"
@@ -208,7 +223,7 @@ func GetDefaultUserConfig() *UserConfig {
 	}
 }
 
-// GetDefaultStreamingConfig returns default streaming configuration
+// GetDefaultStreamingConfig returns default streaming configuration.
 func GetDefaultStreamingConfig() *StreamingConfig {
 	base := GetDefaults()
 	base.Service.Name = "streaming"
@@ -249,7 +264,7 @@ func GetDefaultStreamingConfig() *StreamingConfig {
 	}
 }
 
-// GetDefaultAcquisitionConfig returns default acquisition configuration
+// GetDefaultAcquisitionConfig returns default acquisition configuration.
 func GetDefaultAcquisitionConfig() *AcquisitionConfig {
 	base := GetDefaults()
 	base.Service.Name = "acquisition"

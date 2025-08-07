@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Cache defines a generic caching interface
+// Cache defines a generic caching interface.
 type Cache interface {
 	// Get retrieves a value from the cache
 	Get(ctx context.Context, key string) (interface{}, error)
@@ -26,7 +26,7 @@ type Cache interface {
 	TTL(ctx context.Context, key string) (time.Duration, error)
 }
 
-// LayeredCache represents a multi-layer cache
+// LayeredCache represents a multi-layer cache.
 type LayeredCache interface {
 	Cache
 
@@ -40,7 +40,7 @@ type LayeredCache interface {
 	GetFromLayer(ctx context.Context, layer, key string) (interface{}, error)
 }
 
-// CacheInvalidator handles cache invalidation across instances
+// CacheInvalidator handles cache invalidation across instances.
 type CacheInvalidator interface {
 	// InvalidateKey invalidates a specific key across all instances
 	InvalidateKey(ctx context.Context, key string) error

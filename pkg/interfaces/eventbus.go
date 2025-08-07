@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// Event represents a domain event
+// Event represents a domain event.
 type Event interface {
 	// EventType returns the type of the event
 	EventType() string
@@ -16,7 +16,7 @@ type Event interface {
 	AggregateID() string
 }
 
-// EventHandler handles events of a specific type
+// EventHandler handles events of a specific type.
 type EventHandler interface {
 	// Handle processes an event
 	Handle(ctx context.Context, event Event) error
@@ -25,7 +25,7 @@ type EventHandler interface {
 	EventType() string
 }
 
-// EventBus provides pub/sub functionality for domain events
+// EventBus provides pub/sub functionality for domain events.
 type EventBus interface {
 	// Publish publishes an event to all subscribers
 	Publish(ctx context.Context, event Event) error
@@ -46,7 +46,7 @@ type EventBus interface {
 	Stop() error
 }
 
-// EventStore provides persistence for events
+// EventStore provides persistence for events.
 type EventStore interface {
 	// Save saves an event to the store
 	Save(ctx context.Context, event Event) error

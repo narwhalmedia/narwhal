@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -13,16 +13,22 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/auth"
 	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
+	"github.com/narwhalmedia/narwhal/test/mocks"
 )
 
 type AuthTestSuite struct {
 	suite.Suite
-	handler *handler.GRPCHandler
+
+	handler     *handler.GRPCHandler
+	mockService *mocks.MockLibraryService
 }
 
 func (suite *AuthTestSuite) SetupTest() {
-	// Create handler with nil service for auth testing
-	suite.handler = handler.NewGRPCHandler(nil, logger.NewNoop(), nil)
+	// Create mock service
+	suite.mockService = new(mocks.MockLibraryService)
+
+	// Create handler with mock service for auth testing
+	suite.handler = handler.NewGRPCHandler(suite.mockService, logger.NewNoop(), nil)
 }
 
 func (suite *AuthTestSuite) TestCreateLibrary_NoAuth() {
@@ -35,13 +41,13 @@ func (suite *AuthTestSuite) TestCreateLibrary_NoAuth() {
 
 	resp, err := suite.handler.CreateLibrary(ctx, req)
 
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
-	assert.Contains(suite.T(), st.Message(), "user not authenticated")
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, st.Code())
+	suite.Contains(st.Message(), "user not authenticated")
 }
 
 func (suite *AuthTestSuite) TestCreateLibrary_WithAuth() {
@@ -55,18 +61,22 @@ func (suite *AuthTestSuite) TestCreateLibrary_WithAuth() {
 		Path: "/test/path",
 	}
 
-	// This will fail at the service layer since service is nil,
-	// but it should pass authentication
+	// Set up mock expectation
+	suite.mockService.On("CreateLibrary", ctx, mock.AnythingOfType("*domain.Library")).
+		Return(nil)
+
+	// Should succeed with authentication
 	resp, err := suite.handler.CreateLibrary(ctx, req)
 
-	// Should panic or error differently, not auth error
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	// Should succeed
+	suite.Require().NoError(err)
+	suite.NotNil(resp)
+	suite.NotNil(resp.GetLibrary())
+	suite.Equal("Test Library", resp.GetLibrary().GetName())
+	suite.Equal("/test/path", resp.GetLibrary().GetPath())
 
-	st, ok := status.FromError(err)
-	if ok {
-		assert.NotEqual(suite.T(), codes.Unauthenticated, st.Code())
-	}
+	// Verify the service was called
+	suite.mockService.AssertExpectations(suite.T())
 }
 
 func (suite *AuthTestSuite) TestGetLibrary_NoAuth() {
@@ -77,12 +87,12 @@ func (suite *AuthTestSuite) TestGetLibrary_NoAuth() {
 
 	resp, err := suite.handler.GetLibrary(ctx, req)
 
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, st.Code())
 }
 
 func (suite *AuthTestSuite) TestListLibraries_NoAuth() {
@@ -91,12 +101,12 @@ func (suite *AuthTestSuite) TestListLibraries_NoAuth() {
 
 	resp, err := suite.handler.ListLibraries(ctx, req)
 
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, st.Code())
 }
 
 func (suite *AuthTestSuite) TestUpdateLibrary_NoAuth() {
@@ -110,12 +120,12 @@ func (suite *AuthTestSuite) TestUpdateLibrary_NoAuth() {
 
 	resp, err := suite.handler.UpdateLibrary(ctx, req)
 
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, st.Code())
 }
 
 func (suite *AuthTestSuite) TestDeleteLibrary_NoAuth() {
@@ -126,12 +136,12 @@ func (suite *AuthTestSuite) TestDeleteLibrary_NoAuth() {
 
 	resp, err := suite.handler.DeleteLibrary(ctx, req)
 
-	assert.Nil(suite.T(), resp)
-	assert.Error(suite.T(), err)
+	suite.Nil(resp)
+	suite.Require().Error(err)
 
 	st, ok := status.FromError(err)
-	assert.True(suite.T(), ok)
-	assert.Equal(suite.T(), codes.Unauthenticated, st.Code())
+	suite.True(ok)
+	suite.Equal(codes.Unauthenticated, st.Code())
 }
 
 func TestAuthTestSuite(t *testing.T) {

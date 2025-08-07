@@ -6,7 +6,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// Repository defines a generic repository interface
+// Repository defines a generic repository interface.
 type Repository[T any] interface {
 	// Get retrieves an entity by ID
 	Get(ctx context.Context, id string) (*T, error)
@@ -27,7 +27,7 @@ type Repository[T any] interface {
 	Count(ctx context.Context, filter Filter) (int64, error)
 }
 
-// Filter represents query filters
+// Filter represents query filters.
 type Filter struct {
 	Limit      int
 	Offset     int
@@ -36,7 +36,7 @@ type Filter struct {
 	Conditions map[string]interface{}
 }
 
-// UnitOfWork represents a transactional unit of work
+// UnitOfWork represents a transactional unit of work.
 type UnitOfWork interface {
 	// Begin starts a new transaction
 	Begin(ctx context.Context) error
@@ -57,7 +57,7 @@ type UnitOfWork interface {
 	LibraryRepo() LibraryRepository
 }
 
-// MediaRepository defines media-specific repository operations
+// MediaRepository defines media-specific repository operations.
 type MediaRepository interface {
 	Repository[models.Media]
 
@@ -71,7 +71,7 @@ type MediaRepository interface {
 	Search(ctx context.Context, query string, filter Filter) ([]*models.Media, error)
 }
 
-// MetadataRepository defines metadata-specific repository operations
+// MetadataRepository defines metadata-specific repository operations.
 type MetadataRepository interface {
 	Repository[models.Metadata]
 
@@ -82,7 +82,7 @@ type MetadataRepository interface {
 	FindByExternalID(ctx context.Context, source, externalID string) (*models.Metadata, error)
 }
 
-// LibraryRepository defines library-specific repository operations
+// LibraryRepository defines library-specific repository operations.
 type LibraryRepository interface {
 	Repository[models.Library]
 

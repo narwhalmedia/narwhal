@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Library represents a media library
+// Library represents a media library.
 type Library struct {
 	ID           uuid.UUID
 	Name         string
@@ -19,7 +19,7 @@ type Library struct {
 	UpdatedAt    time.Time
 }
 
-// MetadataProviderConfig represents a metadata provider configuration
+// MetadataProviderConfig represents a metadata provider configuration.
 type MetadataProviderConfig struct {
 	ID           uuid.UUID
 	Name         string
@@ -31,7 +31,7 @@ type MetadataProviderConfig struct {
 	UpdatedAt    time.Time
 }
 
-// ScanResult represents the result of a library scan
+// ScanResult represents the result of a library scan.
 type ScanResult struct {
 	ID           uuid.UUID
 	LibraryID    uuid.UUID
@@ -48,7 +48,7 @@ type ScanResult struct {
 	Duration     int64 // milliseconds
 }
 
-// Media represents a media item
+// Media represents a media item.
 type Media struct {
 	ID          uuid.UUID
 	LibraryID   uuid.UUID

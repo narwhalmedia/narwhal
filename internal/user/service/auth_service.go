@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
@@ -14,7 +15,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// AuthService handles authentication operations
+// AuthService handles authentication operations.
 type AuthService struct {
 	repo       repository.Repository
 	jwtManager *auth.JWTManager
@@ -22,7 +23,7 @@ type AuthService struct {
 	logger     interfaces.Logger
 }
 
-// NewAuthService creates a new authentication service
+// NewAuthService creates a new authentication service.
 func NewAuthService(
 	repo repository.Repository,
 	jwtManager *auth.JWTManager,
@@ -37,8 +38,11 @@ func NewAuthService(
 	}
 }
 
-// Login authenticates a user and returns auth tokens
-func (s *AuthService) Login(ctx context.Context, username, password, deviceInfo, ipAddress, userAgent string) (*domain.AuthTokens, error) {
+// Login authenticates a user and returns auth tokens.
+func (s *AuthService) Login(
+	ctx context.Context,
+	username, password, deviceInfo, ipAddress, userAgent string,
+) (*domain.AuthTokens, error) {
 	// Find user by username or email
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
@@ -84,7 +88,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, deviceInfo,
 	tokens, err := s.jwtManager.GenerateTokenPair(user, session.ID)
 	if err != nil {
 		// Rollback session creation
-		s.repo.DeleteSession(ctx, session.ID)
+		_ = s.repo.DeleteSession(ctx, session.ID)
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
@@ -94,8 +98,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, deviceInfo,
 	// Update last login
 	now := time.Now()
 	user.LastLoginAt = &now
-	s.repo.UpdateUser(ctx, user)
-
+	_ = s.repo.UpdateUser(ctx, user)
 	// Publish login event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.logged_in", map[string]interface{}{
 		"user_id":    user.ID,
@@ -111,7 +114,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, deviceInfo,
 	return tokens, nil
 }
 
-// RefreshToken generates new tokens using a refresh token
+// RefreshToken generates new tokens using a refresh token.
 func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*domain.AuthTokens, error) {
 	// Find session by refresh token
 	session, err := s.repo.GetSessionByRefreshToken(ctx, refreshToken)
@@ -121,7 +124,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*d
 
 	// Check if session is expired
 	if time.Now().After(session.ExpiresAt) {
-		s.repo.DeleteSession(ctx, session.ID)
+		_ = s.repo.DeleteSession(ctx, session.ID)
 		return nil, errors.Unauthorized("refresh token expired")
 	}
 
@@ -133,7 +136,7 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*d
 
 	// Check if user is still active
 	if !user.IsActive {
-		s.repo.DeleteSession(ctx, session.ID)
+		_ = s.repo.DeleteSession(ctx, session.ID)
 		return nil, errors.Forbidden("account is disabled")
 	}
 
@@ -148,12 +151,11 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*d
 
 	// Update session activity
 	session.UpdatedAt = time.Now()
-	s.repo.UpdateSession(ctx, session)
-
+	_ = s.repo.UpdateSession(ctx, session)
 	return tokens, nil
 }
 
-// Logout invalidates a user's session
+// Logout invalidates a user's session.
 func (s *AuthService) Logout(ctx context.Context, userID uuid.UUID, sessionID string) error {
 	// Parse session ID
 	sid, err := uuid.Parse(sessionID)
@@ -190,7 +192,7 @@ func (s *AuthService) Logout(ctx context.Context, userID uuid.UUID, sessionID st
 	return nil
 }
 
-// LogoutAll invalidates all of a user's sessions
+// LogoutAll invalidates all of a user's sessions.
 func (s *AuthService) LogoutAll(ctx context.Context, userID uuid.UUID) error {
 	if err := s.repo.DeleteUserSessions(ctx, userID); err != nil {
 		return err
@@ -207,7 +209,7 @@ func (s *AuthService) LogoutAll(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
-// ValidateToken validates an access token and returns user info
+// ValidateToken validates an access token and returns user info.
 func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*auth.CustomClaims, error) {
 	claims, err := s.jwtManager.ValidateAccessToken(tokenString)
 	if err != nil {
@@ -227,12 +229,12 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*a
 	return claims, nil
 }
 
-// GetUserSessions returns all active sessions for a user
+// GetUserSessions returns all active sessions for a user.
 func (s *AuthService) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]*domain.Session, error) {
 	return s.repo.ListUserSessions(ctx, userID)
 }
 
-// RevokeSession revokes a specific session
+// RevokeSession revokes a specific session.
 func (s *AuthService) RevokeSession(ctx context.Context, userID uuid.UUID, sessionID uuid.UUID) error {
 	// Get session to verify ownership
 	session, err := s.repo.GetSession(ctx, sessionID)
@@ -249,7 +251,7 @@ func (s *AuthService) RevokeSession(ctx context.Context, userID uuid.UUID, sessi
 	return s.repo.DeleteSession(ctx, sessionID)
 }
 
-// CleanupExpiredSessions removes expired sessions
+// CleanupExpiredSessions removes expired sessions.
 func (s *AuthService) CleanupExpiredSessions(ctx context.Context) error {
 	if err := s.repo.DeleteExpiredSessions(ctx); err != nil {
 		return err

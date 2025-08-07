@@ -10,25 +10,26 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// MediaFile represents a discovered media file
+// MediaFile represents a discovered media file.
 type MediaFile struct {
 	Path     string
 	Size     int64
 	Modified time.Time
 }
 
-// Scanner handles directory scanning for media files
+// Scanner handles directory scanning for media files.
 type Scanner struct {
 	logger       interfaces.Logger
 	scanningMu   sync.RWMutex
 	scanningLibs map[string]bool
 }
 
-// NewScanner creates a new scanner
+// NewScanner creates a new scanner.
 func NewScanner(logger interfaces.Logger) *Scanner {
 	return &Scanner{
 		logger:       logger,
@@ -36,14 +37,14 @@ func NewScanner(logger interfaces.Logger) *Scanner {
 	}
 }
 
-// IsScanning checks if a library is currently being scanned
+// IsScanning checks if a library is currently being scanned.
 func (s *Scanner) IsScanning(libraryID string) bool {
 	s.scanningMu.RLock()
 	defer s.scanningMu.RUnlock()
 	return s.scanningLibs[libraryID]
 }
 
-// SetScanning sets the scanning state for a library
+// SetScanning sets the scanning state for a library.
 func (s *Scanner) SetScanning(libraryID string, scanning bool) {
 	s.scanningMu.Lock()
 	defer s.scanningMu.Unlock()
@@ -54,7 +55,7 @@ func (s *Scanner) SetScanning(libraryID string, scanning bool) {
 	}
 }
 
-// ScanDirectory scans a directory for media files
+// ScanDirectory scans a directory for media files.
 func (s *Scanner) ScanDirectory(path string, mediaType string) ([]*MediaFile, error) {
 	var files []*MediaFile
 	extensions := getMediaExtensions(models.MediaType(mediaType))
@@ -88,7 +89,7 @@ func (s *Scanner) ScanDirectory(path string, mediaType string) ([]*MediaFile, er
 	return files, err
 }
 
-// getMediaExtensions returns valid file extensions for a media type
+// getMediaExtensions returns valid file extensions for a media type.
 func getMediaExtensions(mediaType models.MediaType) []string {
 	switch mediaType {
 	case models.MediaTypeMovie, models.MediaTypeSeries, models.MediaTypeTV:
@@ -106,7 +107,7 @@ func getMediaExtensions(mediaType models.MediaType) []string {
 	}
 }
 
-// contains checks if a slice contains a value
+// contains checks if a slice contains a value.
 func contains(slice []string, item string) bool {
 	for _, s := range slice {
 		if s == item {
@@ -116,7 +117,7 @@ func contains(slice []string, item string) bool {
 	return false
 }
 
-// ExtractTitle extracts a clean title from a file path
+// ExtractTitle extracts a clean title from a file path.
 func ExtractTitle(path string) string {
 	filename := filepath.Base(path)
 	ext := filepath.Ext(filename)
@@ -124,7 +125,9 @@ func ExtractTitle(path string) string {
 
 	// Regular expressions for common patterns
 	yearPattern := regexp.MustCompile(`\s*[\(\[]?\d{4}[\)\]]?\s*`)
-	qualityPattern := regexp.MustCompile(`\s*[\(\[]?(1080p|720p|480p|2160p|4K|BluRay|BRRip|WEBRip|HDTV|DVDRip|WEB-DL|x264|x265|h264|h265|HEVC)[\)\]]?.*`)
+	qualityPattern := regexp.MustCompile(
+		`\s*[\(\[]?(1080p|720p|480p|2160p|4K|BluRay|BRRip|WEBRip|HDTV|DVDRip|WEB-DL|x264|x265|h264|h265|HEVC)[\)\]]?.*`,
+	)
 	releaseGroupPattern := regexp.MustCompile(`-[A-Za-z0-9]+$`)
 
 	// Clean up common separators
@@ -158,7 +161,7 @@ func ExtractTitle(path string) string {
 	return strings.Join(words, " ")
 }
 
-// ScanPath scans a library path and returns scan results
+// ScanPath scans a library path and returns scan results.
 func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, error) {
 	libraryID := library.ID.String()
 
@@ -221,7 +224,7 @@ func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, 
 	return result, nil
 }
 
-// IsVideoFile checks if a file has a video extension
+// IsVideoFile checks if a file has a video extension.
 func (s *Scanner) IsVideoFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
 	videoExtensions := []string{

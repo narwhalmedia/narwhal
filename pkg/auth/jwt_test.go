@@ -6,11 +6,12 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestJWTManager_GenerateTokenPair(t *testing.T) {
@@ -91,7 +92,7 @@ func TestJWTManager_ValidateAccessToken_InvalidToken(t *testing.T) {
 	claims, err := jwtManager.ValidateAccessToken("invalid.token.here")
 
 	// Assert
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, claims)
 }
 
@@ -118,7 +119,7 @@ func TestJWTManager_ValidateAccessToken_ExpiredToken(t *testing.T) {
 	claims, err := jwtManager.ValidateAccessToken(tokens.AccessToken)
 
 	// Assert
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, claims)
 }
 
@@ -151,7 +152,7 @@ func TestJWTManager_ValidateAccessToken_WrongSecret(t *testing.T) {
 	claims, err := jwtManager2.ValidateAccessToken(tokens.AccessToken)
 
 	// Assert
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, claims)
 }
 
@@ -213,8 +214,8 @@ func TestGenerateRefreshToken(t *testing.T) {
 	token2, err2 := auth.GenerateRefreshToken()
 
 	// Assert
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 	assert.NotEmpty(t, token1)
 	assert.NotEmpty(t, token2)
 	assert.NotEqual(t, token1, token2) // Should be unique

@@ -3,15 +3,17 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 )
 
-// JWTManager handles JWT token operations
+// JWTManager handles JWT token operations.
 type JWTManager struct {
 	accessSecret  string
 	refreshSecret string
@@ -20,7 +22,7 @@ type JWTManager struct {
 	refreshTTL    time.Duration
 }
 
-// NewJWTManager creates a new JWT manager
+// NewJWTManager creates a new JWT manager.
 func NewJWTManager(accessSecret, refreshSecret, issuer string, accessTTL, refreshTTL time.Duration) *JWTManager {
 	return &JWTManager{
 		accessSecret:  accessSecret,
@@ -31,9 +33,10 @@ func NewJWTManager(accessSecret, refreshSecret, issuer string, accessTTL, refres
 	}
 }
 
-// CustomClaims extends jwt.RegisteredClaims with our custom fields
+// CustomClaims extends jwt.RegisteredClaims with our custom fields.
 type CustomClaims struct {
 	jwt.RegisteredClaims
+
 	UserID    string   `json:"user_id"`
 	Username  string   `json:"username"`
 	Email     string   `json:"email"`
@@ -42,7 +45,7 @@ type CustomClaims struct {
 	SessionID string   `json:"session_id,omitempty"`
 }
 
-// GenerateTokenPair generates both access and refresh tokens
+// GenerateTokenPair generates both access and refresh tokens.
 func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (*domain.AuthTokens, error) {
 	// Extract role names
 	roleNames := make([]string, len(user.Roles))
@@ -51,13 +54,27 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 	}
 
 	// Generate access token
-	accessToken, err := j.generateToken(user, roleNames, sessionID.String(), domain.TokenTypeAccess, j.accessSecret, j.accessTTL)
+	accessToken, err := j.generateToken(
+		user,
+		roleNames,
+		sessionID.String(),
+		domain.TokenTypeAccess,
+		j.accessSecret,
+		j.accessTTL,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
 	// Generate refresh token
-	refreshToken, err := j.generateToken(user, roleNames, sessionID.String(), domain.TokenTypeRefresh, j.refreshSecret, j.refreshTTL)
+	refreshToken, err := j.generateToken(
+		user,
+		roleNames,
+		sessionID.String(),
+		domain.TokenTypeRefresh,
+		j.refreshSecret,
+		j.refreshTTL,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
@@ -73,8 +90,13 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 	}, nil
 }
 
-// generateToken creates a JWT token with the specified parameters
-func (j *JWTManager) generateToken(user *domain.User, roles []string, sessionID, tokenType, secret string, ttl time.Duration) (string, error) {
+// generateToken creates a JWT token with the specified parameters.
+func (j *JWTManager) generateToken(
+	user *domain.User,
+	roles []string,
+	sessionID, tokenType, secret string,
+	ttl time.Duration,
+) (string, error) {
 	now := time.Now()
 	claims := CustomClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -97,17 +119,17 @@ func (j *JWTManager) generateToken(user *domain.User, roles []string, sessionID,
 	return token.SignedString([]byte(secret))
 }
 
-// ValidateAccessToken validates an access token and returns the claims
+// ValidateAccessToken validates an access token and returns the claims.
 func (j *JWTManager) ValidateAccessToken(tokenString string) (*CustomClaims, error) {
 	return j.validateToken(tokenString, j.accessSecret)
 }
 
-// ValidateRefreshToken validates a refresh token and returns the claims
+// ValidateRefreshToken validates a refresh token and returns the claims.
 func (j *JWTManager) ValidateRefreshToken(tokenString string) (*CustomClaims, error) {
 	return j.validateToken(tokenString, j.refreshSecret)
 }
 
-// validateToken parses and validates a JWT token
+// validateToken parses and validates a JWT token.
 func (j *JWTManager) validateToken(tokenString, secret string) (*CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -124,19 +146,19 @@ func (j *JWTManager) validateToken(tokenString, secret string) (*CustomClaims, e
 		return claims, nil
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	return nil, errors.New("invalid token")
 }
 
-// GenerateRefreshToken generates a cryptographically secure refresh token
+// GenerateRefreshToken generates a cryptographically secure refresh token.
 func GenerateRefreshToken() (string, error) {
-	b := make([]byte, 32)
+	b := make([]byte, TokenKeySize)
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-// Config holds JWT configuration
+// Config holds JWT configuration.
 type Config struct {
 	AccessSecret  string
 	RefreshSecret string
@@ -145,20 +167,20 @@ type Config struct {
 	RefreshTTL    time.Duration
 }
 
-// DefaultConfig returns default JWT configuration
+// DefaultConfig returns default JWT configuration.
 func DefaultConfig() *Config {
 	return &Config{
 		AccessSecret:  GenerateSecret(),
 		RefreshSecret: GenerateSecret(),
 		Issuer:        "narwhal",
-		AccessTTL:     15 * time.Minute,
+		AccessTTL:     DefaultAccessTTL,
 		RefreshTTL:    7 * 24 * time.Hour, // 7 days
 	}
 }
 
-// GenerateSecret generates a random secret for JWT signing
+// GenerateSecret generates a random secret for JWT signing.
 func GenerateSecret() string {
-	b := make([]byte, 32)
-	rand.Read(b)
+	b := make([]byte, TokenKeySize)
+	_, _ = rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)
 }

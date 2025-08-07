@@ -7,7 +7,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// RBACInterface defines the common interface for RBAC implementations
+// RBACInterface defines the common interface for RBAC implementations.
 type RBACInterface interface {
 	CheckPermission(role, resource, action string) bool
 	CheckPermissions(roles []string, resource, action string) bool
@@ -16,17 +16,17 @@ type RBACInterface interface {
 	RemovePermission(role, resource, action string)
 }
 
-// RBACType defines the type of RBAC implementation
+// RBACType defines the type of RBAC implementation.
 type RBACType string
 
 const (
-	// RBACTypeBuiltin uses the built-in custom RBAC implementation
+	// RBACTypeBuiltin uses the built-in custom RBAC implementation.
 	RBACTypeBuiltin RBACType = "builtin"
-	// RBACTypeCasbin uses Casbin for RBAC
+	// RBACTypeCasbin uses Casbin for RBAC.
 	RBACTypeCasbin RBACType = "casbin"
 )
 
-// RBACConfig holds configuration for RBAC
+// RBACConfig holds configuration for RBAC.
 type RBACConfig struct {
 	Type             RBACType
 	CasbinModelPath  string
@@ -34,7 +34,7 @@ type RBACConfig struct {
 	Logger           interfaces.Logger
 }
 
-// NewRBACFromConfig creates an RBAC instance based on configuration
+// NewRBACFromConfig creates an RBAC instance based on configuration.
 func NewRBACFromConfig(config RBACConfig) (RBACInterface, error) {
 	switch config.Type {
 	case RBACTypeBuiltin:
@@ -83,7 +83,7 @@ m = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act`
 	}
 }
 
-// GetRBACType returns the RBAC type from environment or default
+// GetRBACType returns the RBAC type from environment or default.
 func GetRBACType() RBACType {
 	rbacType := os.Getenv("RBAC_TYPE")
 	switch rbacType {

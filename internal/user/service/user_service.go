@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/narwhalmedia/narwhal/internal/user/constants"
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
@@ -14,7 +15,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// UserService handles user management operations
+// UserService handles user management operations.
 type UserService struct {
 	repo     repository.Repository
 	eventBus interfaces.EventBus
@@ -22,7 +23,7 @@ type UserService struct {
 	logger   interfaces.Logger
 }
 
-// NewUserService creates a new user service
+// NewUserService creates a new user service.
 func NewUserService(
 	repo repository.Repository,
 	eventBus interfaces.EventBus,
@@ -37,8 +38,11 @@ func NewUserService(
 	}
 }
 
-// CreateUser creates a new user
-func (s *UserService) CreateUser(ctx context.Context, username, email, password, displayName string) (*domain.User, error) {
+// CreateUser creates a new user.
+func (s *UserService) CreateUser(
+	ctx context.Context,
+	username, email, password, displayName string,
+) (*domain.User, error) {
 	// Validate input
 	if username == "" || email == "" || password == "" {
 		return nil, errors.BadRequest("username, email, and password are required")
@@ -106,7 +110,7 @@ func (s *UserService) CreateUser(ctx context.Context, username, email, password,
 	return user, nil
 }
 
-// GetUser retrieves a user by ID
+// GetUser retrieves a user by ID.
 func (s *UserService) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	// Check cache first
 	cacheKey := fmt.Sprintf("user:%s", id.String())
@@ -123,18 +127,21 @@ func (s *UserService) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, 
 	}
 
 	// Cache the result
-	s.cache.Set(ctx, cacheKey, user, 5*time.Minute)
-
+	_ = s.cache.Set(ctx, cacheKey, user, constants.CacheTTL)
 	return user, nil
 }
 
-// GetUserByUsername retrieves a user by username
+// GetUserByUsername retrieves a user by username.
 func (s *UserService) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	return s.repo.GetUserByUsername(ctx, strings.ToLower(username))
 }
 
-// UpdateUser updates a user's information
-func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*domain.User, error) {
+// UpdateUser updates a user's information.
+func (s *UserService) UpdateUser(
+	ctx context.Context,
+	id uuid.UUID,
+	updates map[string]interface{},
+) (*domain.User, error) {
 	// Get existing user
 	user, err := s.repo.GetUser(ctx, id)
 	if err != nil {
@@ -158,7 +165,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, updates map[
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, fmt.Sprintf("user:%s", id.String()))
+	_ = s.cache.Delete(ctx, fmt.Sprintf("user:%s", id.String()))
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.updated", map[string]interface{}{
@@ -169,7 +176,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uuid.UUID, updates map[
 	return user, nil
 }
 
-// ChangePassword changes a user's password
+// ChangePassword changes a user's password.
 func (s *UserService) ChangePassword(ctx context.Context, userID uuid.UUID, oldPassword, newPassword string) error {
 	// Get user
 	user, err := s.repo.GetUser(ctx, userID)
@@ -193,8 +200,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	}
 
 	// Invalidate all sessions to force re-login
-	s.repo.DeleteUserSessions(ctx, userID)
-
+	_ = s.repo.DeleteUserSessions(ctx, userID)
 	// Publish event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.password_changed", map[string]interface{}{
 		"user_id": userID,
@@ -206,7 +212,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID uuid.UUID, oldP
 	return nil
 }
 
-// DeleteUser deletes a user
+// DeleteUser deletes a user.
 func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	// Get user to verify existence
 	user, err := s.repo.GetUser(ctx, id)
@@ -215,15 +221,14 @@ func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	}
 
 	// Delete all user sessions
-	s.repo.DeleteUserSessions(ctx, id)
-
+	_ = s.repo.DeleteUserSessions(ctx, id)
 	// Delete user
 	if err := s.repo.DeleteUser(ctx, id); err != nil {
 		return err
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, fmt.Sprintf("user:%s", id.String()))
+	_ = s.cache.Delete(ctx, fmt.Sprintf("user:%s", id.String()))
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.deleted", map[string]interface{}{
@@ -238,12 +243,12 @@ func (s *UserService) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// ListUsers lists all users with pagination
+// ListUsers lists all users with pagination.
 func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]*domain.User, int64, error) {
 	if limit <= 0 {
 		limit = 50
 	}
-	if limit > 200 {
+	if limit > constants.MaxPageSize {
 		limit = 200
 	}
 
@@ -260,7 +265,7 @@ func (s *UserService) ListUsers(ctx context.Context, limit, offset int) ([]*doma
 	return users, total, nil
 }
 
-// AssignRole assigns a role to a user
+// AssignRole assigns a role to a user.
 func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error {
 	// Get user
 	user, err := s.repo.GetUser(ctx, userID)
@@ -288,7 +293,7 @@ func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
+	_ = s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.role_assigned", map[string]interface{}{
@@ -303,7 +308,7 @@ func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName
 	return nil
 }
 
-// RemoveRole removes a role from a user
+// RemoveRole removes a role from a user.
 func (s *UserService) RemoveRole(ctx context.Context, userID uuid.UUID, roleName string) error {
 	// Get user
 	user, err := s.repo.GetUser(ctx, userID)
@@ -334,7 +339,7 @@ func (s *UserService) RemoveRole(ctx context.Context, userID uuid.UUID, roleName
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
+	_ = s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, events.NewEvent("user.role_removed", map[string]interface{}{
@@ -349,7 +354,7 @@ func (s *UserService) RemoveRole(ctx context.Context, userID uuid.UUID, roleName
 	return nil
 }
 
-// SetUserActive activates or deactivates a user
+// SetUserActive activates or deactivates a user.
 func (s *UserService) SetUserActive(ctx context.Context, userID uuid.UUID, active bool) error {
 	// Get user
 	user, err := s.repo.GetUser(ctx, userID)
@@ -367,11 +372,11 @@ func (s *UserService) SetUserActive(ctx context.Context, userID uuid.UUID, activ
 
 	// If deactivating, delete all sessions
 	if !active {
-		s.repo.DeleteUserSessions(ctx, userID)
+		_ = s.repo.DeleteUserSessions(ctx, userID)
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
+	_ = s.cache.Delete(ctx, fmt.Sprintf("user:%s", userID.String()))
 
 	// Publish event
 	eventType := "user.activated"

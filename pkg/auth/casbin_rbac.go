@@ -1,24 +1,26 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// CasbinRBAC provides Casbin-based role-based access control
+// CasbinRBAC provides Casbin-based role-based access control.
 type CasbinRBAC struct {
 	enforcer *casbin.Enforcer
 	logger   interfaces.Logger
 	mu       sync.RWMutex
 }
 
-// NewCasbinRBAC creates a new Casbin-based RBAC instance
+// NewCasbinRBAC creates a new Casbin-based RBAC instance.
 func NewCasbinRBAC(modelPath, policyPath string, logger interfaces.Logger) (*CasbinRBAC, error) {
 	// Load model from file
 	m, err := model.NewModelFromFile(modelPath)
@@ -41,7 +43,7 @@ func NewCasbinRBAC(modelPath, policyPath string, logger interfaces.Logger) (*Cas
 	}, nil
 }
 
-// NewCasbinRBACFromString creates a new Casbin-based RBAC instance from string configs
+// NewCasbinRBACFromString creates a new Casbin-based RBAC instance from string configs.
 func NewCasbinRBACFromString(modelText, policyText string, logger interfaces.Logger) (*CasbinRBAC, error) {
 	// Load model from string
 	m, err := model.NewModelFromString(modelText)
@@ -67,7 +69,7 @@ func NewCasbinRBACFromString(modelText, policyText string, logger interfaces.Log
 
 			// Parse CSV line
 			parts := strings.Split(line, ",")
-			if len(parts) < 4 {
+			if len(parts) < RequiredPolicyParts {
 				continue
 			}
 
@@ -78,9 +80,9 @@ func NewCasbinRBACFromString(modelText, policyText string, logger interfaces.Log
 
 			// Add policy
 			if parts[0] == "p" {
-				enforcer.AddPolicy(parts[1], parts[2], parts[3])
+				_, _ = enforcer.AddPolicy(parts[1], parts[2], parts[3])
 			} else if parts[0] == "g" && len(parts) >= 3 {
-				enforcer.AddGroupingPolicy(parts[1], parts[2])
+				_, _ = enforcer.AddGroupingPolicy(parts[1], parts[2])
 			}
 		}
 	}
@@ -94,7 +96,7 @@ func NewCasbinRBACFromString(modelText, policyText string, logger interfaces.Log
 	}, nil
 }
 
-// CheckPermission checks if a role has permission to perform an action on a resource
+// CheckPermission checks if a role has permission to perform an action on a resource.
 func (r *CasbinRBAC) CheckPermission(role, resource, action string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -112,7 +114,7 @@ func (r *CasbinRBAC) CheckPermission(role, resource, action string) bool {
 	return allowed
 }
 
-// CheckPermissions checks if any of the roles have permission to perform an action on a resource
+// CheckPermissions checks if any of the roles have permission to perform an action on a resource.
 func (r *CasbinRBAC) CheckPermissions(roles []string, resource, action string) bool {
 	for _, role := range roles {
 		if r.CheckPermission(role, resource, action) {
@@ -122,7 +124,7 @@ func (r *CasbinRBAC) CheckPermissions(roles []string, resource, action string) b
 	return false
 }
 
-// GetRolePermissions returns all permissions for a role
+// GetRolePermissions returns all permissions for a role.
 func (r *CasbinRBAC) GetRolePermissions(role string) map[string][]string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -133,7 +135,7 @@ func (r *CasbinRBAC) GetRolePermissions(role string) map[string][]string {
 	policies, _ := r.enforcer.GetFilteredPolicy(0, role)
 
 	for _, policy := range policies {
-		if len(policy) >= 3 {
+		if len(policy) >= MinimumPolicyParts {
 			resource := policy[1]
 			action := policy[2]
 
@@ -159,7 +161,7 @@ func (r *CasbinRBAC) GetRolePermissions(role string) map[string][]string {
 	return permissions
 }
 
-// AddPermission adds a permission to a role
+// AddPermission adds a permission to a role.
 func (r *CasbinRBAC) AddPermission(role, resource, action string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -182,7 +184,7 @@ func (r *CasbinRBAC) AddPermission(role, resource, action string) {
 	}
 }
 
-// RemovePermission removes a permission from a role
+// RemovePermission removes a permission from a role.
 func (r *CasbinRBAC) RemovePermission(role, resource, action string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -205,7 +207,7 @@ func (r *CasbinRBAC) RemovePermission(role, resource, action string) {
 	}
 }
 
-// AssignRole assigns a role to a user
+// AssignRole assigns a role to a user.
 func (r *CasbinRBAC) AssignRole(userID, role string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -224,7 +226,7 @@ func (r *CasbinRBAC) AssignRole(userID, role string) error {
 	return nil
 }
 
-// RemoveRole removes a role from a user
+// RemoveRole removes a role from a user.
 func (r *CasbinRBAC) RemoveRole(userID, role string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -243,7 +245,7 @@ func (r *CasbinRBAC) RemoveRole(userID, role string) error {
 	return nil
 }
 
-// GetUserRoles returns all roles assigned to a user
+// GetUserRoles returns all roles assigned to a user.
 func (r *CasbinRBAC) GetUserRoles(userID string) []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -259,7 +261,7 @@ func (r *CasbinRBAC) GetUserRoles(userID string) []string {
 	return roles
 }
 
-// CheckUserPermission checks if a user has permission to perform an action on a resource
+// CheckUserPermission checks if a user has permission to perform an action on a resource.
 func (r *CasbinRBAC) CheckUserPermission(userID, resource, action string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -277,7 +279,7 @@ func (r *CasbinRBAC) CheckUserPermission(userID, resource, action string) bool {
 	return allowed
 }
 
-// AddRole creates a new role with permissions
+// AddRole creates a new role with permissions.
 func (r *CasbinRBAC) AddRole(role string, permissions []Permission) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -297,7 +299,7 @@ func (r *CasbinRBAC) AddRole(role string, permissions []Permission) error {
 	return nil
 }
 
-// DeleteRole removes a role and all its permissions
+// DeleteRole removes a role and all its permissions.
 func (r *CasbinRBAC) DeleteRole(role string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -322,7 +324,7 @@ func (r *CasbinRBAC) DeleteRole(role string) error {
 	return nil
 }
 
-// GetAllRoles returns all defined roles
+// GetAllRoles returns all defined roles.
 func (r *CasbinRBAC) GetAllRoles() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -346,7 +348,7 @@ func (r *CasbinRBAC) GetAllRoles() []string {
 	return roles
 }
 
-// SavePolicy saves the current policy to file
+// SavePolicy saves the current policy to file.
 func (r *CasbinRBAC) SavePolicy() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -354,7 +356,7 @@ func (r *CasbinRBAC) SavePolicy() error {
 	return r.enforcer.SavePolicy()
 }
 
-// LoadPolicy reloads the policy from file
+// LoadPolicy reloads the policy from file.
 func (r *CasbinRBAC) LoadPolicy() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -362,17 +364,17 @@ func (r *CasbinRBAC) LoadPolicy() error {
 	return r.enforcer.LoadPolicy()
 }
 
-// CasbinPolicyEnforcer provides policy-based access control using Casbin
+// CasbinPolicyEnforcer provides policy-based access control using Casbin.
 type CasbinPolicyEnforcer struct {
 	rbac *CasbinRBAC
 }
 
-// NewCasbinPolicyEnforcer creates a new Casbin policy enforcer
+// NewCasbinPolicyEnforcer creates a new Casbin policy enforcer.
 func NewCasbinPolicyEnforcer(rbac *CasbinRBAC) *CasbinPolicyEnforcer {
 	return &CasbinPolicyEnforcer{rbac: rbac}
 }
 
-// Enforce checks if the given roles satisfy the permission requirement
+// Enforce checks if the given roles satisfy the permission requirement.
 func (p *CasbinPolicyEnforcer) Enforce(roles []string, resource, action string) error {
 	if !p.rbac.CheckPermissions(roles, resource, action) {
 		return fmt.Errorf("permission denied: %s:%s", resource, action)
@@ -380,7 +382,7 @@ func (p *CasbinPolicyEnforcer) Enforce(roles []string, resource, action string) 
 	return nil
 }
 
-// EnforceUser checks if the given user satisfies the permission requirement
+// EnforceUser checks if the given user satisfies the permission requirement.
 func (p *CasbinPolicyEnforcer) EnforceUser(userID, resource, action string) error {
 	if !p.rbac.CheckUserPermission(userID, resource, action) {
 		return fmt.Errorf("permission denied: %s:%s for user %s", resource, action, userID)
@@ -388,7 +390,7 @@ func (p *CasbinPolicyEnforcer) EnforceUser(userID, resource, action string) erro
 	return nil
 }
 
-// EnforceAny checks if the given roles satisfy any of the permission requirements
+// EnforceAny checks if the given roles satisfy any of the permission requirements.
 func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -403,7 +405,7 @@ func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...Permiss
 	return fmt.Errorf("permission denied: requires any of [%s]", strings.Join(permStrs, ", "))
 }
 
-// EnforceAll checks if the given roles satisfy all permission requirements
+// EnforceAll checks if the given roles satisfy all permission requirements.
 func (p *CasbinPolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
@@ -413,8 +415,13 @@ func (p *CasbinPolicyEnforcer) EnforceAll(roles []string, permissions ...Permiss
 	return nil
 }
 
-// CheckOwnership verifies if a user owns a resource
-func (p *CasbinPolicyEnforcer) CheckOwnership(userID string, resourceUserID string, roles []string, ownership ResourceOwnership) error {
+// CheckOwnership verifies if a user owns a resource.
+func (p *CasbinPolicyEnforcer) CheckOwnership(
+	userID string,
+	resourceUserID string,
+	roles []string,
+	ownership ResourceOwnership,
+) error {
 	// Check if user is the owner
 	if userID == resourceUserID {
 		return nil
@@ -429,10 +436,10 @@ func (p *CasbinPolicyEnforcer) CheckOwnership(userID string, resourceUserID stri
 		}
 	}
 
-	return fmt.Errorf("permission denied: not the resource owner")
+	return errors.New("permission denied: not the resource owner")
 }
 
-// InitializeDefaultPolicies sets up the default policies for the system
+// InitializeDefaultPolicies sets up the default policies for the system.
 func InitializeDefaultPolicies(rbac *CasbinRBAC) error {
 	// Define default roles and their permissions
 	defaultPolicies := map[string][]Permission{

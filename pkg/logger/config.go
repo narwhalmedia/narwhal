@@ -5,19 +5,19 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// Config holds logger configuration
+// Config holds logger configuration.
 type Config struct {
-	Level       string   `json:"level" yaml:"level"`
-	Development bool     `json:"development" yaml:"development"`
-	Encoding    string   `json:"encoding" yaml:"encoding"` // json or console
+	Level       string   `json:"level"        yaml:"level"`
+	Development bool     `json:"development"  yaml:"development"`
+	Encoding    string   `json:"encoding"     yaml:"encoding"` // json or console
 	OutputPaths []string `json:"output_paths" yaml:"output_paths"`
-	ErrorPaths  []string `json:"error_paths" yaml:"error_paths"`
+	ErrorPaths  []string `json:"error_paths"  yaml:"error_paths"`
 
 	// Additional fields to include in all logs
 	InitialFields map[string]interface{} `json:"initial_fields" yaml:"initial_fields"`
 }
 
-// DefaultConfig returns default logger configuration
+// DefaultConfig returns default logger configuration.
 func DefaultConfig() *Config {
 	return &Config{
 		Level:       "info",
@@ -28,7 +28,7 @@ func DefaultConfig() *Config {
 	}
 }
 
-// DevelopmentConfig returns development logger configuration
+// DevelopmentConfig returns development logger configuration.
 func DevelopmentConfig() *Config {
 	return &Config{
 		Level:       "debug",
@@ -39,7 +39,7 @@ func DevelopmentConfig() *Config {
 	}
 }
 
-// Build creates a logger from the configuration
+// Build creates a logger from the configuration.
 func (c *Config) Build() (*ZapLogger, error) {
 	// Parse log level
 	level, err := zapcore.ParseLevel(c.Level)
@@ -91,7 +91,7 @@ func (c *Config) Build() (*ZapLogger, error) {
 	}, nil
 }
 
-// NewFromConfig creates a new logger from configuration
+// NewFromConfig creates a new logger from configuration.
 func NewFromConfig(cfg *Config) (*ZapLogger, error) {
 	if cfg == nil {
 		cfg = DefaultConfig()

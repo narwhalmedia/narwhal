@@ -3,9 +3,11 @@ package auth_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRBAC_CheckPermission(t *testing.T) {
@@ -62,8 +64,20 @@ func TestRBAC_CheckPermissions(t *testing.T) {
 		action     string
 		shouldPass bool
 	}{
-		{"Multiple roles - admin passes", []string{domain.RoleUser, domain.RoleAdmin}, domain.ResourceSystem, domain.ActionAdmin, true},
-		{"Multiple roles - user can read", []string{domain.RoleGuest, domain.RoleUser}, domain.ResourceMedia, domain.ActionWrite, true},
+		{
+			"Multiple roles - admin passes",
+			[]string{domain.RoleUser, domain.RoleAdmin},
+			domain.ResourceSystem,
+			domain.ActionAdmin,
+			true,
+		},
+		{
+			"Multiple roles - user can read",
+			[]string{domain.RoleGuest, domain.RoleUser},
+			domain.ResourceMedia,
+			domain.ActionWrite,
+			true,
+		},
 		{"Multiple roles - guest cannot", []string{domain.RoleGuest}, domain.ResourceMedia, domain.ActionWrite, false},
 		{"Empty roles", []string{}, domain.ResourceLibrary, domain.ActionRead, false},
 		{"Unknown roles", []string{"unknown1", "unknown2"}, domain.ResourceLibrary, domain.ActionRead, false},
@@ -137,10 +151,10 @@ func TestPolicyEnforcer_Enforce(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := enforcer.Enforce(tt.roles, tt.resource, tt.action)
 			if tt.shouldErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "permission denied")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -157,11 +171,11 @@ func TestPolicyEnforcer_EnforceAny(t *testing.T) {
 
 	// User has one of the permissions (media:read)
 	err := enforcer.EnforceAny([]string{domain.RoleUser}, permissions...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Guest has one of the permissions (media:read)
 	err = enforcer.EnforceAny([]string{domain.RoleGuest}, permissions...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test with permissions guest doesn't have
 	permissions2 := []auth.Permission{
@@ -169,7 +183,7 @@ func TestPolicyEnforcer_EnforceAny(t *testing.T) {
 		{Resource: domain.ResourceUser, Action: domain.ActionWrite},
 	}
 	err = enforcer.EnforceAny([]string{domain.RoleGuest}, permissions2...)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestPolicyEnforcer_EnforceAll(t *testing.T) {
@@ -183,11 +197,11 @@ func TestPolicyEnforcer_EnforceAll(t *testing.T) {
 
 	// Admin has all permissions
 	err := enforcer.EnforceAll([]string{domain.RoleAdmin}, permissions...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// User has all permissions
 	err = enforcer.EnforceAll([]string{domain.RoleUser}, permissions...)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Guest doesn't have all permissions (missing streaming:read)
 	permissions2 := []auth.Permission{
@@ -196,7 +210,7 @@ func TestPolicyEnforcer_EnforceAll(t *testing.T) {
 		{Resource: domain.ResourceUser, Action: domain.ActionRead},
 	}
 	err = enforcer.EnforceAll([]string{domain.RoleGuest}, permissions2...)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestPolicyEnforcer_CheckOwnership(t *testing.T) {
@@ -210,18 +224,18 @@ func TestPolicyEnforcer_CheckOwnership(t *testing.T) {
 
 	// Owner can access
 	err := enforcer.CheckOwnership("user123", "user123", []string{domain.RoleUser}, ownership)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Non-owner cannot access
 	err = enforcer.CheckOwnership("user123", "user456", []string{domain.RoleUser}, ownership)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	// Admin can access when AllowAdmin is true
 	err = enforcer.CheckOwnership("user123", "user456", []string{domain.RoleAdmin}, ownership)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Admin cannot access when AllowAdmin is false
 	ownership.AllowAdmin = false
 	err = enforcer.CheckOwnership("user123", "user456", []string{domain.RoleAdmin}, ownership)
-	assert.Error(t, err)
+	require.Error(t, err)
 }

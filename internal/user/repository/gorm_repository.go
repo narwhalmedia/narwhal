@@ -2,25 +2,27 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
-	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"gorm.io/gorm"
+
+	"github.com/narwhalmedia/narwhal/internal/user/domain"
+	pkgerrors "github.com/narwhalmedia/narwhal/pkg/errors"
 )
 
-// GormRepository implements Repository using GORM
+// GormRepository implements Repository using GORM.
 type GormRepository struct {
 	db *gorm.DB
 }
 
-// NewGormRepository creates a new GORM repository
+// NewGormRepository creates a new GORM repository.
 func NewGormRepository(db *gorm.DB) Repository {
 	return &GormRepository{db: db}
 }
 
-// BeginTx starts a new transaction
+// BeginTx starts a new transaction.
 func (r *GormRepository) BeginTx(ctx context.Context) (Repository, error) {
 	tx := r.db.WithContext(ctx).Begin()
 	if tx.Error != nil {
@@ -29,12 +31,12 @@ func (r *GormRepository) BeginTx(ctx context.Context) (Repository, error) {
 	return &GormRepository{db: tx}, nil
 }
 
-// Commit commits the transaction
+// Commit commits the transaction.
 func (r *GormRepository) Commit() error {
 	return r.db.Commit().Error
 }
 
-// Rollback rolls back the transaction
+// Rollback rolls back the transaction.
 func (r *GormRepository) Rollback() error {
 	return r.db.Rollback().Error
 }
@@ -43,8 +45,8 @@ func (r *GormRepository) Rollback() error {
 
 func (r *GormRepository) CreateUser(ctx context.Context, user *domain.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		if errors.IsDuplicateError(err) {
-			return errors.Conflict("username or email already exists")
+		if pkgerrors.IsDuplicateError(err) {
+			return pkgerrors.Conflict("username or email already exists")
 		}
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -54,8 +56,8 @@ func (r *GormRepository) CreateUser(ctx context.Context, user *domain.User) erro
 func (r *GormRepository) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.WithContext(ctx).Preload("Roles.Permissions").First(&user, "id = ?", id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
@@ -65,8 +67,8 @@ func (r *GormRepository) GetUser(ctx context.Context, id uuid.UUID) (*domain.Use
 func (r *GormRepository) GetUserByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.WithContext(ctx).Preload("Roles.Permissions").First(&user, "username = ?", username).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
@@ -76,8 +78,8 @@ func (r *GormRepository) GetUserByUsername(ctx context.Context, username string)
 func (r *GormRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.WithContext(ctx).Preload("Roles.Permissions").First(&user, "email = ?", email).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("user not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("user not found")
 		}
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
@@ -97,7 +99,7 @@ func (r *GormRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("failed to delete user: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return errors.NotFound("user not found")
+		return pkgerrors.NotFound("user not found")
 	}
 	return nil
 }
@@ -136,8 +138,8 @@ func (r *GormRepository) UserExists(ctx context.Context, username, email string)
 
 func (r *GormRepository) CreateRole(ctx context.Context, role *domain.Role) error {
 	if err := r.db.WithContext(ctx).Create(role).Error; err != nil {
-		if errors.IsDuplicateError(err) {
-			return errors.Conflict("role name already exists")
+		if pkgerrors.IsDuplicateError(err) {
+			return pkgerrors.Conflict("role name already exists")
 		}
 		return fmt.Errorf("failed to create role: %w", err)
 	}
@@ -147,8 +149,8 @@ func (r *GormRepository) CreateRole(ctx context.Context, role *domain.Role) erro
 func (r *GormRepository) GetRole(ctx context.Context, id uuid.UUID) (*domain.Role, error) {
 	var role domain.Role
 	if err := r.db.WithContext(ctx).Preload("Permissions").First(&role, "id = ?", id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("role not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("role not found")
 		}
 		return nil, fmt.Errorf("failed to get role: %w", err)
 	}
@@ -158,8 +160,8 @@ func (r *GormRepository) GetRole(ctx context.Context, id uuid.UUID) (*domain.Rol
 func (r *GormRepository) GetRoleByName(ctx context.Context, name string) (*domain.Role, error) {
 	var role domain.Role
 	if err := r.db.WithContext(ctx).Preload("Permissions").First(&role, "name = ?", name).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("role not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("role not found")
 		}
 		return nil, fmt.Errorf("failed to get role by name: %w", err)
 	}
@@ -179,7 +181,7 @@ func (r *GormRepository) DeleteRole(ctx context.Context, id uuid.UUID) error {
 		return fmt.Errorf("failed to delete role: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return errors.NotFound("role not found")
+		return pkgerrors.NotFound("role not found")
 	}
 	return nil
 }
@@ -192,7 +194,11 @@ func (r *GormRepository) ListRoles(ctx context.Context) ([]*domain.Role, error) 
 	return roles, nil
 }
 
-func (r *GormRepository) AssignPermissionsToRole(ctx context.Context, roleID uuid.UUID, permissionIDs []uuid.UUID) error {
+func (r *GormRepository) AssignPermissionsToRole(
+	ctx context.Context,
+	roleID uuid.UUID,
+	permissionIDs []uuid.UUID,
+) error {
 	var permissions []domain.Permission
 	if err := r.db.WithContext(ctx).Find(&permissions, "id IN ?", permissionIDs).Error; err != nil {
 		return fmt.Errorf("failed to find permissions: %w", err)
@@ -204,7 +210,11 @@ func (r *GormRepository) AssignPermissionsToRole(ctx context.Context, roleID uui
 	return nil
 }
 
-func (r *GormRepository) RemovePermissionsFromRole(ctx context.Context, roleID uuid.UUID, permissionIDs []uuid.UUID) error {
+func (r *GormRepository) RemovePermissionsFromRole(
+	ctx context.Context,
+	roleID uuid.UUID,
+	permissionIDs []uuid.UUID,
+) error {
 	var permissions []domain.Permission
 	if err := r.db.WithContext(ctx).Find(&permissions, "id IN ?", permissionIDs).Error; err != nil {
 		return fmt.Errorf("failed to find permissions: %w", err)
@@ -228,19 +238,22 @@ func (r *GormRepository) CreatePermission(ctx context.Context, permission *domai
 func (r *GormRepository) GetPermission(ctx context.Context, id uuid.UUID) (*domain.Permission, error) {
 	var permission domain.Permission
 	if err := r.db.WithContext(ctx).First(&permission, "id = ?", id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("permission not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("permission not found")
 		}
 		return nil, fmt.Errorf("failed to get permission: %w", err)
 	}
 	return &permission, nil
 }
 
-func (r *GormRepository) GetPermissionByResourceAction(ctx context.Context, resource, action string) (*domain.Permission, error) {
+func (r *GormRepository) GetPermissionByResourceAction(
+	ctx context.Context,
+	resource, action string,
+) (*domain.Permission, error) {
 	var permission domain.Permission
 	if err := r.db.WithContext(ctx).First(&permission, "resource = ? AND action = ?", resource, action).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("permission not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("permission not found")
 		}
 		return nil, fmt.Errorf("failed to get permission: %w", err)
 	}
@@ -260,7 +273,7 @@ func (r *GormRepository) DeletePermission(ctx context.Context, id uuid.UUID) err
 		return fmt.Errorf("failed to delete permission: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return errors.NotFound("permission not found")
+		return pkgerrors.NotFound("permission not found")
 	}
 	return nil
 }
@@ -285,8 +298,8 @@ func (r *GormRepository) CreateSession(ctx context.Context, session *domain.Sess
 func (r *GormRepository) GetSession(ctx context.Context, id uuid.UUID) (*domain.Session, error) {
 	var session domain.Session
 	if err := r.db.WithContext(ctx).First(&session, "id = ?", id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("session not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("session not found")
 		}
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
@@ -296,8 +309,8 @@ func (r *GormRepository) GetSession(ctx context.Context, id uuid.UUID) (*domain.
 func (r *GormRepository) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (*domain.Session, error) {
 	var session domain.Session
 	if err := r.db.WithContext(ctx).First(&session, "refresh_token = ?", refreshToken).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, errors.NotFound("session not found")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, pkgerrors.NotFound("session not found")
 		}
 		return nil, fmt.Errorf("failed to get session by refresh token: %w", err)
 	}
@@ -317,7 +330,7 @@ func (r *GormRepository) DeleteSession(ctx context.Context, id uuid.UUID) error 
 		return fmt.Errorf("failed to delete session: %w", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		return errors.NotFound("session not found")
+		return pkgerrors.NotFound("session not found")
 	}
 	return nil
 }

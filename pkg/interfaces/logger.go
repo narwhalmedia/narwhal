@@ -2,7 +2,7 @@ package interfaces
 
 import "context"
 
-// Logger defines the logging interface
+// Logger defines the logging interface.
 type Logger interface {
 	// Debug logs a debug message
 	Debug(msg string, fields ...Field)
@@ -26,33 +26,33 @@ type Logger interface {
 	WithFields(fields ...Field) Logger
 }
 
-// Field represents a structured log field
+// Field represents a structured log field.
 type Field struct {
 	Key   string
 	Value interface{}
 }
 
-// String creates a string field
+// String creates a string field.
 func String(key, value string) Field {
 	return Field{Key: key, Value: value}
 }
 
-// Int creates an int field
+// Int creates an int field.
 func Int(key string, value int) Field {
 	return Field{Key: key, Value: value}
 }
 
-// Bool creates a bool field
+// Bool creates a bool field.
 func Bool(key string, value bool) Field {
 	return Field{Key: key, Value: value}
 }
 
-// Error creates an error field
+// Error creates an error field.
 func Error(err error) Field {
 	return Field{Key: "error", Value: err}
 }
 
-// Any creates a field with any value
+// Any creates a field with any value.
 func Any(key string, value interface{}) Field {
 	return Field{Key: key, Value: value}
 }

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// MetadataProvider interface for external metadata providers
+// MetadataProvider interface for external metadata providers.
 type MetadataProvider interface {
 	GetName() string
 	GetType() string
@@ -20,14 +21,14 @@ type MetadataProvider interface {
 	GetEpisodeDetails(ctx context.Context, providerID string, season, episode int) (*models.EpisodeMetadata, error)
 }
 
-// MetadataFetcher manages metadata providers and fetching
+// MetadataFetcher manages metadata providers and fetching.
 type MetadataFetcher struct {
 	providers []MetadataProvider
 	mu        sync.RWMutex
 	logger    interfaces.Logger
 }
 
-// NewMetadataFetcher creates a new metadata fetcher
+// NewMetadataFetcher creates a new metadata fetcher.
 func NewMetadataFetcher(logger interfaces.Logger) *MetadataFetcher {
 	return &MetadataFetcher{
 		providers: make([]MetadataProvider, 0),
@@ -35,7 +36,7 @@ func NewMetadataFetcher(logger interfaces.Logger) *MetadataFetcher {
 	}
 }
 
-// RegisterProvider registers a metadata provider
+// RegisterProvider registers a metadata provider.
 func (f *MetadataFetcher) RegisterProvider(provider MetadataProvider) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -56,7 +57,7 @@ func (f *MetadataFetcher) RegisterProvider(provider MetadataProvider) {
 		interfaces.String("type", provider.GetType()))
 }
 
-// GetProviders returns all registered providers
+// GetProviders returns all registered providers.
 func (f *MetadataFetcher) GetProviders() []MetadataProvider {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -66,7 +67,7 @@ func (f *MetadataFetcher) GetProviders() []MetadataProvider {
 	return providers
 }
 
-// FetchMetadata fetches metadata for a media item
+// FetchMetadata fetches metadata for a media item.
 func (f *MetadataFetcher) FetchMetadata(ctx context.Context, media *models.Media) (*models.Metadata, error) {
 	f.mu.RLock()
 	providers := make([]MetadataProvider, len(f.providers))
@@ -74,7 +75,7 @@ func (f *MetadataFetcher) FetchMetadata(ctx context.Context, media *models.Media
 	f.mu.RUnlock()
 
 	if len(providers) == 0 {
-		return nil, fmt.Errorf("no metadata providers registered")
+		return nil, errors.New("no metadata providers registered")
 	}
 
 	// Try each provider
@@ -137,8 +138,12 @@ func (f *MetadataFetcher) FetchMetadata(ctx context.Context, media *models.Media
 	return nil, fmt.Errorf("no metadata found for media: %s", media.Title)
 }
 
-// FetchEpisodeMetadata fetches metadata for a specific episode
-func (f *MetadataFetcher) FetchEpisodeMetadata(ctx context.Context, seriesMetadata *models.Metadata, season, episode int) (*models.EpisodeMetadata, error) {
+// FetchEpisodeMetadata fetches metadata for a specific episode.
+func (f *MetadataFetcher) FetchEpisodeMetadata(
+	ctx context.Context,
+	seriesMetadata *models.Metadata,
+	season, episode int,
+) (*models.EpisodeMetadata, error) {
 	f.mu.RLock()
 	providers := make([]MetadataProvider, len(f.providers))
 	copy(providers, f.providers)

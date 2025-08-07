@@ -6,14 +6,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/suite"
 )
 
 type EncryptionTestSuite struct {
 	suite.Suite
+
 	container *testutil.PostgresContainer
 	repo      repository.Repository
 	ctx       context.Context
@@ -132,7 +134,7 @@ func (suite *EncryptionTestSuite) TestEmptyAPIKey() {
 	// Retrieve and verify empty key is handled correctly
 	retrieved, err := suite.repo.GetProvider(suite.ctx, provider.ID)
 	suite.Require().NoError(err)
-	suite.Equal("", retrieved.APIKey)
+	suite.Empty(retrieved.APIKey)
 }
 
 func (suite *EncryptionTestSuite) TestListProvidersDecryption() {

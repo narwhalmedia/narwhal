@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	userRepo "github.com/narwhalmedia/narwhal/internal/user/repository"
-	"gorm.io/gorm"
 )
 
-// Migration represents a database migration
+// Migration represents a database migration.
 type Migration struct {
 	ID        uint      `gorm:"primaryKey"`
 	Version   string    `gorm:"uniqueIndex;not null"`
@@ -17,23 +18,23 @@ type Migration struct {
 	AppliedAt time.Time `gorm:"not null"`
 }
 
-// MigrationFunc is a function that performs a migration
+// MigrationFunc is a function that performs a migration.
 type MigrationFunc func(*gorm.DB) error
 
-// MigrationEntry represents a single migration
+// MigrationEntry represents a single migration.
 type MigrationEntry struct {
 	Version string
 	Name    string
 	Up      MigrationFunc
 }
 
-// Migrator handles database migrations
+// Migrator handles database migrations.
 type Migrator struct {
 	db         *gorm.DB
 	migrations []MigrationEntry
 }
 
-// NewMigrator creates a new migrator instance
+// NewMigrator creates a new migrator instance.
 func NewMigrator(db *gorm.DB) *Migrator {
 	return &Migrator{
 		db:         db,
@@ -41,7 +42,7 @@ func NewMigrator(db *gorm.DB) *Migrator {
 	}
 }
 
-// Migrate runs all pending migrations
+// Migrate runs all pending migrations.
 func (m *Migrator) Migrate() error {
 	// Ensure migrations table exists
 	if err := m.db.AutoMigrate(&Migration{}); err != nil {
@@ -92,7 +93,7 @@ func (m *Migrator) Migrate() error {
 	return nil
 }
 
-// GetPendingMigrations returns a list of pending migrations
+// GetPendingMigrations returns a list of pending migrations.
 func (m *Migrator) GetPendingMigrations() ([]MigrationEntry, error) {
 	// Get applied migrations
 	var appliedMigrations []Migration
@@ -117,7 +118,7 @@ func (m *Migrator) GetPendingMigrations() ([]MigrationEntry, error) {
 	return pending, nil
 }
 
-// getAllMigrations returns all migrations in order
+// getAllMigrations returns all migrations in order.
 func getAllMigrations() []MigrationEntry {
 	return []MigrationEntry{
 		{
@@ -138,7 +139,7 @@ func getAllMigrations() []MigrationEntry {
 	}
 }
 
-// migration001CreateInitialSchema creates the initial database schema
+// migration001CreateInitialSchema creates the initial database schema.
 func migration001CreateInitialSchema(tx *gorm.DB) error {
 	// Enable UUID extension
 	if err := tx.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
@@ -171,7 +172,7 @@ func migration001CreateInitialSchema(tx *gorm.DB) error {
 	return nil
 }
 
-// migration002AddIndexes adds performance indexes
+// migration002AddIndexes adds performance indexes.
 func migration002AddIndexes(tx *gorm.DB) error {
 	// Add composite indexes for better query performance
 	indexes := []string{
@@ -206,7 +207,7 @@ func migration002AddIndexes(tx *gorm.DB) error {
 	return nil
 }
 
-// migration003AddConstraints adds database constraints
+// migration003AddConstraints adds database constraints.
 func migration003AddConstraints(tx *gorm.DB) error {
 	// Add unique constraints
 	constraints := []string{
@@ -235,7 +236,7 @@ func migration003AddConstraints(tx *gorm.DB) error {
 	return nil
 }
 
-// isConstraintExistsError checks if the error is due to constraint already existing
+// isConstraintExistsError checks if the error is due to constraint already existing.
 func isConstraintExistsError(err error) bool {
 	if err == nil {
 		return false
@@ -244,14 +245,14 @@ func isConstraintExistsError(err error) bool {
 	return contains(errStr, "already exists") || contains(errStr, "duplicate key")
 }
 
-// contains checks if a string contains a substring
+// contains checks if a string contains a substring.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr ||
 		len(s) >= len(substr) && s[:len(substr)] == substr ||
 		len(s) > len(substr) && findSubstring(s, substr)
 }
 
-// findSubstring checks if substring exists in string
+// findSubstring checks if substring exists in string.
 func findSubstring(s, substr string) bool {
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {

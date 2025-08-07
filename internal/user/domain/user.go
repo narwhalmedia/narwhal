@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// User represents a user in the system
+// User represents a user in the system.
 type User struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Username     string    `gorm:"uniqueIndex;not null"`
@@ -25,7 +25,7 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
-// Role represents a user role
+// Role represents a user role.
 type Role struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name        string    `gorm:"uniqueIndex;not null"`
@@ -35,7 +35,7 @@ type Role struct {
 	UpdatedAt   time.Time
 }
 
-// Permission represents a system permission
+// Permission represents a system permission.
 type Permission struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Resource    string    `gorm:"not null"` // e.g., "library", "media", "user"
@@ -45,7 +45,7 @@ type Permission struct {
 	UpdatedAt   time.Time
 }
 
-// Session represents an active user session
+// Session represents an active user session.
 type Session struct {
 	ID           uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID       uuid.UUID `gorm:"not null;index"`
@@ -58,7 +58,7 @@ type Session struct {
 	UpdatedAt    time.Time
 }
 
-// UserPreferences represents user-specific preferences
+// UserPreferences represents user-specific preferences.
 type UserPreferences struct {
 	Language            string `gorm:"default:'en'"`
 	Theme               string `gorm:"default:'dark'"`
@@ -69,7 +69,7 @@ type UserPreferences struct {
 	EnableNotifications bool   `gorm:"default:true"`
 }
 
-// SetPassword hashes and sets the user's password
+// SetPassword hashes and sets the user's password.
 func (u *User) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -79,13 +79,13 @@ func (u *User) SetPassword(password string) error {
 	return nil
 }
 
-// CheckPassword verifies the user's password
+// CheckPassword verifies the user's password.
 func (u *User) CheckPassword(password string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	return err == nil
 }
 
-// HasRole checks if the user has a specific role
+// HasRole checks if the user has a specific role.
 func (u *User) HasRole(roleName string) bool {
 	for _, role := range u.Roles {
 		if role.Name == roleName {
@@ -95,7 +95,7 @@ func (u *User) HasRole(roleName string) bool {
 	return false
 }
 
-// HasPermission checks if the user has a specific permission
+// HasPermission checks if the user has a specific permission.
 func (u *User) HasPermission(resource, action string) bool {
 	for _, role := range u.Roles {
 		for _, perm := range role.Permissions {
@@ -107,7 +107,7 @@ func (u *User) HasPermission(resource, action string) bool {
 	return false
 }
 
-// GetPermissions returns all unique permissions for the user
+// GetPermissions returns all unique permissions for the user.
 func (u *User) GetPermissions() []Permission {
 	permMap := make(map[string]Permission)
 
@@ -128,13 +128,13 @@ func (u *User) GetPermissions() []Permission {
 	return perms
 }
 
-// Token types
+// Token types.
 const (
 	TokenTypeAccess  = "access"
 	TokenTypeRefresh = "refresh"
 )
 
-// TokenClaims represents JWT token claims
+// TokenClaims represents JWT token claims.
 type TokenClaims struct {
 	UserID    string   `json:"user_id"`
 	Username  string   `json:"username"`
@@ -144,7 +144,7 @@ type TokenClaims struct {
 	SessionID string   `json:"session_id,omitempty"`
 }
 
-// AuthTokens represents a pair of access and refresh tokens
+// AuthTokens represents a pair of access and refresh tokens.
 type AuthTokens struct {
 	AccessToken  string    `json:"access_token"`
 	RefreshToken string    `json:"refresh_token"`
@@ -153,7 +153,7 @@ type AuthTokens struct {
 	ExpiresAt    time.Time `json:"expires_at"`
 }
 
-// Default roles
+// Default roles.
 const (
 	RoleAdmin     = "admin"
 	RoleUser      = "user"
@@ -161,7 +161,7 @@ const (
 	RoleModerator = "moderator"
 )
 
-// Resource types for permissions
+// Resource types for permissions.
 const (
 	ResourceLibrary     = "library"
 	ResourceMedia       = "media"
@@ -173,7 +173,7 @@ const (
 	ResourceSystem      = "system"
 )
 
-// Action types for permissions
+// Action types for permissions.
 const (
 	ActionRead   = "read"
 	ActionWrite  = "write"
@@ -181,12 +181,12 @@ const (
 	ActionAdmin  = "admin"
 )
 
-// IsExpired checks if the session has expired
+// IsExpired checks if the session has expired.
 func (s *Session) IsExpired() bool {
 	return time.Now().After(s.ExpiresAt)
 }
 
-// HasPermission checks if the role has a specific permission
+// HasPermission checks if the role has a specific permission.
 func (r *Role) HasPermission(resource, action string) bool {
 	for _, perm := range r.Permissions {
 		if perm.Matches(resource, action) {
@@ -196,7 +196,7 @@ func (r *Role) HasPermission(resource, action string) bool {
 	return false
 }
 
-// Matches checks if the permission matches the given resource and action
+// Matches checks if the permission matches the given resource and action.
 func (p *Permission) Matches(resource, action string) bool {
 	// Support wildcards
 	resourceMatch := p.Resource == "*" || p.Resource == resource

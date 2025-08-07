@@ -20,12 +20,12 @@ func TestCursorEncoder(t *testing.T) {
 
 		// Encode
 		encoded, err := encoder.EncodeCursor(original)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, encoded)
 
 		// Decode
 		decoded, err := encoder.DecodeCursor(encoded)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Offset, decoded.Offset)
 		assert.WithinDuration(t, original.Timestamp, decoded.Timestamp, time.Second)
 	})
@@ -36,12 +36,12 @@ func TestCursorEncoder(t *testing.T) {
 
 		// Encode
 		encoded, err := encoder.EncodeCursor(original)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, encoded)
 
 		// Decode
 		decoded, err := encoder.DecodeCursor(encoded)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Offset, decoded.Offset)
 		assert.Equal(t, original.SortField, decoded.SortField)
 		assert.Equal(t, original.SortValue, decoded.SortValue)
@@ -49,13 +49,13 @@ func TestCursorEncoder(t *testing.T) {
 
 	t.Run("invalid key length", func(t *testing.T) {
 		_, err := NewCursorEncoder([]byte("short-key"))
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "32 bytes")
 	})
 
 	t.Run("invalid encoded cursor", func(t *testing.T) {
 		_, err := encoder.DecodeCursor("invalid-base64")
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("cursor expiration", func(t *testing.T) {
@@ -82,13 +82,13 @@ func TestPaginationHelpers(t *testing.T) {
 
 		// Calculate offset
 		offset, err := CalculateOffset(encoder, token, 0)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 50, offset)
 	})
 
 	t.Run("calculate offset with empty token", func(t *testing.T) {
 		offset, err := CalculateOffset(encoder, "", 10)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 10, offset)
 	})
 
@@ -103,41 +103,41 @@ func TestPaginationHelpers(t *testing.T) {
 
 		// Should fail due to expiration
 		_, err = CalculateOffset(encoder, token, 0)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "expired")
 	})
 
 	t.Run("generate next page token", func(t *testing.T) {
 		token, err := GenerateNextPageToken(encoder, 0, 10, 100)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, token)
 
 		// Decode and verify
 		cursor, err := encoder.DecodeCursor(token)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 10, cursor.Offset)
 	})
 
 	t.Run("generate next page token at end", func(t *testing.T) {
 		token, err := GenerateNextPageToken(encoder, 90, 10, 100)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, token) // No more pages
 	})
 
 	t.Run("generate previous page token", func(t *testing.T) {
 		token, err := GeneratePrevPageToken(encoder, 20, 10)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotEmpty(t, token)
 
 		// Decode and verify
 		cursor, err := encoder.DecodeCursor(token)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, 10, cursor.Offset)
 	})
 
 	t.Run("generate previous page token at start", func(t *testing.T) {
 		token, err := GeneratePrevPageToken(encoder, 0, 10)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Empty(t, token) // No previous page
 	})
 }

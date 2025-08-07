@@ -7,7 +7,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// InMemoryEventBus is an in-memory implementation of EventBus
+// InMemoryEventBus is an in-memory implementation of EventBus.
 type InMemoryEventBus struct {
 	handlers map[string][]interfaces.EventHandler
 	mu       sync.RWMutex
@@ -17,10 +17,10 @@ type InMemoryEventBus struct {
 	cancel   context.CancelFunc
 }
 
-// LocalEventBus is an alias for InMemoryEventBus
+// LocalEventBus is an alias for InMemoryEventBus.
 type LocalEventBus = InMemoryEventBus
 
-// NewInMemoryEventBus creates a new in-memory event bus
+// NewInMemoryEventBus creates a new in-memory event bus.
 func NewInMemoryEventBus(logger interfaces.Logger) *InMemoryEventBus {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &InMemoryEventBus{
@@ -31,12 +31,12 @@ func NewInMemoryEventBus(logger interfaces.Logger) *InMemoryEventBus {
 	}
 }
 
-// NewLocalEventBus creates a new local event bus (alias for NewInMemoryEventBus)
+// NewLocalEventBus creates a new local event bus (alias for NewInMemoryEventBus).
 func NewLocalEventBus(logger interfaces.Logger) *LocalEventBus {
 	return NewInMemoryEventBus(logger)
 }
 
-// Publish publishes an event to all subscribers
+// Publish publishes an event to all subscribers.
 func (eb *InMemoryEventBus) Publish(ctx context.Context, event interfaces.Event) error {
 	eb.mu.RLock()
 	handlers := eb.handlers[event.EventType()]
@@ -55,7 +55,7 @@ func (eb *InMemoryEventBus) Publish(ctx context.Context, event interfaces.Event)
 	return nil
 }
 
-// PublishAsync publishes an event asynchronously
+// PublishAsync publishes an event asynchronously.
 func (eb *InMemoryEventBus) PublishAsync(ctx context.Context, event interfaces.Event) {
 	eb.wg.Add(1)
 	go func() {
@@ -68,7 +68,7 @@ func (eb *InMemoryEventBus) PublishAsync(ctx context.Context, event interfaces.E
 	}()
 }
 
-// Subscribe registers a handler for a specific event type
+// Subscribe registers a handler for a specific event type.
 func (eb *InMemoryEventBus) Subscribe(eventType string, handler interfaces.EventHandler) error {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
@@ -81,7 +81,7 @@ func (eb *InMemoryEventBus) Subscribe(eventType string, handler interfaces.Event
 	return nil
 }
 
-// Unsubscribe removes a handler for a specific event type
+// Unsubscribe removes a handler for a specific event type.
 func (eb *InMemoryEventBus) Unsubscribe(eventType string, handler interfaces.EventHandler) error {
 	eb.mu.Lock()
 	defer eb.mu.Unlock()
@@ -97,13 +97,13 @@ func (eb *InMemoryEventBus) Unsubscribe(eventType string, handler interfaces.Eve
 	return nil
 }
 
-// Start starts the event bus
+// Start starts the event bus.
 func (eb *InMemoryEventBus) Start(ctx context.Context) error {
 	eb.logger.Info("Event bus started")
 	return nil
 }
 
-// Stop stops the event bus
+// Stop stops the event bus.
 func (eb *InMemoryEventBus) Stop() error {
 	eb.cancel()
 	eb.wg.Wait()

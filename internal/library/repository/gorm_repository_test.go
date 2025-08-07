@@ -7,17 +7,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
 type LibraryRepositoryTestSuite struct {
 	suite.Suite
+
 	container *testutil.PostgresContainer
 	repo      repository.Repository
 	ctx       context.Context
@@ -35,7 +35,7 @@ func (suite *LibraryRepositoryTestSuite) SetupSuite() {
 		&repository.MetadataProvider{},
 		&repository.ScanHistory{},
 	)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *LibraryRepositoryTestSuite) SetupTest() {
@@ -65,13 +65,13 @@ func (suite *LibraryRepositoryTestSuite) TestCreateLibrary() {
 	err := suite.repo.CreateLibrary(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify library was created
 	retrieved, err := suite.repo.GetLibrary(suite.ctx, library.ID)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), library.Name, retrieved.Name)
-	assert.Equal(suite.T(), library.Path, retrieved.Path)
+	suite.Require().NoError(err)
+	suite.Equal(library.Name, retrieved.Name)
+	suite.Equal(library.Path, retrieved.Path)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestGetLibraryByPath() {
@@ -92,14 +92,14 @@ func (suite *LibraryRepositoryTestSuite) TestGetLibraryByPath() {
 	retrieved, err := suite.repo.GetLibraryByPath(suite.ctx, "/unique/path")
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), retrieved)
-	assert.Equal(suite.T(), library.Path, retrieved.Path)
+	suite.Require().NoError(err)
+	suite.NotNil(retrieved)
+	suite.Equal(library.Path, retrieved.Path)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestListLibraries() {
 	// Arrange
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		library := &domain.Library{
 			ID:           uuid.New(),
 			Name:         fmt.Sprintf("Library %d", i),
@@ -115,14 +115,14 @@ func (suite *LibraryRepositoryTestSuite) TestListLibraries() {
 
 	// Test list all
 	all, err := suite.repo.ListLibraries(suite.ctx, nil)
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), all, 3)
+	suite.Require().NoError(err)
+	suite.Len(all, 3)
 
 	// Test list enabled only
 	enabled := true
 	enabledLibs, err := suite.repo.ListLibraries(suite.ctx, &enabled)
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), enabledLibs, 2)
+	suite.Require().NoError(err)
+	suite.Len(enabledLibs, 2)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestUpdateLibrary() {
@@ -145,12 +145,12 @@ func (suite *LibraryRepositoryTestSuite) TestUpdateLibrary() {
 	err := suite.repo.UpdateLibrary(suite.ctx, library)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify update
 	retrieved, _ := suite.repo.GetLibrary(suite.ctx, library.ID)
-	assert.Equal(suite.T(), "Updated Name", retrieved.Name)
-	assert.False(suite.T(), retrieved.Enabled)
+	suite.Equal("Updated Name", retrieved.Name)
+	suite.False(retrieved.Enabled)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestDeleteLibrary() {
@@ -171,12 +171,12 @@ func (suite *LibraryRepositoryTestSuite) TestDeleteLibrary() {
 	err := suite.repo.DeleteLibrary(suite.ctx, library.ID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify deletion
 	retrieved, err := suite.repo.GetLibrary(suite.ctx, library.ID)
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), retrieved)
+	suite.Require().Error(err)
+	suite.Nil(retrieved)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
@@ -215,36 +215,36 @@ func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
 
 	// Create media
 	err := suite.repo.CreateMedia(suite.ctx, media)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Get media
 	retrieved, err := suite.repo.GetMedia(suite.ctx, media.ID)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), media.Title, retrieved.Title)
+	suite.Require().NoError(err)
+	suite.Equal(media.Title, retrieved.Title)
 
 	// Get media by path
 	byPath, err := suite.repo.GetMediaByPath(suite.ctx, "/media/test.mp4")
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), media.ID, byPath.ID)
+	suite.Require().NoError(err)
+	suite.Equal(media.ID, byPath.ID)
 
 	// Update media
 	media.Title = "Updated Movie"
 	err = suite.repo.UpdateMedia(suite.ctx, media)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// List media by library
 	mediaList, err := suite.repo.ListMediaByLibrary(suite.ctx, library.ID, nil, 10, 0)
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), mediaList, 1)
+	suite.Require().NoError(err)
+	suite.Len(mediaList, 1)
 
 	// Search media
 	searchResults, err := suite.repo.SearchMedia(suite.ctx, "Updated", nil, nil, &library.ID, 10, 0)
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), searchResults, 1)
+	suite.Require().NoError(err)
+	suite.Len(searchResults, 1)
 
 	// Delete media
 	err = suite.repo.DeleteMedia(suite.ctx, media.ID)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestEpisodeOperations() {
@@ -279,32 +279,32 @@ func (suite *LibraryRepositoryTestSuite) TestEpisodeOperations() {
 	episode2 := testutil.CreateTestEpisode(series.ID, 1, 2, "Episode 2")
 
 	err := suite.repo.CreateEpisode(suite.ctx, episode1)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 	err = suite.repo.CreateEpisode(suite.ctx, episode2)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Get episode
 	retrieved, err := suite.repo.GetEpisode(suite.ctx, episode1.ID)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), episode1.Title, retrieved.Title)
+	suite.Require().NoError(err)
+	suite.Equal(episode1.Title, retrieved.Title)
 
 	// List episodes by media
 	episodes, err := suite.repo.ListEpisodesByMedia(suite.ctx, series.ID)
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), episodes, 2)
+	suite.Require().NoError(err)
+	suite.Len(episodes, 2)
 
 	// Update episode
 	episode1.Title = "Updated Episode 1"
 	err = suite.repo.UpdateEpisode(suite.ctx, episode1)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Delete episode
 	err = suite.repo.DeleteEpisode(suite.ctx, episode1.ID)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify only one episode remains
 	episodes, _ = suite.repo.ListEpisodesByMedia(suite.ctx, series.ID)
-	assert.Len(suite.T(), episodes, 1)
+	suite.Len(episodes, 1)
 }
 
 func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
@@ -333,28 +333,28 @@ func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 	}
 
 	err := suite.repo.CreateScanHistory(suite.ctx, scan)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Update scan history
 	now := time.Now()
 	scan.CompletedAt = &now
 	err = suite.repo.UpdateScanHistory(suite.ctx, scan)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Get latest scan
 	latest, err := suite.repo.GetLatestScan(suite.ctx, library.ID)
-	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), scan.ID, latest.ID)
-	assert.NotNil(suite.T(), latest.CompletedAt)
+	suite.Require().NoError(err)
+	suite.Equal(scan.ID, latest.ID)
+	suite.NotNil(latest.CompletedAt)
 
 	// List scan history - method not implemented yet
 	// history, err := suite.repo.ListScanHistory(suite.ctx, library.ID, 10)
-	// assert.NoError(suite.T(), err)
+	// require.NoError(suite.T(), err)
 	// assert.Len(suite.T(), history, 1)
 }
 
 // TestMetadataProviderOperations - commenting out until methods are implemented
-// func (suite *LibraryRepositoryTestSuite) TestMetadataProviderOperations() {
+// func (suite *LibraryRepositoryTestSuite) TestMetadataProviderOperations() { //nolint:funlen
 // 	// Create provider
 // 	provider := &domain.MetadataProvider{
 // 		ID:           uuid.New(),
@@ -368,32 +368,32 @@ func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 // 	}
 
 // 	err := suite.repo.CreateMetadataProvider(suite.ctx, provider)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 
 // 	// Get provider
 // 	retrieved, err := suite.repo.GetMetadataProvider(suite.ctx, provider.ID)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 // 	assert.Equal(suite.T(), provider.Name, retrieved.Name)
 
 // 	// List providers
 // 	providers, err := suite.repo.ListMetadataProviders(suite.ctx)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 // 	assert.Len(suite.T(), providers, 1)
 
 // 	// Update provider
 // 	provider.Enabled = false
 // 	err = suite.repo.UpdateMetadataProvider(suite.ctx, provider)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 
 // 	// Delete provider
 // 	err = suite.repo.DeleteMetadataProvider(suite.ctx, provider.ID)
-// 	assert.NoError(suite.T(), err)
+// 	require.NoError(suite.T(), err)
 // }
 
 func (suite *LibraryRepositoryTestSuite) TestTransaction() {
 	// Start transaction
 	tx, err := suite.repo.BeginTx(suite.ctx)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Create library in transaction
 	library := &domain.Library{
@@ -407,16 +407,16 @@ func (suite *LibraryRepositoryTestSuite) TestTransaction() {
 		UpdatedAt:    time.Now(),
 	}
 	err = tx.CreateLibrary(suite.ctx, library)
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Rollback transaction
 	err = tx.Rollback()
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 
 	// Verify library was not created
 	retrieved, err := suite.repo.GetLibrary(suite.ctx, library.ID)
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), retrieved)
+	suite.Require().Error(err)
+	suite.Nil(retrieved)
 }
 
 func TestLibraryRepositoryTestSuite(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/narwhalmedia/narwhal/internal/user/domain"
 )
 
 type UserDomainTestSuite struct {
@@ -25,9 +25,9 @@ func (suite *UserDomainTestSuite) TestUser_SetPassword() {
 	err := user.SetPassword("testpassword123")
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotEmpty(suite.T(), user.PasswordHash)
-	assert.NotEqual(suite.T(), "testpassword123", user.PasswordHash)
+	suite.Require().NoError(err)
+	suite.NotEmpty(user.PasswordHash)
+	suite.NotEqual("testpassword123", user.PasswordHash)
 }
 
 func (suite *UserDomainTestSuite) TestUser_CheckPassword() {
@@ -39,9 +39,9 @@ func (suite *UserDomainTestSuite) TestUser_CheckPassword() {
 	user.SetPassword("testpassword123")
 
 	// Act & Assert
-	assert.True(suite.T(), user.CheckPassword("testpassword123"))
-	assert.False(suite.T(), user.CheckPassword("wrongpassword"))
-	assert.False(suite.T(), user.CheckPassword(""))
+	suite.True(user.CheckPassword("testpassword123"))
+	suite.False(user.CheckPassword("wrongpassword"))
+	suite.False(user.CheckPassword(""))
 }
 
 func (suite *UserDomainTestSuite) TestUser_HasRole() {
@@ -56,9 +56,9 @@ func (suite *UserDomainTestSuite) TestUser_HasRole() {
 	}
 
 	// Act & Assert
-	assert.True(suite.T(), user.HasRole(domain.RoleAdmin))
-	assert.True(suite.T(), user.HasRole(domain.RoleUser))
-	assert.False(suite.T(), user.HasRole(domain.RoleModerator))
+	suite.True(user.HasRole(domain.RoleAdmin))
+	suite.True(user.HasRole(domain.RoleUser))
+	suite.False(user.HasRole(domain.RoleModerator))
 }
 
 func (suite *UserDomainTestSuite) TestUser_HasPermission() {
@@ -80,12 +80,12 @@ func (suite *UserDomainTestSuite) TestUser_HasPermission() {
 	}
 
 	// Act & Assert
-	assert.True(suite.T(), user.HasPermission("users", "create"))
-	assert.True(suite.T(), user.HasPermission("users", "read"))
-	assert.True(suite.T(), user.HasPermission("users", "update"))
-	assert.True(suite.T(), user.HasPermission("users", "delete"))
-	assert.False(suite.T(), user.HasPermission("media", "create"))
-	assert.False(suite.T(), user.HasPermission("users", "admin"))
+	suite.True(user.HasPermission("users", "create"))
+	suite.True(user.HasPermission("users", "read"))
+	suite.True(user.HasPermission("users", "update"))
+	suite.True(user.HasPermission("users", "delete"))
+	suite.False(user.HasPermission("media", "create"))
+	suite.False(user.HasPermission("users", "admin"))
 }
 
 func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
@@ -115,7 +115,7 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 	userPermissions := user.GetPermissions()
 
 	// Assert - Should have 3 unique permissions
-	assert.Len(suite.T(), userPermissions, 3)
+	suite.Len(userPermissions, 3)
 
 	// Check all permissions are present
 	hasPermission := func(perms []domain.Permission, resource, action string) bool {
@@ -127,9 +127,9 @@ func (suite *UserDomainTestSuite) TestUser_GetPermissions() {
 		return false
 	}
 
-	assert.True(suite.T(), hasPermission(userPermissions, "users", "read"))
-	assert.True(suite.T(), hasPermission(userPermissions, "media", "read"))
-	assert.True(suite.T(), hasPermission(userPermissions, "media", "create"))
+	suite.True(hasPermission(userPermissions, "users", "read"))
+	suite.True(hasPermission(userPermissions, "media", "read"))
+	suite.True(hasPermission(userPermissions, "media", "create"))
 }
 
 func (suite *UserDomainTestSuite) TestSession_IsExpired() {
@@ -149,8 +149,8 @@ func (suite *UserDomainTestSuite) TestSession_IsExpired() {
 	}
 
 	// Act & Assert
-	assert.True(suite.T(), expiredSession.IsExpired())
-	assert.False(suite.T(), validSession.IsExpired())
+	suite.True(expiredSession.IsExpired())
+	suite.False(validSession.IsExpired())
 }
 
 func (suite *UserDomainTestSuite) TestUserPreferences_Defaults() {
@@ -169,12 +169,12 @@ func (suite *UserDomainTestSuite) TestUserPreferences_Defaults() {
 	}
 
 	// Assert
-	assert.Equal(suite.T(), "en", user.Preferences.Language)
-	assert.Equal(suite.T(), "dark", user.Preferences.Theme)
-	assert.Equal(suite.T(), "UTC", user.Preferences.TimeZone)
-	assert.True(suite.T(), user.Preferences.AutoPlayNext)
-	assert.Equal(suite.T(), "en", user.Preferences.SubtitleLanguage)
-	assert.Equal(suite.T(), "auto", user.Preferences.PreferredQuality)
+	suite.Equal("en", user.Preferences.Language)
+	suite.Equal("dark", user.Preferences.Theme)
+	suite.Equal("UTC", user.Preferences.TimeZone)
+	suite.True(user.Preferences.AutoPlayNext)
+	suite.Equal("en", user.Preferences.SubtitleLanguage)
+	suite.Equal("auto", user.Preferences.PreferredQuality)
 }
 
 func (suite *UserDomainTestSuite) TestRole_HasPermission() {
@@ -190,42 +190,42 @@ func (suite *UserDomainTestSuite) TestRole_HasPermission() {
 	}
 
 	// Act & Assert
-	assert.True(suite.T(), role.HasPermission("users", "create"))
-	assert.True(suite.T(), role.HasPermission("users", "read"))
-	assert.False(suite.T(), role.HasPermission("users", "delete"))
+	suite.True(role.HasPermission("users", "create"))
+	suite.True(role.HasPermission("users", "read"))
+	suite.False(role.HasPermission("users", "delete"))
 
 	// Wildcard should match any action
-	assert.True(suite.T(), role.HasPermission("media", "create"))
-	assert.True(suite.T(), role.HasPermission("media", "read"))
-	assert.True(suite.T(), role.HasPermission("media", "delete"))
-	assert.True(suite.T(), role.HasPermission("media", "anything"))
+	suite.True(role.HasPermission("media", "create"))
+	suite.True(role.HasPermission("media", "read"))
+	suite.True(role.HasPermission("media", "delete"))
+	suite.True(role.HasPermission("media", "anything"))
 }
 
 func (suite *UserDomainTestSuite) TestPermission_Matches() {
 	// Test exact match
 	perm := domain.Permission{Resource: "users", Action: "read"}
-	assert.True(suite.T(), perm.Matches("users", "read"))
-	assert.False(suite.T(), perm.Matches("users", "write"))
-	assert.False(suite.T(), perm.Matches("media", "read"))
+	suite.True(perm.Matches("users", "read"))
+	suite.False(perm.Matches("users", "write"))
+	suite.False(perm.Matches("media", "read"))
 
 	// Test wildcard action
 	wildcard := domain.Permission{Resource: "media", Action: "*"}
-	assert.True(suite.T(), wildcard.Matches("media", "read"))
-	assert.True(suite.T(), wildcard.Matches("media", "write"))
-	assert.True(suite.T(), wildcard.Matches("media", "delete"))
-	assert.False(suite.T(), wildcard.Matches("users", "read"))
+	suite.True(wildcard.Matches("media", "read"))
+	suite.True(wildcard.Matches("media", "write"))
+	suite.True(wildcard.Matches("media", "delete"))
+	suite.False(wildcard.Matches("users", "read"))
 
 	// Test wildcard resource
 	wildcardResource := domain.Permission{Resource: "*", Action: "read"}
-	assert.True(suite.T(), wildcardResource.Matches("users", "read"))
-	assert.True(suite.T(), wildcardResource.Matches("media", "read"))
-	assert.False(suite.T(), wildcardResource.Matches("users", "write"))
+	suite.True(wildcardResource.Matches("users", "read"))
+	suite.True(wildcardResource.Matches("media", "read"))
+	suite.False(wildcardResource.Matches("users", "write"))
 
 	// Test double wildcard
 	allAccess := domain.Permission{Resource: "*", Action: "*"}
-	assert.True(suite.T(), allAccess.Matches("users", "read"))
-	assert.True(suite.T(), allAccess.Matches("media", "write"))
-	assert.True(suite.T(), allAccess.Matches("anything", "anything"))
+	suite.True(allAccess.Matches("users", "read"))
+	suite.True(allAccess.Matches("media", "write"))
+	suite.True(allAccess.Matches("anything", "anything"))
 }
 
 func TestUserDomainTestSuite(t *testing.T) {

@@ -6,20 +6,21 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 )
 
-// Encryptor provides AES-256-GCM encryption for sensitive data
+// Encryptor provides AES-256-GCM encryption for sensitive data.
 type Encryptor struct {
 	key []byte
 }
 
 // NewEncryptor creates a new encryptor with the provided key
-// The key will be hashed with SHA-256 to ensure it's exactly 32 bytes
+// The key will be hashed with SHA-256 to ensure it's exactly 32 bytes.
 func NewEncryptor(key string) (*Encryptor, error) {
 	if key == "" {
-		return nil, fmt.Errorf("encryption key cannot be empty")
+		return nil, errors.New("encryption key cannot be empty")
 	}
 
 	// Hash the key to ensure it's exactly 32 bytes for AES-256
@@ -30,7 +31,7 @@ func NewEncryptor(key string) (*Encryptor, error) {
 	}, nil
 }
 
-// Encrypt encrypts plaintext using AES-256-GCM and returns base64 encoded ciphertext
+// Encrypt encrypts plaintext using AES-256-GCM and returns base64 encoded ciphertext.
 func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	if plaintext == "" {
 		return "", nil
@@ -56,7 +57,7 @@ func (e *Encryptor) Encrypt(plaintext string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// Decrypt decrypts base64 encoded ciphertext using AES-256-GCM
+// Decrypt decrypts base64 encoded ciphertext using AES-256-GCM.
 func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
 	if ciphertext == "" {
 		return "", nil
@@ -79,7 +80,7 @@ func (e *Encryptor) Decrypt(ciphertext string) (string, error) {
 
 	nonceSize := gcm.NonceSize()
 	if len(data) < nonceSize {
-		return "", fmt.Errorf("ciphertext too short")
+		return "", errors.New("ciphertext too short")
 	}
 
 	nonce := data[:nonceSize]

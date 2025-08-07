@@ -14,14 +14,15 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// PostgresContainer wraps a postgres test container
+// PostgresContainer wraps a postgres test container.
 type PostgresContainer struct {
 	*tcpostgres.PostgresContainer
+
 	ConnectionString string
 	DB               *gorm.DB
 }
 
-// SetupPostgresContainer creates a new postgres container for testing
+// SetupPostgresContainer creates a new postgres container for testing.
 func SetupPostgresContainer(t *testing.T) *PostgresContainer {
 	ctx := context.Background()
 
@@ -73,12 +74,12 @@ func SetupPostgresContainer(t *testing.T) *PostgresContainer {
 	}
 }
 
-// MigrateModels runs GORM auto-migration for the given models
+// MigrateModels runs GORM auto-migration for the given models.
 func (pc *PostgresContainer) MigrateModels(models ...interface{}) error {
 	return pc.DB.AutoMigrate(models...)
 }
 
-// TruncateTables truncates all tables to clean data between tests
+// TruncateTables truncates all tables to clean data between tests.
 func (pc *PostgresContainer) TruncateTables(tableNames ...string) error {
 	for _, table := range tableNames {
 		if err := pc.DB.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)).Error; err != nil {
@@ -88,7 +89,7 @@ func (pc *PostgresContainer) TruncateTables(tableNames ...string) error {
 	return nil
 }
 
-// BeginTx starts a new transaction for testing
+// BeginTx starts a new transaction for testing.
 func (pc *PostgresContainer) BeginTx() *gorm.DB {
 	return pc.DB.Begin()
 }

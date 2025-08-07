@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// New creates a new logger instance based on configuration
+// New creates a new logger instance based on configuration.
 func New(serviceName, environment, logLevel, logFormat string) (*zap.Logger, error) {
 	var config zap.Config
 
@@ -63,7 +63,7 @@ func New(serviceName, environment, logLevel, logFormat string) (*zap.Logger, err
 	return logger, nil
 }
 
-// WithContext creates a logger with request context fields
+// WithContext creates a logger with request context fields.
 func WithContext(logger *zap.Logger, requestID, userID string) *zap.Logger {
 	fields := []zap.Field{}
 
@@ -82,7 +82,7 @@ func WithContext(logger *zap.Logger, requestID, userID string) *zap.Logger {
 	return logger
 }
 
-// WithTracing adds trace and span IDs to the logger
+// WithTracing adds trace and span IDs to the logger.
 func WithTracing(logger *zap.Logger, traceID, spanID string) *zap.Logger {
 	fields := []zap.Field{}
 

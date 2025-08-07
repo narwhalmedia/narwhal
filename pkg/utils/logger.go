@@ -9,13 +9,13 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// ZapLogger wraps zap logger to implement our Logger interface
+// ZapLogger wraps zap logger to implement our Logger interface.
 type ZapLogger struct {
 	logger *zap.Logger
 	sugar  *zap.SugaredLogger
 }
 
-// NewZapLogger creates a new zap logger
+// NewZapLogger creates a new zap logger.
 func NewZapLogger(development bool) (*ZapLogger, error) {
 	var config zap.Config
 
@@ -39,39 +39,39 @@ func NewZapLogger(development bool) (*ZapLogger, error) {
 	}, nil
 }
 
-// Debug logs a debug message
+// Debug logs a debug message.
 func (l *ZapLogger) Debug(msg string, fields ...interfaces.Field) {
 	l.logger.Debug(msg, convertFields(fields)...)
 }
 
-// Info logs an info message
+// Info logs an info message.
 func (l *ZapLogger) Info(msg string, fields ...interfaces.Field) {
 	l.logger.Info(msg, convertFields(fields)...)
 }
 
-// Warn logs a warning message
+// Warn logs a warning message.
 func (l *ZapLogger) Warn(msg string, fields ...interfaces.Field) {
 	l.logger.Warn(msg, convertFields(fields)...)
 }
 
-// Error logs an error message
+// Error logs an error message.
 func (l *ZapLogger) Error(msg string, fields ...interfaces.Field) {
 	l.logger.Error(msg, convertFields(fields)...)
 }
 
-// Fatal logs a fatal message and exits
+// Fatal logs a fatal message and exits.
 func (l *ZapLogger) Fatal(msg string, fields ...interfaces.Field) {
 	l.logger.Fatal(msg, convertFields(fields)...)
 }
 
-// WithContext returns a logger with context
+// WithContext returns a logger with context.
 func (l *ZapLogger) WithContext(ctx context.Context) interfaces.Logger {
 	// Extract any relevant context values and add as fields
 	// For now, just return self
 	return l
 }
 
-// WithFields returns a logger with additional fields
+// WithFields returns a logger with additional fields.
 func (l *ZapLogger) WithFields(fields ...interfaces.Field) interfaces.Logger {
 	newLogger := l.logger.With(convertFields(fields)...)
 	return &ZapLogger{
@@ -80,12 +80,12 @@ func (l *ZapLogger) WithFields(fields ...interfaces.Field) interfaces.Logger {
 	}
 }
 
-// Sync flushes any buffered log entries
+// Sync flushes any buffered log entries.
 func (l *ZapLogger) Sync() error {
 	return l.logger.Sync()
 }
 
-// convertFields converts our Field type to zap.Field
+// convertFields converts our Field type to zap.Field.
 func convertFields(fields []interfaces.Field) []zap.Field {
 	zapFields := make([]zap.Field, len(fields))
 	for i, field := range fields {

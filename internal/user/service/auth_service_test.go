@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
@@ -14,13 +17,11 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/test/mocks"
 	"github.com/narwhalmedia/narwhal/test/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/suite"
 )
 
 type AuthServiceTestSuite struct {
 	suite.Suite
+
 	ctx         context.Context
 	mockRepo    *mocks.MockRepository
 	authService *service.AuthService
@@ -67,12 +68,12 @@ func (suite *AuthServiceTestSuite) TestLogin_Success() {
 	tokens, err := suite.authService.Login(suite.ctx, "testuser", "password123", "Test Device", "127.0.0.1", "Test/1.0")
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), tokens)
-	assert.NotEmpty(suite.T(), tokens.AccessToken)
-	assert.NotEmpty(suite.T(), tokens.RefreshToken)
-	assert.Equal(suite.T(), "Bearer", tokens.TokenType)
-	assert.Greater(suite.T(), tokens.ExpiresIn, 0)
+	suite.Require().NoError(err)
+	suite.NotNil(tokens)
+	suite.NotEmpty(tokens.AccessToken)
+	suite.NotEmpty(tokens.RefreshToken)
+	suite.Equal("Bearer", tokens.TokenType)
+	suite.Positive(tokens.ExpiresIn)
 }
 
 func (suite *AuthServiceTestSuite) TestLogin_InvalidCredentials() {
@@ -83,12 +84,19 @@ func (suite *AuthServiceTestSuite) TestLogin_InvalidCredentials() {
 	suite.mockRepo.On("GetUserByUsername", suite.ctx, "testuser").Return(user, nil)
 
 	// Act
-	tokens, err := suite.authService.Login(suite.ctx, "testuser", "wrongpassword", "Test Device", "127.0.0.1", "Test/1.0")
+	tokens, err := suite.authService.Login(
+		suite.ctx,
+		"testuser",
+		"wrongpassword",
+		"Test Device",
+		"127.0.0.1",
+		"Test/1.0",
+	)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), tokens)
-	assert.True(suite.T(), errors.IsUnauthorized(err))
+	suite.Require().Error(err)
+	suite.Nil(tokens)
+	suite.True(errors.IsUnauthorized(err))
 }
 
 func (suite *AuthServiceTestSuite) TestLogin_UserNotFound() {
@@ -97,12 +105,19 @@ func (suite *AuthServiceTestSuite) TestLogin_UserNotFound() {
 	suite.mockRepo.On("GetUserByEmail", suite.ctx, "nonexistent").Return(nil, errors.NotFound("user not found"))
 
 	// Act
-	tokens, err := suite.authService.Login(suite.ctx, "nonexistent", "password123", "Test Device", "127.0.0.1", "Test/1.0")
+	tokens, err := suite.authService.Login(
+		suite.ctx,
+		"nonexistent",
+		"password123",
+		"Test Device",
+		"127.0.0.1",
+		"Test/1.0",
+	)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), tokens)
-	assert.True(suite.T(), errors.IsUnauthorized(err))
+	suite.Require().Error(err)
+	suite.Nil(tokens)
+	suite.True(errors.IsUnauthorized(err))
 }
 
 func (suite *AuthServiceTestSuite) TestLogin_InactiveUser() {
@@ -117,9 +132,9 @@ func (suite *AuthServiceTestSuite) TestLogin_InactiveUser() {
 	tokens, err := suite.authService.Login(suite.ctx, "testuser", "password123", "Test Device", "127.0.0.1", "Test/1.0")
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), tokens)
-	assert.True(suite.T(), errors.IsForbidden(err))
+	suite.Require().Error(err)
+	suite.Nil(tokens)
+	suite.True(errors.IsForbidden(err))
 }
 
 func (suite *AuthServiceTestSuite) TestRefreshToken_Success() {
@@ -135,10 +150,10 @@ func (suite *AuthServiceTestSuite) TestRefreshToken_Success() {
 	tokens, err := suite.authService.RefreshToken(suite.ctx, session.RefreshToken)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), tokens)
-	assert.NotEmpty(suite.T(), tokens.AccessToken)
-	assert.Equal(suite.T(), session.RefreshToken, tokens.RefreshToken)
+	suite.Require().NoError(err)
+	suite.NotNil(tokens)
+	suite.NotEmpty(tokens.AccessToken)
+	suite.Equal(session.RefreshToken, tokens.RefreshToken)
 }
 
 func (suite *AuthServiceTestSuite) TestRefreshToken_ExpiredSession() {
@@ -154,9 +169,9 @@ func (suite *AuthServiceTestSuite) TestRefreshToken_ExpiredSession() {
 	tokens, err := suite.authService.RefreshToken(suite.ctx, session.RefreshToken)
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), tokens)
-	assert.True(suite.T(), errors.IsUnauthorized(err))
+	suite.Require().Error(err)
+	suite.Nil(tokens)
+	suite.True(errors.IsUnauthorized(err))
 }
 
 func (suite *AuthServiceTestSuite) TestLogout_Success() {
@@ -175,7 +190,7 @@ func (suite *AuthServiceTestSuite) TestLogout_Success() {
 	err := suite.authService.Logout(suite.ctx, userID, sessionID.String())
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *AuthServiceTestSuite) TestLogout_SessionNotBelongToUser() {
@@ -194,8 +209,8 @@ func (suite *AuthServiceTestSuite) TestLogout_SessionNotBelongToUser() {
 	err := suite.authService.Logout(suite.ctx, userID, sessionID.String())
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.True(suite.T(), errors.IsForbidden(err))
+	suite.Require().Error(err)
+	suite.True(errors.IsForbidden(err))
 }
 
 func (suite *AuthServiceTestSuite) TestLogoutAll_Success() {
@@ -208,7 +223,7 @@ func (suite *AuthServiceTestSuite) TestLogoutAll_Success() {
 	err := suite.authService.LogoutAll(suite.ctx, userID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *AuthServiceTestSuite) TestValidateToken_Success() {
@@ -225,10 +240,10 @@ func (suite *AuthServiceTestSuite) TestValidateToken_Success() {
 	claims, err := suite.authService.ValidateToken(suite.ctx, tokens.AccessToken)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.NotNil(suite.T(), claims)
-	assert.Equal(suite.T(), user.ID.String(), claims.UserID)
-	assert.Equal(suite.T(), user.Username, claims.Username)
+	suite.Require().NoError(err)
+	suite.NotNil(claims)
+	suite.Equal(user.ID.String(), claims.UserID)
+	suite.Equal(user.Username, claims.Username)
 }
 
 func (suite *AuthServiceTestSuite) TestValidateToken_InvalidToken() {
@@ -236,9 +251,9 @@ func (suite *AuthServiceTestSuite) TestValidateToken_InvalidToken() {
 	claims, err := suite.authService.ValidateToken(suite.ctx, "invalid-token")
 
 	// Assert
-	assert.Error(suite.T(), err)
-	assert.Nil(suite.T(), claims)
-	assert.True(suite.T(), errors.IsUnauthorized(err))
+	suite.Require().Error(err)
+	suite.Nil(claims)
+	suite.True(errors.IsUnauthorized(err))
 }
 
 func (suite *AuthServiceTestSuite) TestGetUserSessions_Success() {
@@ -255,8 +270,8 @@ func (suite *AuthServiceTestSuite) TestGetUserSessions_Success() {
 	result, err := suite.authService.GetUserSessions(suite.ctx, userID)
 
 	// Assert
-	assert.NoError(suite.T(), err)
-	assert.Len(suite.T(), result, 2)
+	suite.Require().NoError(err)
+	suite.Len(result, 2)
 }
 
 func (suite *AuthServiceTestSuite) TestCleanupExpiredSessions_Success() {
@@ -267,7 +282,7 @@ func (suite *AuthServiceTestSuite) TestCleanupExpiredSessions_Success() {
 	err := suite.authService.CleanupExpiredSessions(suite.ctx)
 
 	// Assert
-	assert.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func TestAuthServiceTestSuite(t *testing.T) {

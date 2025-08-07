@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/narwhalmedia/narwhal/internal/library/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
@@ -12,7 +14,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
-// LibraryService handles library business logic
+// LibraryService handles library business logic.
 type LibraryService struct {
 	repo     repository.Repository
 	eventBus interfaces.EventBus
@@ -21,7 +23,7 @@ type LibraryService struct {
 	scanner  *domain.Scanner
 }
 
-// NewLibraryService creates a new library service
+// NewLibraryService creates a new library service.
 func NewLibraryService(
 	repo repository.Repository,
 	eventBus interfaces.EventBus,
@@ -37,7 +39,7 @@ func NewLibraryService(
 	}
 }
 
-// CreateLibrary creates a new media library
+// CreateLibrary creates a new media library.
 func (s *LibraryService) CreateLibrary(ctx context.Context, library *domain.Library) error {
 	// Validate input
 	if library.Name == "" || library.Path == "" {
@@ -72,7 +74,7 @@ func (s *LibraryService) CreateLibrary(ctx context.Context, library *domain.Libr
 	return nil
 }
 
-// GetLibrary retrieves a library by ID
+// GetLibrary retrieves a library by ID.
 func (s *LibraryService) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error) {
 	// Check cache first
 	cacheKey := "library:" + id.String()
@@ -89,18 +91,21 @@ func (s *LibraryService) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.
 	}
 
 	// Cache the result
-	s.cache.Set(ctx, cacheKey, library, 5*time.Minute)
-
+	_ = s.cache.Set(ctx, cacheKey, library, constants.CacheTTL)
 	return library, nil
 }
 
-// ListLibraries lists all libraries
+// ListLibraries lists all libraries.
 func (s *LibraryService) ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error) {
 	return s.repo.ListLibraries(ctx, enabled)
 }
 
-// UpdateLibrary updates a library
-func (s *LibraryService) UpdateLibrary(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*domain.Library, error) {
+// UpdateLibrary updates a library.
+func (s *LibraryService) UpdateLibrary(
+	ctx context.Context,
+	id uuid.UUID,
+	updates map[string]interface{},
+) (*domain.Library, error) {
 	// Get existing library
 	library, err := s.repo.GetLibrary(ctx, id)
 	if err != nil {
@@ -127,7 +132,7 @@ func (s *LibraryService) UpdateLibrary(ctx context.Context, id uuid.UUID, update
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, "library:"+id.String())
+	_ = s.cache.Delete(ctx, "library:"+id.String())
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, domain.NewLibraryUpdatedEvent(library))
@@ -135,7 +140,7 @@ func (s *LibraryService) UpdateLibrary(ctx context.Context, id uuid.UUID, update
 	return library, nil
 }
 
-// DeleteLibrary deletes a library
+// DeleteLibrary deletes a library.
 func (s *LibraryService) DeleteLibrary(ctx context.Context, id uuid.UUID) error {
 	// Check if library exists
 	library, err := s.repo.GetLibrary(ctx, id)
@@ -149,7 +154,7 @@ func (s *LibraryService) DeleteLibrary(ctx context.Context, id uuid.UUID) error 
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, "library:"+id.String())
+	_ = s.cache.Delete(ctx, "library:"+id.String())
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, domain.NewLibraryDeletedEvent(id))
@@ -161,7 +166,7 @@ func (s *LibraryService) DeleteLibrary(ctx context.Context, id uuid.UUID) error 
 	return nil
 }
 
-// ScanLibrary starts a library scan
+// ScanLibrary starts a library scan.
 func (s *LibraryService) ScanLibrary(ctx context.Context, id uuid.UUID) error {
 	library, err := s.repo.GetLibrary(ctx, id)
 	if err != nil {
@@ -179,7 +184,7 @@ func (s *LibraryService) ScanLibrary(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// performScan performs the actual library scan
+// performScan performs the actual library scan.
 func (s *LibraryService) performScan(ctx context.Context, library *domain.Library) {
 	// Mark library as scanning
 	s.scanner.SetScanning(library.ID.String(), true)
@@ -209,7 +214,7 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 
 		scanResult.CompletedAt = timePtr(time.Now())
 		scanResult.ErrorMessage = err.Error()
-		s.repo.UpdateScanHistory(ctx, scanResult)
+		_ = s.repo.UpdateScanHistory(ctx, scanResult)
 		return
 	}
 
@@ -270,12 +275,10 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 	// Update library last scan time
 	now := time.Now()
 	library.LastScanAt = &now
-	s.repo.UpdateLibrary(ctx, library)
-
+	_ = s.repo.UpdateLibrary(ctx, library)
 	// Complete scan history
 	scanResult.CompletedAt = timePtr(time.Now())
-	s.repo.UpdateScanHistory(ctx, scanResult)
-
+	_ = s.repo.UpdateScanHistory(ctx, scanResult)
 	duration := time.Since(scanResult.StartedAt)
 	s.logger.Info("Library scan completed",
 		interfaces.String("library_id", library.ID.String()),
@@ -285,10 +288,13 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 		interfaces.Any("duration", duration))
 
 	// Publish scan completed event
-	s.eventBus.PublishAsync(ctx, domain.NewLibraryScanCompletedEvent(library, scanResult.FilesAdded, scanResult.FilesUpdated))
+	s.eventBus.PublishAsync(
+		ctx,
+		domain.NewLibraryScanCompletedEvent(library, scanResult.FilesAdded, scanResult.FilesUpdated),
+	)
 }
 
-// GetMedia retrieves a media item by ID
+// GetMedia retrieves a media item by ID.
 func (s *LibraryService) GetMedia(ctx context.Context, id uuid.UUID) (*models.Media, error) {
 	// Check cache first
 	cacheKey := "media:" + id.String()
@@ -305,25 +311,35 @@ func (s *LibraryService) GetMedia(ctx context.Context, id uuid.UUID) (*models.Me
 	}
 
 	// Cache the result
-	s.cache.Set(ctx, cacheKey, media, 5*time.Minute)
-
+	_ = s.cache.Set(ctx, cacheKey, media, constants.CacheTTL)
 	return media, nil
 }
 
-// SearchMedia searches for media items
-func (s *LibraryService) SearchMedia(ctx context.Context, query string, mediaType *string, status *string, libraryID *uuid.UUID, limit, offset int) ([]*models.Media, error) {
+// SearchMedia searches for media items.
+func (s *LibraryService) SearchMedia(
+	ctx context.Context,
+	query string,
+	mediaType *string,
+	status *string,
+	libraryID *uuid.UUID,
+	limit, offset int,
+) ([]*models.Media, error) {
 	if limit <= 0 {
 		limit = 50
 	}
-	if limit > 200 {
+	if limit > constants.MaxPageSize {
 		limit = 200
 	}
 
 	return s.repo.SearchMedia(ctx, query, mediaType, status, libraryID, limit, offset)
 }
 
-// UpdateMedia updates a media item
-func (s *LibraryService) UpdateMedia(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.Media, error) {
+// UpdateMedia updates a media item.
+func (s *LibraryService) UpdateMedia(
+	ctx context.Context,
+	id uuid.UUID,
+	updates map[string]interface{},
+) (*models.Media, error) {
 	// Get existing media
 	media, err := s.repo.GetMedia(ctx, id)
 	if err != nil {
@@ -353,7 +369,7 @@ func (s *LibraryService) UpdateMedia(ctx context.Context, id uuid.UUID, updates 
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, "media:"+id.String())
+	_ = s.cache.Delete(ctx, "media:"+id.String())
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, domain.NewMediaUpdatedEvent(media))
@@ -361,7 +377,7 @@ func (s *LibraryService) UpdateMedia(ctx context.Context, id uuid.UUID, updates 
 	return media, nil
 }
 
-// DeleteMedia deletes a media item
+// DeleteMedia deletes a media item.
 func (s *LibraryService) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	// Check if media exists
 	media, err := s.repo.GetMedia(ctx, id)
@@ -375,7 +391,7 @@ func (s *LibraryService) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	}
 
 	// Invalidate cache
-	s.cache.Delete(ctx, "media:"+id.String())
+	_ = s.cache.Delete(ctx, "media:"+id.String())
 
 	// Publish event
 	s.eventBus.PublishAsync(ctx, domain.NewMediaDeletedEvent(id.String()))
@@ -387,24 +403,29 @@ func (s *LibraryService) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// ListMediaByLibrary lists media items in a library
-func (s *LibraryService) ListMediaByLibrary(ctx context.Context, libraryID uuid.UUID, status *string, limit, offset int) ([]*models.Media, error) {
+// ListMediaByLibrary lists media items in a library.
+func (s *LibraryService) ListMediaByLibrary(
+	ctx context.Context,
+	libraryID uuid.UUID,
+	status *string,
+	limit, offset int,
+) ([]*models.Media, error) {
 	if limit <= 0 {
 		limit = 50
 	}
-	if limit > 200 {
+	if limit > constants.MaxPageSize {
 		limit = 200
 	}
 
 	return s.repo.ListMediaByLibrary(ctx, libraryID, status, limit, offset)
 }
 
-// GetLatestScan gets the latest scan result for a library
+// GetLatestScan gets the latest scan result for a library.
 func (s *LibraryService) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error) {
 	return s.repo.GetLatestScan(ctx, libraryID)
 }
 
-// Helper function to get a pointer to time
+// Helper function to get a pointer to time.
 func timePtr(t time.Time) *time.Time {
 	return &t
 }

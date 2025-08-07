@@ -6,12 +6,13 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 )
 
-// Cursor represents pagination cursor data
+// Cursor represents pagination cursor data.
 type Cursor struct {
 	Offset    int       `json:"offset"`
 	Timestamp time.Time `json:"timestamp"`
@@ -19,16 +20,16 @@ type Cursor struct {
 	SortValue string    `json:"sort_value,omitempty"`
 }
 
-// CursorEncoder handles cursor encryption/decryption
+// CursorEncoder handles cursor encryption/decryption.
 type CursorEncoder struct {
 	cipher cipher.Block
 }
 
-// NewCursorEncoder creates a new cursor encoder with the given key
+// NewCursorEncoder creates a new cursor encoder with the given key.
 func NewCursorEncoder(key []byte) (*CursorEncoder, error) {
 	// Ensure key is exactly 32 bytes for AES-256
 	if len(key) != 32 {
-		return nil, fmt.Errorf("key must be 32 bytes for AES-256")
+		return nil, errors.New("key must be 32 bytes for AES-256")
 	}
 
 	block, err := aes.NewCipher(key)
@@ -41,7 +42,7 @@ func NewCursorEncoder(key []byte) (*CursorEncoder, error) {
 	}, nil
 }
 
-// EncodeCursor encrypts and encodes a cursor to a base64 string
+// EncodeCursor encrypts and encodes a cursor to a base64 string.
 func (e *CursorEncoder) EncodeCursor(cursor *Cursor) (string, error) {
 	// Marshal cursor to JSON
 	plaintext, err := json.Marshal(cursor)
@@ -68,7 +69,7 @@ func (e *CursorEncoder) EncodeCursor(cursor *Cursor) (string, error) {
 	return base64.URLEncoding.EncodeToString(ciphertext), nil
 }
 
-// DecodeCursor decrypts and decodes a cursor from a base64 string
+// DecodeCursor decrypts and decodes a cursor from a base64 string.
 func (e *CursorEncoder) DecodeCursor(encoded string) (*Cursor, error) {
 	// Decode from base64
 	ciphertext, err := base64.URLEncoding.DecodeString(encoded)
@@ -85,7 +86,7 @@ func (e *CursorEncoder) DecodeCursor(encoded string) (*Cursor, error) {
 	// Extract nonce
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return nil, fmt.Errorf("ciphertext too short")
+		return nil, errors.New("ciphertext too short")
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
@@ -105,7 +106,7 @@ func (e *CursorEncoder) DecodeCursor(encoded string) (*Cursor, error) {
 	return &cursor, nil
 }
 
-// CreateOffsetCursor creates a simple offset-based cursor
+// CreateOffsetCursor creates a simple offset-based cursor.
 func CreateOffsetCursor(offset int) *Cursor {
 	return &Cursor{
 		Offset:    offset,
@@ -113,7 +114,7 @@ func CreateOffsetCursor(offset int) *Cursor {
 	}
 }
 
-// CreateKeyCursor creates a cursor for keyset pagination
+// CreateKeyCursor creates a cursor for keyset pagination.
 func CreateKeyCursor(offset int, sortField, sortValue string) *Cursor {
 	return &Cursor{
 		Offset:    offset,
@@ -123,18 +124,18 @@ func CreateKeyCursor(offset int, sortField, sortValue string) *Cursor {
 	}
 }
 
-// IsExpired checks if the cursor is older than the given duration
+// IsExpired checks if the cursor is older than the given duration.
 func (c *Cursor) IsExpired(maxAge time.Duration) bool {
 	return time.Since(c.Timestamp) > maxAge
 }
 
-// PaginationParams contains common pagination parameters
+// PaginationParams contains common pagination parameters.
 type PaginationParams struct {
 	PageSize  int32
 	PageToken string
 }
 
-// Response contains pagination response metadata
+// Response contains pagination response metadata.
 type Response struct {
 	NextPageToken string
 	PrevPageToken string
@@ -142,7 +143,7 @@ type Response struct {
 	HasMore       bool
 }
 
-// CalculateOffset calculates the offset from a page token
+// CalculateOffset calculates the offset from a page token.
 func CalculateOffset(encoder *CursorEncoder, pageToken string, defaultOffset int) (int, error) {
 	if pageToken == "" {
 		return defaultOffset, nil
@@ -155,13 +156,13 @@ func CalculateOffset(encoder *CursorEncoder, pageToken string, defaultOffset int
 
 	// Check if cursor is expired (24 hours)
 	if cursor.IsExpired(24 * time.Hour) {
-		return 0, fmt.Errorf("page token expired")
+		return 0, errors.New("page token expired")
 	}
 
 	return cursor.Offset, nil
 }
 
-// GenerateNextPageToken generates the next page token
+// GenerateNextPageToken generates the next page token.
 func GenerateNextPageToken(encoder *CursorEncoder, currentOffset, pageSize, totalItems int) (string, error) {
 	nextOffset := currentOffset + pageSize
 	if nextOffset >= totalItems {
@@ -172,7 +173,7 @@ func GenerateNextPageToken(encoder *CursorEncoder, currentOffset, pageSize, tota
 	return encoder.EncodeCursor(cursor)
 }
 
-// GeneratePrevPageToken generates the previous page token
+// GeneratePrevPageToken generates the previous page token.
 func GeneratePrevPageToken(encoder *CursorEncoder, currentOffset, pageSize int) (string, error) {
 	if currentOffset <= 0 {
 		return "", nil // No previous page

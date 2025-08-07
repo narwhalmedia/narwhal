@@ -11,7 +11,7 @@ import (
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 )
 
-// UnaryServerInterceptor returns a gRPC unary server interceptor for logging
+// UnaryServerInterceptor returns a gRPC unary server interceptor for logging.
 func UnaryServerInterceptor(logger interfaces.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		start := time.Now()
@@ -58,7 +58,7 @@ func UnaryServerInterceptor(logger interfaces.Logger) grpc.UnaryServerIntercepto
 	}
 }
 
-// StreamServerInterceptor returns a gRPC stream server interceptor for logging
+// StreamServerInterceptor returns a gRPC stream server interceptor for logging.
 func StreamServerInterceptor(logger interfaces.Logger) grpc.StreamServerInterceptor {
 	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		start := time.Now()
@@ -108,9 +108,10 @@ func StreamServerInterceptor(logger interfaces.Logger) grpc.StreamServerIntercep
 	}
 }
 
-// wrappedServerStream wraps a grpc.ServerStream with a custom context
+// wrappedServerStream wraps a grpc.ServerStream with a custom context.
 type wrappedServerStream struct {
 	grpc.ServerStream
+
 	ctx context.Context
 }
 

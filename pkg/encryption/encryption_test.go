@@ -29,10 +29,10 @@ func TestNewEncryptor(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			enc, err := NewEncryptor(tt.key)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, enc)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, enc)
 			}
 		})
@@ -77,7 +77,7 @@ func TestEncryptDecrypt(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Encrypt
 			encrypted, err := enc.Encrypt(tt.plaintext)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			if tt.plaintext == "" {
 				assert.Empty(t, encrypted)
@@ -88,7 +88,7 @@ func TestEncryptDecrypt(t *testing.T) {
 
 			// Decrypt
 			decrypted, err := enc.Decrypt(encrypted)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.plaintext, decrypted)
 		})
 	}
@@ -151,10 +151,10 @@ func TestDecryptInvalidData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			decrypted, err := enc.Decrypt(tt.ciphertext)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, decrypted)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -175,11 +175,11 @@ func TestDifferentKeys(t *testing.T) {
 
 	// Try to decrypt with second encryptor (different key)
 	decrypted, err := enc2.Decrypt(encrypted)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, decrypted)
 
 	// Decrypt with correct encryptor should work
 	decrypted, err = enc1.Decrypt(encrypted)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, plaintext, decrypted)
 }
