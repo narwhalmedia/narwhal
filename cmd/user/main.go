@@ -18,10 +18,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"gorm.io/gorm"
 
-	"github.com/narwhalmedia/narwhal/cmd/constants"
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/handler"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
 	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
@@ -121,7 +120,7 @@ func main() {
 		defer ticker.Stop()
 
 		for range ticker.C {
-			ctx, cancel := context.WithTimeout(context.Background(), constants.MigrationTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Hour)
 			if err := authService.CleanupExpiredSessions(ctx); err != nil {
 				log.Error("Failed to cleanup expired sessions", interfaces.Error(err))
 			}
@@ -161,7 +160,7 @@ func main() {
 	log.Info("Shutting down user service...")
 
 	// Graceful shutdown with timeout
-	_, shutdownCancel := context.WithTimeout(context.Background(), constants.ShutdownTimeout)
+	_, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
 
 	// Stop gRPC server
@@ -232,49 +231,49 @@ func seedInitialData(db *gorm.DB) error {
 	repo := repository.NewGormRepository(db)
 
 	// Check if roles already exist
-	if _, err := repo.GetRoleByName(ctx, domain.RoleAdmin); err == nil {
+	if _, err := repo.GetRoleByName(ctx, models.RoleAdmin); err == nil {
 		return nil // Already seeded
 	}
 
 	// Create permissions
-	permissions := []domain.Permission{
+	permissions := []models.Permission{
 		// System permissions
-		{Resource: domain.ResourceSystem, Action: domain.ActionAdmin, Description: "Full system administration"},
+		{Resource: models.ResourceSystem, Action: models.ActionAdmin, Description: "Full system administration"},
 
 		// User permissions
-		{Resource: domain.ResourceUser, Action: domain.ActionRead, Description: "View users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionWrite, Description: "Create/update users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionDelete, Description: "Delete users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionAdmin, Description: "Manage user roles and permissions"},
+		{Resource: models.ResourceUser, Action: models.ActionRead, Description: "View users"},
+		{Resource: models.ResourceUser, Action: models.ActionWrite, Description: "Create/update users"},
+		{Resource: models.ResourceUser, Action: models.ActionDelete, Description: "Delete users"},
+		{Resource: models.ResourceUser, Action: models.ActionAdmin, Description: "Manage user roles and permissions"},
 
 		// Library permissions
-		{Resource: domain.ResourceLibrary, Action: domain.ActionRead, Description: "View libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionWrite, Description: "Create/update libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionDelete, Description: "Delete libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionAdmin, Description: "Manage library settings"},
+		{Resource: models.ResourceLibrary, Action: models.ActionRead, Description: "View libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionWrite, Description: "Create/update libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionDelete, Description: "Delete libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionAdmin, Description: "Manage library settings"},
 
 		// Media permissions
-		{Resource: domain.ResourceMedia, Action: domain.ActionRead, Description: "View media"},
-		{Resource: domain.ResourceMedia, Action: domain.ActionWrite, Description: "Create/update media"},
-		{Resource: domain.ResourceMedia, Action: domain.ActionDelete, Description: "Delete media"},
+		{Resource: models.ResourceMedia, Action: models.ActionRead, Description: "View media"},
+		{Resource: models.ResourceMedia, Action: models.ActionWrite, Description: "Create/update media"},
+		{Resource: models.ResourceMedia, Action: models.ActionDelete, Description: "Delete media"},
 
 		// Streaming permissions
-		{Resource: domain.ResourceStreaming, Action: domain.ActionRead, Description: "Stream media"},
-		{Resource: domain.ResourceStreaming, Action: domain.ActionAdmin, Description: "Manage streaming settings"},
+		{Resource: models.ResourceStreaming, Action: models.ActionRead, Description: "Stream media"},
+		{Resource: models.ResourceStreaming, Action: models.ActionAdmin, Description: "Manage streaming settings"},
 
 		// Transcoding permissions
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionRead, Description: "View transcoding jobs"},
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionWrite, Description: "Create transcoding jobs"},
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionAdmin, Description: "Manage transcoding settings"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionRead, Description: "View transcoding jobs"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionWrite, Description: "Create transcoding jobs"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionAdmin, Description: "Manage transcoding settings"},
 
 		// Acquisition permissions
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionRead, Description: "View acquisition settings"},
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionWrite, Description: "Manage acquisition settings"},
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionAdmin, Description: "Full acquisition control"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionRead, Description: "View acquisition settings"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionWrite, Description: "Manage acquisition settings"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionAdmin, Description: "Full acquisition control"},
 
 		// Analytics permissions
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionRead, Description: "View analytics"},
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionAdmin, Description: "Manage analytics settings"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionRead, Description: "View analytics"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionAdmin, Description: "Manage analytics settings"},
 	}
 
 	for i := range permissions {
@@ -291,45 +290,45 @@ func seedInitialData(db *gorm.DB) error {
 		permissions []string
 	}{
 		{
-			name:        domain.RoleAdmin,
+			name:        models.RoleAdmin,
 			description: "Administrator with full access",
 			permissions: []string{"*:*"}, // All permissions
 		},
 		{
-			name:        domain.RoleUser,
+			name:        models.RoleUser,
 			description: "Regular user with media access",
 			permissions: []string{
-				domain.ResourceLibrary + ":" + domain.ActionRead,
-				domain.ResourceMedia + ":" + domain.ActionRead,
-				domain.ResourceStreaming + ":" + domain.ActionRead,
-				domain.ResourceAnalytics + ":" + domain.ActionRead,
+				models.ResourceLibrary + ":" + models.ActionRead,
+				models.ResourceMedia + ":" + models.ActionRead,
+				models.ResourceStreaming + ":" + models.ActionRead,
+				models.ResourceAnalytics + ":" + models.ActionRead,
 			},
 		},
 		{
-			name:        domain.RoleGuest,
+			name:        models.RoleGuest,
 			description: "Guest with limited access",
 			permissions: []string{
-				domain.ResourceMedia + ":" + domain.ActionRead,
+				models.ResourceMedia + ":" + models.ActionRead,
 			},
 		},
 	}
 
 	for _, r := range roles {
-		role := &domain.Role{
+		role := &models.Role{
 			ID:          uuid.New(),
 			Name:        r.name,
 			Description: r.description,
 		}
 
 		// Add permissions
-		if r.name == domain.RoleAdmin {
+		if r.name == models.RoleAdmin {
 			// Admin gets all permissions
 			role.Permissions = permissions
 		} else {
 			// Find specific permissions
 			for _, permStr := range r.permissions {
 				parts := strings.Split(permStr, ":")
-				if len(parts) == constants.ArgumentSeparatorParts {
+				if len(parts) == 2 {
 					for _, p := range permissions {
 						if p.Resource == parts[0] && p.Action == parts[1] {
 							role.Permissions = append(role.Permissions, p)

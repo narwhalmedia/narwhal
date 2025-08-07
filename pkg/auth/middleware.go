@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // ContextKey is a type for context keys.
@@ -33,8 +35,8 @@ type AuthInterceptor struct {
 // PolicyEnforcerInterface defines the interface for policy enforcement.
 type PolicyEnforcerInterface interface {
 	Enforce(roles []string, resource, action string) error
-	EnforceAny(roles []string, permissions ...Permission) error
-	EnforceAll(roles []string, permissions ...Permission) error
+	EnforceAny(roles []string, permissions ...models.Permission) error
+	EnforceAll(roles []string, permissions ...models.Permission) error
 }
 
 // NewAuthInterceptor creates a new auth interceptor.
@@ -73,7 +75,7 @@ func (p *GenericPolicyEnforcer) Enforce(roles []string, resource, action string)
 }
 
 // EnforceAny checks if the given roles satisfy any of the permission requirements.
-func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
+func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return nil
@@ -88,7 +90,7 @@ func (p *GenericPolicyEnforcer) EnforceAny(roles []string, permissions ...Permis
 }
 
 // EnforceAll checks if the given roles satisfy all permission requirements.
-func (p *GenericPolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
+func (p *GenericPolicyEnforcer) EnforceAll(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return fmt.Errorf("permission denied: %s:%s", perm.Resource, perm.Action)
@@ -316,7 +318,7 @@ func (a *AuthInterceptor) RequirePermission(resource, action string) func(contex
 }
 
 // RequireAnyPermission creates a function that checks for any of the given permissions.
-func (a *AuthInterceptor) RequireAnyPermission(permissions ...Permission) func(context.Context) error {
+func (a *AuthInterceptor) RequireAnyPermission(permissions ...models.Permission) func(context.Context) error {
 	return func(ctx context.Context) error {
 		roles, ok := GetRolesFromContext(ctx)
 		if !ok {
@@ -328,7 +330,7 @@ func (a *AuthInterceptor) RequireAnyPermission(permissions ...Permission) func(c
 }
 
 // RequireAllPermissions creates a function that checks for all of the given permissions.
-func (a *AuthInterceptor) RequireAllPermissions(permissions ...Permission) func(context.Context) error {
+func (a *AuthInterceptor) RequireAllPermissions(permissions ...models.Permission) func(context.Context) error {
 	return func(ctx context.Context) error {
 		roles, ok := GetRolesFromContext(ctx)
 		if !ok {

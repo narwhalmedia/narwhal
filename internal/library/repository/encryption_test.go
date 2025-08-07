@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/testutil"
 )
 
@@ -33,11 +33,11 @@ func (suite *EncryptionTestSuite) SetupSuite() {
 
 	// Run migrations
 	err := suite.container.DB.AutoMigrate(
-		&repository.Library{},
-		&repository.MediaItem{},
-		&repository.Episode{},
-		&repository.MetadataProvider{},
-		&repository.ScanHistory{},
+		&models.Library{},
+		&models.Media{},
+		&models.Episode{},
+		&models.MetadataProvider{},
+		&models.ScanHistory{},
 	)
 	suite.Require().NoError(err)
 }
@@ -55,7 +55,7 @@ func (suite *EncryptionTestSuite) SetupTest() {
 
 func (suite *EncryptionTestSuite) TestAPIKeyEncryption() {
 	// Create a provider with an API key
-	provider := &domain.MetadataProviderConfig{
+	provider := &models.MetadataProvider{
 		Name:         "TMDB",
 		ProviderType: "tmdb",
 		APIKey:       "sk-test-api-key-123456789",
@@ -69,7 +69,7 @@ func (suite *EncryptionTestSuite) TestAPIKeyEncryption() {
 	suite.Require().NotEqual(uuid.Nil, provider.ID)
 
 	// Query the database directly to verify encryption
-	var dbProvider repository.MetadataProvider
+	var dbProvider models.MetadataProvider
 	err = suite.container.DB.First(&dbProvider, "id = ?", provider.ID).Error
 	suite.Require().NoError(err)
 
@@ -87,7 +87,7 @@ func (suite *EncryptionTestSuite) TestAPIKeyEncryption() {
 
 func (suite *EncryptionTestSuite) TestUpdateProviderEncryption() {
 	// Create a provider
-	provider := &domain.MetadataProviderConfig{
+	provider := &models.MetadataProvider{
 		Name:         "TVDB",
 		ProviderType: "tvdb",
 		APIKey:       "original-api-key",
@@ -104,7 +104,7 @@ func (suite *EncryptionTestSuite) TestUpdateProviderEncryption() {
 	suite.Require().NoError(err)
 
 	// Query the database directly
-	var dbProvider repository.MetadataProvider
+	var dbProvider models.MetadataProvider
 	err = suite.container.DB.First(&dbProvider, "id = ?", provider.ID).Error
 	suite.Require().NoError(err)
 
@@ -120,7 +120,7 @@ func (suite *EncryptionTestSuite) TestUpdateProviderEncryption() {
 
 func (suite *EncryptionTestSuite) TestEmptyAPIKey() {
 	// Create a provider with empty API key
-	provider := &domain.MetadataProviderConfig{
+	provider := &models.MetadataProvider{
 		Name:         "MusicBrainz",
 		ProviderType: "musicbrainz",
 		APIKey:       "",
@@ -139,7 +139,7 @@ func (suite *EncryptionTestSuite) TestEmptyAPIKey() {
 
 func (suite *EncryptionTestSuite) TestListProvidersDecryption() {
 	// Create multiple providers
-	providers := []*domain.MetadataProviderConfig{
+	providers := []*models.MetadataProvider{
 		{
 			Name:         "Provider1",
 			ProviderType: "type1",

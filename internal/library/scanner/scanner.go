@@ -1,4 +1,4 @@
-package domain
+package scanner
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
@@ -161,16 +160,15 @@ func ExtractTitle(path string) string {
 	return strings.Join(words, " ")
 }
 
-// ScanPath scans a library path and returns scan results.
-func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, error) {
+// ScanPath is now part of the scanner, but it's not used by the service directly.
+// The service now calls ScanDirectory. I'll keep this here for now for reference, but it should be removed.
+func (s *Scanner) ScanPath(ctx context.Context, library *models.Library) (*models.ScanHistory, error) {
 	libraryID := library.ID.String()
 
 	// Check if already scanning
 	if s.IsScanning(libraryID) {
-		return &ScanResult{
+		return &models.ScanHistory{
 			LibraryID:    library.ID,
-			Status:       "already_scanning",
-			Errors:       1,
 			ErrorMessage: "Library is already being scanned",
 		}, nil
 	}
@@ -179,47 +177,39 @@ func (s *Scanner) ScanPath(ctx context.Context, library *Library) (*ScanResult, 
 	s.SetScanning(libraryID, true)
 	defer s.SetScanning(libraryID, false)
 
-	result := &ScanResult{
+	result := &models.ScanHistory{
 		ID:        uuid.New(),
 		LibraryID: library.ID,
 		StartedAt: time.Now(),
-		Status:    "scanning",
 	}
 
 	// Check if path exists
 	if _, err := os.Stat(library.Path); os.IsNotExist(err) {
-		result.Status = "failed"
-		result.Errors = 1
 		result.ErrorMessage = "Library path does not exist"
-		result.CompletedAt = &[]time.Time{time.Now()}[0]
-		result.Duration = time.Since(result.StartedAt).Milliseconds()
+		completedAt := time.Now()
+		result.CompletedAt = &completedAt
 		return result, nil
 	}
 
 	// Scan for files
-	files, err := s.ScanDirectory(library.Path, library.Type)
+	files, err := s.ScanDirectory(library.Path, string(library.Type))
 	if err != nil {
-		result.Status = "failed"
-		result.Errors = 1
 		result.ErrorMessage = err.Error()
-		result.CompletedAt = &[]time.Time{time.Now()}[0]
-		result.Duration = time.Since(result.StartedAt).Milliseconds()
+		completedAt := time.Now()
+		result.CompletedAt = &completedAt
 		return result, nil
 	}
 
 	// Count files
-	result.FilesFound = len(files)
 	result.FilesScanned = len(files)
 
 	// Complete scan
 	completedAt := time.Now()
 	result.CompletedAt = &completedAt
-	result.Status = "completed"
-	result.Duration = time.Since(result.StartedAt).Milliseconds()
 
 	s.logger.Info("Library scan completed",
 		interfaces.String("library_id", libraryID),
-		interfaces.Int("files_found", result.FilesFound))
+		interfaces.Int("files_found", result.FilesScanned))
 
 	return result, nil
 }

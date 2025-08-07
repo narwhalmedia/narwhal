@@ -5,17 +5,16 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // LibraryServiceInterface defines the interface for library service operations.
 type LibraryServiceInterface interface {
 	// Library operations
-	CreateLibrary(ctx context.Context, library *domain.Library) error
-	GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error)
-	ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error)
-	UpdateLibrary(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*domain.Library, error)
+	CreateLibrary(ctx context.Context, library *models.Library) error
+	GetLibrary(ctx context.Context, id uuid.UUID) (*models.Library, error)
+	ListLibraries(ctx context.Context, enabled *bool) ([]*models.Library, error)
+	UpdateLibrary(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.Library, error)
 	DeleteLibrary(ctx context.Context, id uuid.UUID) error
 	ScanLibrary(ctx context.Context, id uuid.UUID) error
 
@@ -39,7 +38,7 @@ type LibraryServiceInterface interface {
 	) ([]*models.Media, error)
 
 	// Scan operations
-	GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error)
+	GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*models.ScanHistory, error)
 }
 
 // Ensure LibraryService implements the interface.

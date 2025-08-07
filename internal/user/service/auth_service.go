@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/events"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
@@ -42,7 +42,7 @@ func NewAuthService(
 func (s *AuthService) Login(
 	ctx context.Context,
 	username, password, deviceInfo, ipAddress, userAgent string,
-) (*domain.AuthTokens, error) {
+) (*models.AuthTokens, error) {
 	// Find user by username or email
 	user, err := s.repo.GetUserByUsername(ctx, username)
 	if err != nil {
@@ -70,7 +70,7 @@ func (s *AuthService) Login(
 	}
 
 	// Create session
-	session := &domain.Session{
+	session := &models.Session{
 		ID:           uuid.New(),
 		UserID:       user.ID,
 		RefreshToken: refreshToken,
@@ -115,7 +115,7 @@ func (s *AuthService) Login(
 }
 
 // RefreshToken generates new tokens using a refresh token.
-func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*domain.AuthTokens, error) {
+func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (*models.AuthTokens, error) {
 	// Find session by refresh token
 	session, err := s.repo.GetSessionByRefreshToken(ctx, refreshToken)
 	if err != nil {
@@ -230,7 +230,7 @@ func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*a
 }
 
 // GetUserSessions returns all active sessions for a user.
-func (s *AuthService) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]*domain.Session, error) {
+func (s *AuthService) GetUserSessions(ctx context.Context, userID uuid.UUID) ([]*models.Session, error) {
 	return s.repo.ListUserSessions(ctx, userID)
 }
 

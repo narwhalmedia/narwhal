@@ -9,8 +9,8 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // CasbinRBAC provides Casbin-based role-based access control.
@@ -280,7 +280,7 @@ func (r *CasbinRBAC) CheckUserPermission(userID, resource, action string) bool {
 }
 
 // AddRole creates a new role with permissions.
-func (r *CasbinRBAC) AddRole(role string, permissions []Permission) error {
+func (r *CasbinRBAC) AddRole(role string, permissions []models.Permission) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -391,7 +391,7 @@ func (p *CasbinPolicyEnforcer) EnforceUser(userID, resource, action string) erro
 }
 
 // EnforceAny checks if the given roles satisfy any of the permission requirements.
-func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
+func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return nil
@@ -406,7 +406,7 @@ func (p *CasbinPolicyEnforcer) EnforceAny(roles []string, permissions ...Permiss
 }
 
 // EnforceAll checks if the given roles satisfy all permission requirements.
-func (p *CasbinPolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
+func (p *CasbinPolicyEnforcer) EnforceAll(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return fmt.Errorf("permission denied: %s:%s", perm.Resource, perm.Action)
@@ -430,7 +430,7 @@ func (p *CasbinPolicyEnforcer) CheckOwnership(
 	// Check if admin access is allowed and user has admin role
 	if ownership.AllowAdmin {
 		for _, role := range roles {
-			if role == domain.RoleAdmin {
+			if role == models.RoleAdmin {
 				return nil
 			}
 		}
@@ -442,59 +442,59 @@ func (p *CasbinPolicyEnforcer) CheckOwnership(
 // InitializeDefaultPolicies sets up the default policies for the system.
 func InitializeDefaultPolicies(rbac *CasbinRBAC) error {
 	// Define default roles and their permissions
-	defaultPolicies := map[string][]Permission{
-		domain.RoleAdmin: {
+	defaultPolicies := map[string][]models.Permission{
+		models.RoleAdmin: {
 			// Admin has full access to everything
-			{Resource: domain.ResourceLibrary, Action: domain.ActionRead},
-			{Resource: domain.ResourceLibrary, Action: domain.ActionWrite},
-			{Resource: domain.ResourceLibrary, Action: domain.ActionDelete},
-			{Resource: domain.ResourceLibrary, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceMedia, Action: domain.ActionRead},
-			{Resource: domain.ResourceMedia, Action: domain.ActionWrite},
-			{Resource: domain.ResourceMedia, Action: domain.ActionDelete},
-			{Resource: domain.ResourceMedia, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceUser, Action: domain.ActionRead},
-			{Resource: domain.ResourceUser, Action: domain.ActionWrite},
-			{Resource: domain.ResourceUser, Action: domain.ActionDelete},
-			{Resource: domain.ResourceUser, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceTranscoding, Action: domain.ActionRead},
-			{Resource: domain.ResourceTranscoding, Action: domain.ActionWrite},
-			{Resource: domain.ResourceTranscoding, Action: domain.ActionDelete},
-			{Resource: domain.ResourceTranscoding, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionRead},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionWrite},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionDelete},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceAcquisition, Action: domain.ActionRead},
-			{Resource: domain.ResourceAcquisition, Action: domain.ActionWrite},
-			{Resource: domain.ResourceAcquisition, Action: domain.ActionDelete},
-			{Resource: domain.ResourceAcquisition, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceAnalytics, Action: domain.ActionRead},
-			{Resource: domain.ResourceAnalytics, Action: domain.ActionWrite},
-			{Resource: domain.ResourceAnalytics, Action: domain.ActionDelete},
-			{Resource: domain.ResourceAnalytics, Action: domain.ActionAdmin},
-			{Resource: domain.ResourceSystem, Action: domain.ActionRead},
-			{Resource: domain.ResourceSystem, Action: domain.ActionWrite},
-			{Resource: domain.ResourceSystem, Action: domain.ActionDelete},
-			{Resource: domain.ResourceSystem, Action: domain.ActionAdmin},
+			{Resource: models.ResourceLibrary, Action: models.ActionRead},
+			{Resource: models.ResourceLibrary, Action: models.ActionWrite},
+			{Resource: models.ResourceLibrary, Action: models.ActionDelete},
+			{Resource: models.ResourceLibrary, Action: models.ActionAdmin},
+			{Resource: models.ResourceMedia, Action: models.ActionRead},
+			{Resource: models.ResourceMedia, Action: models.ActionWrite},
+			{Resource: models.ResourceMedia, Action: models.ActionDelete},
+			{Resource: models.ResourceMedia, Action: models.ActionAdmin},
+			{Resource: models.ResourceUser, Action: models.ActionRead},
+			{Resource: models.ResourceUser, Action: models.ActionWrite},
+			{Resource: models.ResourceUser, Action: models.ActionDelete},
+			{Resource: models.ResourceUser, Action: models.ActionAdmin},
+			{Resource: models.ResourceTranscoding, Action: models.ActionRead},
+			{Resource: models.ResourceTranscoding, Action: models.ActionWrite},
+			{Resource: models.ResourceTranscoding, Action: models.ActionDelete},
+			{Resource: models.ResourceTranscoding, Action: models.ActionAdmin},
+			{Resource: models.ResourceStreaming, Action: models.ActionRead},
+			{Resource: models.ResourceStreaming, Action: models.ActionWrite},
+			{Resource: models.ResourceStreaming, Action: models.ActionDelete},
+			{Resource: models.ResourceStreaming, Action: models.ActionAdmin},
+			{Resource: models.ResourceAcquisition, Action: models.ActionRead},
+			{Resource: models.ResourceAcquisition, Action: models.ActionWrite},
+			{Resource: models.ResourceAcquisition, Action: models.ActionDelete},
+			{Resource: models.ResourceAcquisition, Action: models.ActionAdmin},
+			{Resource: models.ResourceAnalytics, Action: models.ActionRead},
+			{Resource: models.ResourceAnalytics, Action: models.ActionWrite},
+			{Resource: models.ResourceAnalytics, Action: models.ActionDelete},
+			{Resource: models.ResourceAnalytics, Action: models.ActionAdmin},
+			{Resource: models.ResourceSystem, Action: models.ActionRead},
+			{Resource: models.ResourceSystem, Action: models.ActionWrite},
+			{Resource: models.ResourceSystem, Action: models.ActionDelete},
+			{Resource: models.ResourceSystem, Action: models.ActionAdmin},
 		},
-		domain.RoleUser: {
+		models.RoleUser: {
 			// Standard user permissions
-			{Resource: domain.ResourceLibrary, Action: domain.ActionRead},
-			{Resource: domain.ResourceMedia, Action: domain.ActionRead},
-			{Resource: domain.ResourceMedia, Action: domain.ActionWrite},
-			{Resource: domain.ResourceUser, Action: domain.ActionRead},
-			{Resource: domain.ResourceUser, Action: domain.ActionWrite},
-			{Resource: domain.ResourceTranscoding, Action: domain.ActionRead},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionRead},
-			{Resource: domain.ResourceAcquisition, Action: domain.ActionRead},
-			{Resource: domain.ResourceAnalytics, Action: domain.ActionRead},
+			{Resource: models.ResourceLibrary, Action: models.ActionRead},
+			{Resource: models.ResourceMedia, Action: models.ActionRead},
+			{Resource: models.ResourceMedia, Action: models.ActionWrite},
+			{Resource: models.ResourceUser, Action: models.ActionRead},
+			{Resource: models.ResourceUser, Action: models.ActionWrite},
+			{Resource: models.ResourceTranscoding, Action: models.ActionRead},
+			{Resource: models.ResourceStreaming, Action: models.ActionRead},
+			{Resource: models.ResourceAcquisition, Action: models.ActionRead},
+			{Resource: models.ResourceAnalytics, Action: models.ActionRead},
 		},
-		domain.RoleGuest: {
+		models.RoleGuest: {
 			// Guest permissions
-			{Resource: domain.ResourceLibrary, Action: domain.ActionRead},
-			{Resource: domain.ResourceMedia, Action: domain.ActionRead},
-			{Resource: domain.ResourceStreaming, Action: domain.ActionRead},
+			{Resource: models.ResourceLibrary, Action: models.ActionRead},
+			{Resource: models.ResourceMedia, Action: models.ActionRead},
+			{Resource: models.ResourceStreaming, Action: models.ActionRead},
 		},
 	}
 

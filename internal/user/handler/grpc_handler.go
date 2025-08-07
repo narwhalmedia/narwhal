@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	authpb "github.com/narwhalmedia/narwhal/pkg/auth/v1"
 	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
@@ -131,11 +131,11 @@ func (h *GRPCHandler) ValidateToken(
 	role := commonpb.UserRole_USER_ROLE_UNSPECIFIED
 	if len(claims.Roles) > 0 {
 		switch claims.Roles[0] {
-		case domain.RoleAdmin:
+		case models.RoleAdmin:
 			role = commonpb.UserRole_USER_ROLE_ADMIN
-		case domain.RoleUser:
+		case models.RoleUser:
 			role = commonpb.UserRole_USER_ROLE_USER
-		case domain.RoleGuest:
+		case models.RoleGuest:
 			role = commonpb.UserRole_USER_ROLE_GUEST
 		}
 	}
@@ -247,17 +247,13 @@ func (h *GRPCHandler) UpdateUser(
 			switch path {
 			case "preferences.language":
 				if req.GetUser().GetPreferences() != nil {
-					prefs := domain.UserPreferences{
-						Language: req.GetUser().GetPreferences().GetLanguage(),
-					}
-					updates["preferences"] = prefs
+					// The preferences are now flattened, so we update the user directly.
+					// The service layer will handle the map[string]interface{}
+					updates["pref_language"] = req.GetUser().GetPreferences().GetLanguage()
 				}
 			case "preferences.theme":
 				if req.GetUser().GetPreferences() != nil {
-					prefs := domain.UserPreferences{
-						Theme: req.GetUser().GetPreferences().GetTheme(),
-					}
-					updates["preferences"] = prefs
+					updates["pref_theme"] = req.GetUser().GetPreferences().GetTheme()
 				}
 			case "email":
 				updates["email"] = req.GetUser().GetEmail()
@@ -404,7 +400,7 @@ func (h *GRPCHandler) requireAdmin(ctx context.Context) error {
 	}
 
 	for _, role := range claims.Roles {
-		if role == domain.RoleAdmin {
+		if role == models.RoleAdmin {
 			return nil
 		}
 	}
@@ -445,7 +441,7 @@ func extractMetadataValue(md metadata.MD, keys ...string) string {
 	return ""
 }
 
-func domainUserToProto(user *domain.User) *authpb.User {
+func domainUserToProto(user *models.User) *authpb.User {
 	proto := &authpb.User{
 		Id:       user.ID.String(),
 		Username: user.Username,
@@ -458,22 +454,22 @@ func domainUserToProto(user *domain.User) *authpb.User {
 	// Set role
 	if len(user.Roles) > 0 {
 		switch user.Roles[0].Name {
-		case domain.RoleAdmin:
+		case models.RoleAdmin:
 			proto.Role = commonpb.UserRole_USER_ROLE_ADMIN
-		case domain.RoleUser:
+		case models.RoleUser:
 			proto.Role = commonpb.UserRole_USER_ROLE_USER
-		case domain.RoleGuest:
+		case models.RoleGuest:
 			proto.Role = commonpb.UserRole_USER_ROLE_GUEST
 		}
 	}
 
 	// Set preferences
 	proto.Preferences = &authpb.UserPreferences{
-		Language:         user.Preferences.Language,
-		Theme:            user.Preferences.Theme,
-		DefaultQuality:   user.Preferences.PreferredQuality,
-		SubtitleLanguage: user.Preferences.SubtitleLanguage,
-		AutoPlay:         user.Preferences.AutoPlayNext,
+		Language:         user.PrefLanguage,
+		Theme:            user.PrefTheme,
+		DefaultQuality:   user.PrefPreferredQuality,
+		SubtitleLanguage: user.PrefSubtitleLanguage,
+		AutoPlay:         user.PrefAutoPlayNext,
 	}
 
 	// Set last login
@@ -487,13 +483,13 @@ func domainUserToProto(user *domain.User) *authpb.User {
 func protoRoleToString(role commonpb.UserRole) string {
 	switch role {
 	case commonpb.UserRole_USER_ROLE_ADMIN:
-		return domain.RoleAdmin
+		return models.RoleAdmin
 	case commonpb.UserRole_USER_ROLE_USER:
-		return domain.RoleUser
+		return models.RoleUser
 	case commonpb.UserRole_USER_ROLE_GUEST:
-		return domain.RoleGuest
+		return models.RoleGuest
 	default:
-		return domain.RoleUser
+		return models.RoleUser
 	}
 }
 

@@ -6,37 +6,35 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // CreateTestUser creates a test user with default values.
-func CreateTestUser(username, email string) *domain.User {
-	user := &domain.User{
-		ID:          uuid.New(),
-		Username:    username,
-		Email:       email,
-		DisplayName: username,
-		IsActive:    true,
-		IsVerified:  true,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		Preferences: domain.UserPreferences{
-			Language:         "en",
-			Theme:            "dark",
-			TimeZone:         "UTC",
-			AutoPlayNext:     true,
-			SubtitleLanguage: "en",
-			PreferredQuality: "auto",
-		},
+func CreateTestUser(username, email string) *models.User {
+	user := &models.User{
+		ID:                      uuid.New(),
+		Username:                username,
+		Email:                   email,
+		DisplayName:             username,
+		IsActive:                true,
+		IsVerified:              true,
+		CreatedAt:               time.Now(),
+		UpdatedAt:               time.Now(),
+		PrefLanguage:            "en",
+		PrefTheme:               "dark",
+		PrefTimeZone:            "UTC",
+		PrefAutoPlayNext:        true,
+		PrefSubtitleLanguage:    "en",
+		PrefPreferredQuality:    "auto",
+		PrefEnableNotifications: true,
 	}
 	user.SetPassword("testpass123")
 	return user
 }
 
 // CreateTestRole creates a test role.
-func CreateTestRole(name, description string) *domain.Role {
-	return &domain.Role{
+func CreateTestRole(name, description string) *models.Role {
+	return &models.Role{
 		ID:          uuid.New(),
 		Name:        name,
 		Description: description,
@@ -46,8 +44,8 @@ func CreateTestRole(name, description string) *domain.Role {
 }
 
 // CreateTestPermission creates a test permission.
-func CreateTestPermission(resource, action, description string) *domain.Permission {
-	return &domain.Permission{
+func CreateTestPermission(resource, action, description string) *models.Permission {
+	return &models.Permission{
 		ID:          uuid.New(),
 		Resource:    resource,
 		Action:      action,
@@ -58,8 +56,8 @@ func CreateTestPermission(resource, action, description string) *domain.Permissi
 }
 
 // CreateTestSession creates a test session.
-func CreateTestSession(userID uuid.UUID) *domain.Session {
-	return &domain.Session{
+func CreateTestSession(userID uuid.UUID) *models.Session {
+	return &models.Session{
 		ID:           uuid.New(),
 		UserID:       userID,
 		RefreshToken: uuid.New().String(),
@@ -74,38 +72,38 @@ func CreateTestSession(userID uuid.UUID) *domain.Session {
 
 // CreateTestLibrary creates a test library.
 func CreateTestLibrary(name, path string, mediaType models.MediaType) *models.Library {
+	now := time.Now()
 	return &models.Library{
 		ID:           uuid.New(),
 		Name:         name,
 		Path:         path,
 		Type:         mediaType,
-		AutoScan:     true,
-		ScanInterval: 60, // minutes
-		LastScanned:  time.Now(),
-		Created:      time.Now(),
-		Updated:      time.Now(),
+		Enabled:      true,
+		ScanInterval: 3600, // seconds
+		LastScanAt:   &now,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 }
 
 // CreateTestMedia creates a test media item.
 func CreateTestMedia(libraryID uuid.UUID, title string, mediaType models.MediaType) *models.Media {
+	now := time.Now()
 	return &models.Media{
-		ID:          uuid.New(),
-		LibraryID:   libraryID,
-		Title:       title,
-		Type:        mediaType,
-		Path:        "/test/media/" + title + ".mp4",
-		Size:        1024 * 1024 * 100, // 100MB
-		Duration:    3600,              // 1 hour
-		Resolution:  "1920x1080",
-		Codec:       "h264",
-		Bitrate:     5000,
-		Added:       time.Now(),
-		Modified:    time.Now(),
-		LastScanned: time.Now(),
-		Status:      "available",
-		FilePath:    "/test/media/" + title + ".mp4",
-		FileSize:    1024 * 1024 * 100,
+		ID:             uuid.New(),
+		LibraryID:      libraryID,
+		Title:          title,
+		Type:           mediaType,
+		FilePath:       "/test/media/" + title + ".mp4",
+		FileSize:       1024 * 1024 * 100, // 100MB
+		Runtime:        60,                // 1 hour in minutes
+		Resolution:     "1920x1080",
+		VideoCodec:     "h264",
+		Bitrate:        5000,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		FileModifiedAt: &now,
+		Status:         "available",
 	}
 }
 
@@ -131,15 +129,18 @@ func CreateTestMetadata(mediaID uuid.UUID) *models.Metadata {
 
 // CreateTestEpisode creates a test episode.
 func CreateTestEpisode(mediaID uuid.UUID, season, episode int, title string) *models.Episode {
+	now := time.Now()
+	airDate := time.Date(2020, 1, episode, 0, 0, 0, 0, time.UTC)
 	return &models.Episode{
 		ID:            uuid.New(),
 		MediaID:       mediaID,
 		SeasonNumber:  season,
 		EpisodeNumber: episode,
 		Title:         title,
-		Path:          fmt.Sprintf("/test/series/s%02de%02d.mp4", season, episode),
-		Duration:      2400, // 40 minutes
-		AirDate:       time.Date(2020, 1, episode, 0, 0, 0, 0, time.UTC),
-		Added:         time.Now(),
+		FilePath:      fmt.Sprintf("/test/series/s%02de%02d.mp4", season, episode),
+		Runtime:       40, // 40 minutes
+		AirDate:       &airDate,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 }

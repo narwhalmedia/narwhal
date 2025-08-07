@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
@@ -25,28 +24,28 @@ type MockLibraryRepository struct {
 	mock.Mock
 }
 
-func (m *MockLibraryRepository) CreateLibrary(ctx context.Context, library *domain.Library) error {
+func (m *MockLibraryRepository) CreateLibrary(ctx context.Context, library *models.Library) error {
 	args := m.Called(ctx, library)
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error) {
+func (m *MockLibraryRepository) GetLibrary(ctx context.Context, id uuid.UUID) (*models.Library, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*domain.Library), args.Error(1)
+	return args.Get(0).(*models.Library), args.Error(1)
 }
 
-func (m *MockLibraryRepository) GetLibraryByPath(ctx context.Context, path string) (*domain.Library, error) {
+func (m *MockLibraryRepository) GetLibraryByPath(ctx context.Context, path string) (*models.Library, error) {
 	args := m.Called(ctx, path)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*domain.Library), args.Error(1)
+	return args.Get(0).(*models.Library), args.Error(1)
 }
 
-func (m *MockLibraryRepository) UpdateLibrary(ctx context.Context, library *domain.Library) error {
+func (m *MockLibraryRepository) UpdateLibrary(ctx context.Context, library *models.Library) error {
 	args := m.Called(ctx, library)
 	return args.Error(0)
 }
@@ -56,12 +55,12 @@ func (m *MockLibraryRepository) DeleteLibrary(ctx context.Context, id uuid.UUID)
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error) {
+func (m *MockLibraryRepository) ListLibraries(ctx context.Context, enabled *bool) ([]*models.Library, error) {
 	args := m.Called(ctx, enabled)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*domain.Library), args.Error(1)
+	return args.Get(0).([]*models.Library), args.Error(1)
 }
 
 func (m *MockLibraryRepository) CreateMedia(ctx context.Context, media *models.Media) error {
@@ -123,22 +122,22 @@ func (m *MockLibraryRepository) SearchMedia(
 	return args.Get(0).([]*models.Media), args.Error(1)
 }
 
-func (m *MockLibraryRepository) CreateScanHistory(ctx context.Context, scan *domain.ScanResult) error {
+func (m *MockLibraryRepository) CreateScanHistory(ctx context.Context, scan *models.ScanHistory) error {
 	args := m.Called(ctx, scan)
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) UpdateScanHistory(ctx context.Context, scan *domain.ScanResult) error {
+func (m *MockLibraryRepository) UpdateScanHistory(ctx context.Context, scan *models.ScanHistory) error {
 	args := m.Called(ctx, scan)
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error) {
+func (m *MockLibraryRepository) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*models.ScanHistory, error) {
 	args := m.Called(ctx, libraryID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*domain.ScanResult), args.Error(1)
+	return args.Get(0).(*models.ScanHistory), args.Error(1)
 }
 
 // Episode methods.
@@ -198,43 +197,43 @@ func (m *MockLibraryRepository) DeleteEpisode(ctx context.Context, id uuid.UUID)
 }
 
 // MetadataProvider methods.
-func (m *MockLibraryRepository) CreateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error {
+func (m *MockLibraryRepository) CreateProvider(ctx context.Context, provider *models.MetadataProvider) error {
 	args := m.Called(ctx, provider)
 	return args.Error(0)
 }
 
-func (m *MockLibraryRepository) GetProvider(ctx context.Context, id uuid.UUID) (*domain.MetadataProviderConfig, error) {
+func (m *MockLibraryRepository) GetProvider(ctx context.Context, id uuid.UUID) (*models.MetadataProvider, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*domain.MetadataProviderConfig), args.Error(1)
+	return args.Get(0).(*models.MetadataProvider), args.Error(1)
 }
 
 func (m *MockLibraryRepository) GetProviderByName(
 	ctx context.Context,
 	name string,
-) (*domain.MetadataProviderConfig, error) {
+) (*models.MetadataProvider, error) {
 	args := m.Called(ctx, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*domain.MetadataProviderConfig), args.Error(1)
+	return args.Get(0).(*models.MetadataProvider), args.Error(1)
 }
 
 func (m *MockLibraryRepository) ListProviders(
 	ctx context.Context,
 	enabled *bool,
 	providerType *string,
-) ([]*domain.MetadataProviderConfig, error) {
+) ([]*models.MetadataProvider, error) {
 	args := m.Called(ctx, enabled, providerType)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]*domain.MetadataProviderConfig), args.Error(1)
+	return args.Get(0).([]*models.MetadataProvider), args.Error(1)
 }
 
-func (m *MockLibraryRepository) UpdateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error {
+func (m *MockLibraryRepository) UpdateProvider(ctx context.Context, provider *models.MetadataProvider) error {
 	args := m.Called(ctx, provider)
 	return args.Error(0)
 }
@@ -295,7 +294,7 @@ func (suite *LibraryServiceTestSuite) TearDownTest() {
 
 func (suite *LibraryServiceTestSuite) TestCreateLibrary_Success() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		Name:         "Test Library",
 		Path:         "/test/path",
 		Type:         "movie",
@@ -304,7 +303,7 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_Success() {
 	}
 
 	suite.mockRepo.On("GetLibraryByPath", suite.ctx, "/test/path").Return(nil, errors.NotFound("not found"))
-	suite.mockRepo.On("CreateLibrary", suite.ctx, mock.AnythingOfType("*domain.Library")).Return(nil)
+	suite.mockRepo.On("CreateLibrary", suite.ctx, mock.AnythingOfType("*models.Library")).Return(nil)
 
 	// Act
 	err := suite.libraryService.CreateLibrary(suite.ctx, library)
@@ -316,12 +315,12 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_Success() {
 
 func (suite *LibraryServiceTestSuite) TestCreateLibrary_PathExists() {
 	// Arrange
-	existingLibrary := &domain.Library{
+	existingLibrary := &models.Library{
 		ID:   uuid.New(),
 		Path: "/test/path",
 	}
 
-	library := &domain.Library{
+	library := &models.Library{
 		Name: "Test Library",
 		Path: "/test/path",
 	}
@@ -338,7 +337,7 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_PathExists() {
 
 func (suite *LibraryServiceTestSuite) TestCreateLibrary_MissingFields() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		Name: "", // Missing name
 		Path: "/test/path",
 	}
@@ -354,7 +353,7 @@ func (suite *LibraryServiceTestSuite) TestCreateLibrary_MissingFields() {
 func (suite *LibraryServiceTestSuite) TestGetLibrary_Success() {
 	// Arrange
 	libraryID := uuid.New()
-	expectedLibrary := &domain.Library{
+	expectedLibrary := &models.Library{
 		ID:   libraryID,
 		Name: "Test Library",
 	}
@@ -372,7 +371,7 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Success() {
 func (suite *LibraryServiceTestSuite) TestGetLibrary_Cached() {
 	// Arrange
 	libraryID := uuid.New()
-	expectedLibrary := &domain.Library{
+	expectedLibrary := &models.Library{
 		ID:   libraryID,
 		Name: "Test Library",
 	}
@@ -397,7 +396,7 @@ func (suite *LibraryServiceTestSuite) TestGetLibrary_Cached() {
 func (suite *LibraryServiceTestSuite) TestUpdateLibrary_Success() {
 	// Arrange
 	libraryID := uuid.New()
-	existingLibrary := &domain.Library{
+	existingLibrary := &models.Library{
 		ID:           libraryID,
 		Name:         "Original Name",
 		Path:         "/original/path",
@@ -412,7 +411,7 @@ func (suite *LibraryServiceTestSuite) TestUpdateLibrary_Success() {
 	}
 
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(existingLibrary, nil)
-	suite.mockRepo.On("UpdateLibrary", suite.ctx, mock.AnythingOfType("*domain.Library")).Return(nil)
+	suite.mockRepo.On("UpdateLibrary", suite.ctx, mock.AnythingOfType("*models.Library")).Return(nil)
 
 	// Act
 	updatedLibrary, err := suite.libraryService.UpdateLibrary(suite.ctx, libraryID, updates)
@@ -427,7 +426,7 @@ func (suite *LibraryServiceTestSuite) TestUpdateLibrary_Success() {
 func (suite *LibraryServiceTestSuite) TestDeleteLibrary_Success() {
 	// Arrange
 	libraryID := uuid.New()
-	library := &domain.Library{
+	library := &models.Library{
 		ID:   libraryID,
 		Name: "To Delete",
 	}
@@ -445,7 +444,7 @@ func (suite *LibraryServiceTestSuite) TestDeleteLibrary_Success() {
 func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 	// Arrange
 	libraryID := uuid.New()
-	library := &domain.Library{
+	library := &models.Library{
 		ID:      libraryID,
 		Name:    "Test Library",
 		Path:    "/test/path",
@@ -454,9 +453,9 @@ func (suite *LibraryServiceTestSuite) TestScanLibrary_Success() {
 	}
 
 	suite.mockRepo.On("GetLibrary", suite.ctx, libraryID).Return(library, nil)
-	suite.mockRepo.On("CreateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
-	suite.mockRepo.On("UpdateLibrary", mock.Anything, mock.AnythingOfType("*domain.Library")).Return(nil).Maybe()
-	suite.mockRepo.On("UpdateScanHistory", mock.Anything, mock.AnythingOfType("*domain.ScanResult")).Return(nil).Maybe()
+	suite.mockRepo.On("CreateScanHistory", mock.Anything, mock.AnythingOfType("*models.ScanHistory")).Return(nil).Maybe()
+	suite.mockRepo.On("UpdateLibrary", mock.Anything, mock.AnythingOfType("*models.Library")).Return(nil).Maybe()
+	suite.mockRepo.On("UpdateScanHistory", mock.Anything, mock.AnythingOfType("*models.ScanHistory")).Return(nil).Maybe()
 	suite.mockRepo.On("GetMediaByPath", mock.Anything, mock.AnythingOfType("string")).
 		Return(nil, errors.NotFound("not found")).
 		Maybe()

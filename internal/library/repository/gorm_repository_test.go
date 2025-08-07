@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/testutil"
@@ -29,11 +28,11 @@ func (suite *LibraryRepositoryTestSuite) SetupSuite() {
 
 	// Run migrations
 	err := suite.container.MigrateModels(
-		&repository.Library{},
-		&repository.MediaItem{},
-		&repository.Episode{},
-		&repository.MetadataProvider{},
-		&repository.ScanHistory{},
+		&models.Library{},
+		&models.Media{},
+		&models.Episode{},
+		&models.MetadataProvider{},
+		&models.ScanHistory{},
 	)
 	suite.Require().NoError(err)
 }
@@ -50,7 +49,7 @@ func (suite *LibraryRepositoryTestSuite) SetupTest() {
 
 func (suite *LibraryRepositoryTestSuite) TestCreateLibrary() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Test Library",
 		Path:         "/test/path",
@@ -76,7 +75,7 @@ func (suite *LibraryRepositoryTestSuite) TestCreateLibrary() {
 
 func (suite *LibraryRepositoryTestSuite) TestGetLibraryByPath() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Test Library",
 		Path:         "/unique/path",
@@ -100,7 +99,7 @@ func (suite *LibraryRepositoryTestSuite) TestGetLibraryByPath() {
 func (suite *LibraryRepositoryTestSuite) TestListLibraries() {
 	// Arrange
 	for i := range 3 {
-		library := &domain.Library{
+		library := &models.Library{
 			ID:           uuid.New(),
 			Name:         fmt.Sprintf("Library %d", i),
 			Path:         fmt.Sprintf("/path/%d", i),
@@ -127,7 +126,7 @@ func (suite *LibraryRepositoryTestSuite) TestListLibraries() {
 
 func (suite *LibraryRepositoryTestSuite) TestUpdateLibrary() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Original Name",
 		Path:         "/original/path",
@@ -155,7 +154,7 @@ func (suite *LibraryRepositoryTestSuite) TestUpdateLibrary() {
 
 func (suite *LibraryRepositoryTestSuite) TestDeleteLibrary() {
 	// Arrange
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "To Delete",
 		Path:         "/delete/me",
@@ -181,7 +180,7 @@ func (suite *LibraryRepositoryTestSuite) TestDeleteLibrary() {
 
 func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
 	// Create library first
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Media Library",
 		Path:         "/media",
@@ -199,18 +198,13 @@ func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
 		LibraryID:   library.ID,
 		Title:       "Test Movie",
 		Type:        models.MediaTypeMovie,
-		Path:        "/media/test.mp4",
-		Size:        1024 * 1024 * 100,
-		Duration:    7200,
-		Resolution:  "1920x1080",
-		Codec:       "h264",
-		Bitrate:     5000,
-		Added:       time.Now(),
-		Modified:    time.Now(),
-		LastScanned: time.Now(),
-		Status:      "available",
 		FilePath:    "/media/test.mp4",
 		FileSize:    1024 * 1024 * 100,
+		Runtime:     120, // 2 hours in minutes
+		Resolution:  "1920x1080",
+		VideoCodec:  "h264",
+		Bitrate:     5000,
+		Status:      "available",
 	}
 
 	// Create media
@@ -249,7 +243,7 @@ func (suite *LibraryRepositoryTestSuite) TestMediaOperations() {
 
 func (suite *LibraryRepositoryTestSuite) TestEpisodeOperations() {
 	// Create library and series
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Series Library",
 		Path:         "/series",
@@ -262,15 +256,12 @@ func (suite *LibraryRepositoryTestSuite) TestEpisodeOperations() {
 	suite.repo.CreateLibrary(suite.ctx, library)
 
 	series := &models.Media{
-		ID:          uuid.New(),
-		LibraryID:   library.ID,
-		Title:       "Test Series",
-		Type:        models.MediaTypeSeries,
-		Path:        "/series/test",
-		Added:       time.Now(),
-		Modified:    time.Now(),
-		LastScanned: time.Now(),
-		Status:      "available",
+		ID:        uuid.New(),
+		LibraryID: library.ID,
+		Title:     "Test Series",
+		Type:      models.MediaTypeSeries,
+		FilePath:  "/series/test",
+		Status:    "available",
 	}
 	suite.repo.CreateMedia(suite.ctx, series)
 
@@ -309,7 +300,7 @@ func (suite *LibraryRepositoryTestSuite) TestEpisodeOperations() {
 
 func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 	// Create library
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Scan Library",
 		Path:         "/scan",
@@ -322,7 +313,7 @@ func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 	suite.repo.CreateLibrary(suite.ctx, library)
 
 	// Create scan history
-	scan := &domain.ScanResult{
+	scan := &models.ScanHistory{
 		ID:           uuid.New(),
 		LibraryID:    library.ID,
 		StartedAt:    time.Now(),
@@ -356,7 +347,7 @@ func (suite *LibraryRepositoryTestSuite) TestScanHistoryOperations() {
 // TestMetadataProviderOperations - commenting out until methods are implemented
 // func (suite *LibraryRepositoryTestSuite) TestMetadataProviderOperations() { //nolint:funlen
 // 	// Create provider
-// 	provider := &domain.MetadataProvider{
+// 	provider := &models.MetadataProvider{
 // 		ID:           uuid.New(),
 // 		Name:         "TMDB",
 // 		ProviderType: "tmdb",
@@ -396,7 +387,7 @@ func (suite *LibraryRepositoryTestSuite) TestTransaction() {
 	suite.Require().NoError(err)
 
 	// Create library in transaction
-	library := &domain.Library{
+	library := &models.Library{
 		ID:           uuid.New(),
 		Name:         "Transaction Test",
 		Path:         "/tx/test",

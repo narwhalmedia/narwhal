@@ -10,11 +10,11 @@ import (
 
 // LibraryCreatedEvent is published when a library is created.
 type LibraryCreatedEvent struct {
-	Library   *Library
+	Library   *models.Library
 	timestamp int64
 }
 
-func NewLibraryCreatedEvent(library *Library) *LibraryCreatedEvent {
+func NewLibraryCreatedEvent(library *models.Library) *LibraryCreatedEvent {
 	return &LibraryCreatedEvent{
 		Library:   library,
 		timestamp: time.Now().Unix(),
@@ -35,11 +35,11 @@ func (e *LibraryCreatedEvent) AggregateID() string {
 
 // LibraryUpdatedEvent is published when a library is updated.
 type LibraryUpdatedEvent struct {
-	Library   *Library
+	Library   *models.Library
 	timestamp int64
 }
 
-func NewLibraryUpdatedEvent(library *Library) *LibraryUpdatedEvent {
+func NewLibraryUpdatedEvent(library *models.Library) *LibraryUpdatedEvent {
 	return &LibraryUpdatedEvent{
 		Library:   library,
 		timestamp: time.Now().Unix(),
@@ -85,13 +85,13 @@ func (e *LibraryDeletedEvent) AggregateID() string {
 
 // LibraryScanCompletedEvent is published when a library scan is completed.
 type LibraryScanCompletedEvent struct {
-	Library      *Library
+	Library      *models.Library
 	NewFiles     int
 	UpdatedFiles int
 	timestamp    int64
 }
 
-func NewLibraryScanCompletedEvent(library *Library, newFiles, updatedFiles int) *LibraryScanCompletedEvent {
+func NewLibraryScanCompletedEvent(library *models.Library, newFiles, updatedFiles int) *LibraryScanCompletedEvent {
 	return &LibraryScanCompletedEvent{
 		Library:      library,
 		NewFiles:     newFiles,

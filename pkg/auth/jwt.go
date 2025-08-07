@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // JWTManager handles JWT token operations.
@@ -46,7 +46,7 @@ type CustomClaims struct {
 }
 
 // GenerateTokenPair generates both access and refresh tokens.
-func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (*domain.AuthTokens, error) {
+func (j *JWTManager) GenerateTokenPair(user *models.User, sessionID uuid.UUID) (*models.AuthTokens, error) {
 	// Extract role names
 	roleNames := make([]string, len(user.Roles))
 	for i, role := range user.Roles {
@@ -58,7 +58,7 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 		user,
 		roleNames,
 		sessionID.String(),
-		domain.TokenTypeAccess,
+		models.TokenTypeAccess,
 		j.accessSecret,
 		j.accessTTL,
 	)
@@ -71,7 +71,7 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 		user,
 		roleNames,
 		sessionID.String(),
-		domain.TokenTypeRefresh,
+		models.TokenTypeRefresh,
 		j.refreshSecret,
 		j.refreshTTL,
 	)
@@ -81,7 +81,7 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 
 	expiresAt := time.Now().Add(j.accessTTL)
 
-	return &domain.AuthTokens{
+	return &models.AuthTokens{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
@@ -92,7 +92,7 @@ func (j *JWTManager) GenerateTokenPair(user *domain.User, sessionID uuid.UUID) (
 
 // generateToken creates a JWT token with the specified parameters.
 func (j *JWTManager) generateToken(
-	user *domain.User,
+	user *models.User,
 	roles []string,
 	sessionID, tokenType, secret string,
 	ttl time.Duration,

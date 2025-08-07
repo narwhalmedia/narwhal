@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/pkg/events"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
 	"github.com/narwhalmedia/narwhal/pkg/utils"
@@ -47,11 +47,11 @@ func (suite *UserServiceTestSuite) TearDownTest() {
 
 func (suite *UserServiceTestSuite) TestCreateUser_Success() {
 	// Arrange
-	role := testutil.CreateTestRole(domain.RoleUser, "Default user role")
+	role := testutil.CreateTestRole(models.RoleUser, "Default user role")
 
 	suite.mockRepo.On("UserExists", suite.ctx, "testuser", "test@example.com").Return(false, nil)
-	suite.mockRepo.On("GetRoleByName", suite.ctx, domain.RoleUser).Return(role, nil)
-	suite.mockRepo.On("CreateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("GetRoleByName", suite.ctx, models.RoleUser).Return(role, nil)
+	suite.mockRepo.On("CreateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 
 	// Act
 	user, err := suite.userService.CreateUser(suite.ctx, "testuser", "test@example.com", "password123", "Test User")
@@ -65,7 +65,7 @@ func (suite *UserServiceTestSuite) TestCreateUser_Success() {
 	suite.True(user.IsActive)
 	suite.False(user.IsVerified)
 	suite.Len(user.Roles, 1)
-	suite.Equal(domain.RoleUser, user.Roles[0].Name)
+	suite.Equal(models.RoleUser, user.Roles[0].Name)
 }
 
 func (suite *UserServiceTestSuite) TestCreateUser_UserExists() {
@@ -137,7 +137,7 @@ func (suite *UserServiceTestSuite) TestUpdateUser_Success() {
 	}
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 
 	// Act
 	updatedUser, err := suite.userService.UpdateUser(suite.ctx, user.ID, updates)
@@ -155,7 +155,7 @@ func (suite *UserServiceTestSuite) TestChangePassword_Success() {
 	user.SetPassword("oldpassword")
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 	suite.mockRepo.On("DeleteUserSessions", suite.ctx, user.ID).Return(nil)
 
 	// Act
@@ -197,7 +197,7 @@ func (suite *UserServiceTestSuite) TestDeleteUser_Success() {
 
 func (suite *UserServiceTestSuite) TestListUsers_Success() {
 	// Arrange
-	users := []*domain.User{
+	users := []*models.User{
 		testutil.CreateTestUser("user1", "user1@example.com"),
 		testutil.CreateTestUser("user2", "user2@example.com"),
 	}
@@ -217,16 +217,16 @@ func (suite *UserServiceTestSuite) TestListUsers_Success() {
 func (suite *UserServiceTestSuite) TestAssignRole_Success() {
 	// Arrange
 	user := testutil.CreateTestUser("testuser", "test@example.com")
-	user.Roles = []domain.Role{*testutil.CreateTestRole(domain.RoleUser, "User role")}
+	user.Roles = []models.Role{*testutil.CreateTestRole(models.RoleUser, "User role")}
 
-	adminRole := testutil.CreateTestRole(domain.RoleAdmin, "Admin role")
+	adminRole := testutil.CreateTestRole(models.RoleAdmin, "Admin role")
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("GetRoleByName", suite.ctx, domain.RoleAdmin).Return(adminRole, nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("GetRoleByName", suite.ctx, models.RoleAdmin).Return(adminRole, nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 
 	// Act
-	err := suite.userService.AssignRole(suite.ctx, user.ID, domain.RoleAdmin)
+	err := suite.userService.AssignRole(suite.ctx, user.ID, models.RoleAdmin)
 
 	// Assert
 	suite.Require().NoError(err)
@@ -234,14 +234,14 @@ func (suite *UserServiceTestSuite) TestAssignRole_Success() {
 
 func (suite *UserServiceTestSuite) TestAssignRole_AlreadyHasRole() {
 	// Arrange
-	adminRole := testutil.CreateTestRole(domain.RoleAdmin, "Admin role")
+	adminRole := testutil.CreateTestRole(models.RoleAdmin, "Admin role")
 	user := testutil.CreateTestUser("testuser", "test@example.com")
-	user.Roles = []domain.Role{*adminRole}
+	user.Roles = []models.Role{*adminRole}
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
 
 	// Act
-	err := suite.userService.AssignRole(suite.ctx, user.ID, domain.RoleAdmin)
+	err := suite.userService.AssignRole(suite.ctx, user.ID, models.RoleAdmin)
 
 	// Assert
 	suite.Require().NoError(err)
@@ -252,17 +252,17 @@ func (suite *UserServiceTestSuite) TestAssignRole_AlreadyHasRole() {
 
 func (suite *UserServiceTestSuite) TestRemoveRole_Success() {
 	// Arrange
-	userRole := testutil.CreateTestRole(domain.RoleUser, "User role")
-	adminRole := testutil.CreateTestRole(domain.RoleAdmin, "Admin role")
+	userRole := testutil.CreateTestRole(models.RoleUser, "User role")
+	adminRole := testutil.CreateTestRole(models.RoleAdmin, "Admin role")
 
 	user := testutil.CreateTestUser("testuser", "test@example.com")
-	user.Roles = []domain.Role{*userRole, *adminRole}
+	user.Roles = []models.Role{*userRole, *adminRole}
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 
 	// Act
-	err := suite.userService.RemoveRole(suite.ctx, user.ID, domain.RoleAdmin)
+	err := suite.userService.RemoveRole(suite.ctx, user.ID, models.RoleAdmin)
 
 	// Assert
 	suite.Require().NoError(err)
@@ -274,7 +274,7 @@ func (suite *UserServiceTestSuite) TestSetUserActive_Deactivate() {
 	user.IsActive = true
 
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 	suite.mockRepo.On("DeleteUserSessions", suite.ctx, user.ID).Return(nil)
 
 	// Act

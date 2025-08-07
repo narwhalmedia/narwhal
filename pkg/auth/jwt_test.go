@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/testutil"
 )
 
@@ -25,8 +25,8 @@ func TestJWTManager_GenerateTokenPair(t *testing.T) {
 	)
 
 	user := testutil.CreateTestUser("testuser", "test@example.com")
-	user.Roles = []domain.Role{
-		*testutil.CreateTestRole(domain.RoleUser, "User role"),
+	user.Roles = []models.Role{
+		*testutil.CreateTestRole(models.RoleUser, "User role"),
 	}
 	sessionID := uuid.New()
 
@@ -54,9 +54,9 @@ func TestJWTManager_ValidateAccessToken_Success(t *testing.T) {
 	)
 
 	user := testutil.CreateTestUser("testuser", "test@example.com")
-	user.Roles = []domain.Role{
-		*testutil.CreateTestRole(domain.RoleUser, "User role"),
-		*testutil.CreateTestRole(domain.RoleAdmin, "Admin role"),
+	user.Roles = []models.Role{
+		*testutil.CreateTestRole(models.RoleUser, "User role"),
+		*testutil.CreateTestRole(models.RoleAdmin, "Admin role"),
 	}
 	sessionID := uuid.New()
 
@@ -72,8 +72,8 @@ func TestJWTManager_ValidateAccessToken_Success(t *testing.T) {
 	assert.Equal(t, user.ID.String(), claims.UserID)
 	assert.Equal(t, user.Username, claims.Username)
 	assert.Equal(t, user.Email, claims.Email)
-	assert.Equal(t, []string{domain.RoleUser, domain.RoleAdmin}, claims.Roles)
-	assert.Equal(t, domain.TokenTypeAccess, claims.TokenType)
+	assert.Equal(t, []string{models.RoleUser, models.RoleAdmin}, claims.Roles)
+	assert.Equal(t, models.TokenTypeAccess, claims.TokenType)
 	assert.Equal(t, sessionID.String(), claims.SessionID)
 	assert.Equal(t, "test-issuer", claims.Issuer)
 }
@@ -189,8 +189,8 @@ func TestJWTManager_ValidateRefreshToken(t *testing.T) {
 		UserID:    user.ID.String(),
 		Username:  user.Username,
 		Email:     user.Email,
-		Roles:     []string{domain.RoleUser},
-		TokenType: domain.TokenTypeRefresh,
+		Roles:     []string{models.RoleUser},
+		TokenType: models.TokenTypeRefresh,
 		SessionID: sessionID.String(),
 	}
 
@@ -205,7 +205,7 @@ func TestJWTManager_ValidateRefreshToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, validatedClaims)
 	assert.Equal(t, user.ID.String(), validatedClaims.UserID)
-	assert.Equal(t, domain.TokenTypeRefresh, validatedClaims.TokenType)
+	assert.Equal(t, models.TokenTypeRefresh, validatedClaims.TokenType)
 }
 
 func TestGenerateRefreshToken(t *testing.T) {

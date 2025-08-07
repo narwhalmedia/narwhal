@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // RBAC provides role-based access control functionality.
@@ -26,39 +26,39 @@ func NewRBAC() *RBAC {
 // initializeDefaultPermissions sets up the default permission structure.
 func (r *RBAC) initializeDefaultPermissions() {
 	// Admin role - full access to everything
-	r.permissions[domain.RoleAdmin] = map[string][]string{
-		domain.ResourceLibrary:     {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceMedia:       {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceUser:        {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceTranscoding: {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceStreaming:   {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceAcquisition: {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceAnalytics:   {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
-		domain.ResourceSystem:      {domain.ActionRead, domain.ActionWrite, domain.ActionDelete, domain.ActionAdmin},
+	r.permissions[models.RoleAdmin] = map[string][]string{
+		models.ResourceLibrary:     {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceMedia:       {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceUser:        {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceTranscoding: {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceStreaming:   {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceAcquisition: {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceAnalytics:   {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
+		models.ResourceSystem:      {models.ActionRead, models.ActionWrite, models.ActionDelete, models.ActionAdmin},
 	}
 
 	// User role - standard user permissions
-	r.permissions[domain.RoleUser] = map[string][]string{
-		domain.ResourceLibrary:     {domain.ActionRead},
-		domain.ResourceMedia:       {domain.ActionRead, domain.ActionWrite},
-		domain.ResourceUser:        {domain.ActionRead, domain.ActionWrite}, // Can read/update own profile
-		domain.ResourceTranscoding: {domain.ActionRead},
-		domain.ResourceStreaming:   {domain.ActionRead},
-		domain.ResourceAcquisition: {domain.ActionRead},
-		domain.ResourceAnalytics:   {domain.ActionRead}, // Can view own analytics
-		domain.ResourceSystem:      {},                  // No system access
+	r.permissions[models.RoleUser] = map[string][]string{
+		models.ResourceLibrary:     {models.ActionRead},
+		models.ResourceMedia:       {models.ActionRead, models.ActionWrite},
+		models.ResourceUser:        {models.ActionRead, models.ActionWrite}, // Can read/update own profile
+		models.ResourceTranscoding: {models.ActionRead},
+		models.ResourceStreaming:   {models.ActionRead},
+		models.ResourceAcquisition: {models.ActionRead},
+		models.ResourceAnalytics:   {models.ActionRead}, // Can view own analytics
+		models.ResourceSystem:      {},                  // No system access
 	}
 
 	// Guest role - minimal permissions
-	r.permissions[domain.RoleGuest] = map[string][]string{
-		domain.ResourceLibrary:     {domain.ActionRead},
-		domain.ResourceMedia:       {domain.ActionRead},
-		domain.ResourceUser:        {},
-		domain.ResourceTranscoding: {},
-		domain.ResourceStreaming:   {domain.ActionRead},
-		domain.ResourceAcquisition: {},
-		domain.ResourceAnalytics:   {},
-		domain.ResourceSystem:      {},
+	r.permissions[models.RoleGuest] = map[string][]string{
+		models.ResourceLibrary:     {models.ActionRead},
+		models.ResourceMedia:       {models.ActionRead},
+		models.ResourceUser:        {},
+		models.ResourceTranscoding: {},
+		models.ResourceStreaming:   {models.ActionRead},
+		models.ResourceAcquisition: {},
+		models.ResourceAnalytics:   {},
+		models.ResourceSystem:      {},
 	}
 }
 
@@ -137,14 +137,8 @@ func (r *RBAC) RemovePermission(role, resource, action string) {
 // Middleware provides context-aware permission checking.
 type Middleware interface {
 	RequirePermission(resource, action string) func(context.Context) error
-	RequireAnyPermission(permissions ...Permission) func(context.Context) error
-	RequireAllPermissions(permissions ...Permission) func(context.Context) error
-}
-
-// Permission represents a resource-action pair.
-type Permission struct {
-	Resource string
-	Action   string
+	RequireAnyPermission(permissions ...models.Permission) func(context.Context) error
+	RequireAllPermissions(permissions ...models.Permission) func(context.Context) error
 }
 
 // PolicyEnforcer provides policy-based access control.
@@ -166,7 +160,7 @@ func (p *PolicyEnforcer) Enforce(roles []string, resource, action string) error 
 }
 
 // EnforceAny checks if the given roles satisfy any of the permission requirements.
-func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) error {
+func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return nil
@@ -181,7 +175,7 @@ func (p *PolicyEnforcer) EnforceAny(roles []string, permissions ...Permission) e
 }
 
 // EnforceAll checks if the given roles satisfy all permission requirements.
-func (p *PolicyEnforcer) EnforceAll(roles []string, permissions ...Permission) error {
+func (p *PolicyEnforcer) EnforceAll(roles []string, permissions ...models.Permission) error {
 	for _, perm := range permissions {
 		if !p.rbac.CheckPermissions(roles, perm.Resource, perm.Action) {
 			return fmt.Errorf("permission denied: %s:%s", perm.Resource, perm.Action)
@@ -211,7 +205,7 @@ func (p *PolicyEnforcer) CheckOwnership(
 	// Check if admin access is allowed and user has admin role
 	if ownership.AllowAdmin {
 		for _, role := range roles {
-			if role == domain.RoleAdmin {
+			if role == models.RoleAdmin {
 				return nil
 			}
 		}
@@ -221,71 +215,71 @@ func (p *PolicyEnforcer) CheckOwnership(
 }
 
 // DefaultPermissions returns the default permission set for initial setup.
-func DefaultPermissions() []domain.Permission {
-	return []domain.Permission{
+func DefaultPermissions() []models.Permission {
+	return []models.Permission{
 		// Library permissions
-		{Resource: domain.ResourceLibrary, Action: domain.ActionRead, Description: "View libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionWrite, Description: "Create/update libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionDelete, Description: "Delete libraries"},
-		{Resource: domain.ResourceLibrary, Action: domain.ActionAdmin, Description: "Manage library settings"},
+		{Resource: models.ResourceLibrary, Action: models.ActionRead, Description: "View libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionWrite, Description: "Create/update libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionDelete, Description: "Delete libraries"},
+		{Resource: models.ResourceLibrary, Action: models.ActionAdmin, Description: "Manage library settings"},
 
 		// Media permissions
-		{Resource: domain.ResourceMedia, Action: domain.ActionRead, Description: "View media"},
-		{Resource: domain.ResourceMedia, Action: domain.ActionWrite, Description: "Add/update media"},
-		{Resource: domain.ResourceMedia, Action: domain.ActionDelete, Description: "Delete media"},
-		{Resource: domain.ResourceMedia, Action: domain.ActionAdmin, Description: "Manage media settings"},
+		{Resource: models.ResourceMedia, Action: models.ActionRead, Description: "View media"},
+		{Resource: models.ResourceMedia, Action: models.ActionWrite, Description: "Add/update media"},
+		{Resource: models.ResourceMedia, Action: models.ActionDelete, Description: "Delete media"},
+		{Resource: models.ResourceMedia, Action: models.ActionAdmin, Description: "Manage media settings"},
 
 		// User permissions
-		{Resource: domain.ResourceUser, Action: domain.ActionRead, Description: "View users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionWrite, Description: "Create/update users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionDelete, Description: "Delete users"},
-		{Resource: domain.ResourceUser, Action: domain.ActionAdmin, Description: "Manage user settings"},
+		{Resource: models.ResourceUser, Action: models.ActionRead, Description: "View users"},
+		{Resource: models.ResourceUser, Action: models.ActionWrite, Description: "Create/update users"},
+		{Resource: models.ResourceUser, Action: models.ActionDelete, Description: "Delete users"},
+		{Resource: models.ResourceUser, Action: models.ActionAdmin, Description: "Manage user settings"},
 
 		// Transcoding permissions
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionRead, Description: "View transcoding jobs"},
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionWrite, Description: "Create transcoding jobs"},
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionDelete, Description: "Cancel transcoding jobs"},
-		{Resource: domain.ResourceTranscoding, Action: domain.ActionAdmin, Description: "Manage transcoding settings"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionRead, Description: "View transcoding jobs"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionWrite, Description: "Create transcoding jobs"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionDelete, Description: "Cancel transcoding jobs"},
+		{Resource: models.ResourceTranscoding, Action: models.ActionAdmin, Description: "Manage transcoding settings"},
 
 		// Streaming permissions
-		{Resource: domain.ResourceStreaming, Action: domain.ActionRead, Description: "Stream media"},
-		{Resource: domain.ResourceStreaming, Action: domain.ActionWrite, Description: "Manage streams"},
-		{Resource: domain.ResourceStreaming, Action: domain.ActionDelete, Description: "Terminate streams"},
-		{Resource: domain.ResourceStreaming, Action: domain.ActionAdmin, Description: "Manage streaming settings"},
+		{Resource: models.ResourceStreaming, Action: models.ActionRead, Description: "Stream media"},
+		{Resource: models.ResourceStreaming, Action: models.ActionWrite, Description: "Manage streams"},
+		{Resource: models.ResourceStreaming, Action: models.ActionDelete, Description: "Terminate streams"},
+		{Resource: models.ResourceStreaming, Action: models.ActionAdmin, Description: "Manage streaming settings"},
 
 		// Acquisition permissions
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionRead, Description: "View downloads"},
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionWrite, Description: "Add downloads"},
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionDelete, Description: "Remove downloads"},
-		{Resource: domain.ResourceAcquisition, Action: domain.ActionAdmin, Description: "Manage acquisition settings"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionRead, Description: "View downloads"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionWrite, Description: "Add downloads"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionDelete, Description: "Remove downloads"},
+		{Resource: models.ResourceAcquisition, Action: models.ActionAdmin, Description: "Manage acquisition settings"},
 
 		// Analytics permissions
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionRead, Description: "View analytics"},
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionWrite, Description: "Create reports"},
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionDelete, Description: "Delete reports"},
-		{Resource: domain.ResourceAnalytics, Action: domain.ActionAdmin, Description: "Manage analytics settings"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionRead, Description: "View analytics"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionWrite, Description: "Create reports"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionDelete, Description: "Delete reports"},
+		{Resource: models.ResourceAnalytics, Action: models.ActionAdmin, Description: "Manage analytics settings"},
 
 		// System permissions
-		{Resource: domain.ResourceSystem, Action: domain.ActionRead, Description: "View system status"},
-		{Resource: domain.ResourceSystem, Action: domain.ActionWrite, Description: "Modify system settings"},
-		{Resource: domain.ResourceSystem, Action: domain.ActionDelete, Description: "Delete system data"},
-		{Resource: domain.ResourceSystem, Action: domain.ActionAdmin, Description: "Full system administration"},
+		{Resource: models.ResourceSystem, Action: models.ActionRead, Description: "View system status"},
+		{Resource: models.ResourceSystem, Action: models.ActionWrite, Description: "Modify system settings"},
+		{Resource: models.ResourceSystem, Action: models.ActionDelete, Description: "Delete system data"},
+		{Resource: models.ResourceSystem, Action: models.ActionAdmin, Description: "Full system administration"},
 	}
 }
 
 // DefaultRoles returns the default roles for initial setup.
-func DefaultRoles() []domain.Role {
-	return []domain.Role{
+func DefaultRoles() []models.Role {
+	return []models.Role{
 		{
-			Name:        domain.RoleAdmin,
+			Name:        models.RoleAdmin,
 			Description: "System administrator with full access",
 		},
 		{
-			Name:        domain.RoleUser,
+			Name:        models.RoleUser,
 			Description: "Standard user with content access",
 		},
 		{
-			Name:        domain.RoleGuest,
+			Name:        models.RoleGuest,
 			Description: "Guest user with limited read-only access",
 		},
 	}

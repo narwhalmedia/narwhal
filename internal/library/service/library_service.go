@@ -9,6 +9,7 @@ import (
 	"github.com/narwhalmedia/narwhal/internal/library/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
+	"github.com/narwhalmedia/narwhal/internal/library/scanner"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/interfaces"
 	"github.com/narwhalmedia/narwhal/pkg/models"
@@ -20,7 +21,7 @@ type LibraryService struct {
 	eventBus interfaces.EventBus
 	cache    interfaces.Cache
 	logger   interfaces.Logger
-	scanner  *domain.Scanner
+	scanner  *scanner.Scanner
 }
 
 // NewLibraryService creates a new library service.
@@ -35,12 +36,12 @@ func NewLibraryService(
 		eventBus: eventBus,
 		cache:    cache,
 		logger:   logger,
-		scanner:  domain.NewScanner(logger),
+		scanner:  scanner.NewScanner(logger),
 	}
 }
 
 // CreateLibrary creates a new media library.
-func (s *LibraryService) CreateLibrary(ctx context.Context, library *domain.Library) error {
+func (s *LibraryService) CreateLibrary(ctx context.Context, library *models.Library) error {
 	// Validate input
 	if library.Name == "" || library.Path == "" {
 		return errors.BadRequest("library name and path are required")
@@ -64,7 +65,7 @@ func (s *LibraryService) CreateLibrary(ctx context.Context, library *domain.Libr
 	}
 
 	// Publish event
-	s.eventBus.PublishAsync(ctx, domain.NewLibraryCreatedEvent(library))
+	s.eventBus.PublishAsync(ctx, &domain.LibraryCreatedEvent{Library: library})
 
 	s.logger.Info("Library created",
 		interfaces.String("id", library.ID.String()),
@@ -75,11 +76,11 @@ func (s *LibraryService) CreateLibrary(ctx context.Context, library *domain.Libr
 }
 
 // GetLibrary retrieves a library by ID.
-func (s *LibraryService) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error) {
+func (s *LibraryService) GetLibrary(ctx context.Context, id uuid.UUID) (*models.Library, error) {
 	// Check cache first
 	cacheKey := "library:" + id.String()
 	if cached, err := s.cache.Get(ctx, cacheKey); err == nil && cached != nil {
-		if library, ok := cached.(*domain.Library); ok {
+		if library, ok := cached.(*models.Library); ok {
 			return library, nil
 		}
 	}
@@ -96,7 +97,7 @@ func (s *LibraryService) GetLibrary(ctx context.Context, id uuid.UUID) (*domain.
 }
 
 // ListLibraries lists all libraries.
-func (s *LibraryService) ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error) {
+func (s *LibraryService) ListLibraries(ctx context.Context, enabled *bool) ([]*models.Library, error) {
 	return s.repo.ListLibraries(ctx, enabled)
 }
 
@@ -105,7 +106,7 @@ func (s *LibraryService) UpdateLibrary(
 	ctx context.Context,
 	id uuid.UUID,
 	updates map[string]interface{},
-) (*domain.Library, error) {
+) (*models.Library, error) {
 	// Get existing library
 	library, err := s.repo.GetLibrary(ctx, id)
 	if err != nil {
@@ -135,7 +136,7 @@ func (s *LibraryService) UpdateLibrary(
 	_ = s.cache.Delete(ctx, "library:"+id.String())
 
 	// Publish event
-	s.eventBus.PublishAsync(ctx, domain.NewLibraryUpdatedEvent(library))
+	s.eventBus.PublishAsync(ctx, &domain.LibraryUpdatedEvent{Library: library})
 
 	return library, nil
 }
@@ -157,7 +158,7 @@ func (s *LibraryService) DeleteLibrary(ctx context.Context, id uuid.UUID) error 
 	_ = s.cache.Delete(ctx, "library:"+id.String())
 
 	// Publish event
-	s.eventBus.PublishAsync(ctx, domain.NewLibraryDeletedEvent(id))
+	s.eventBus.PublishAsync(ctx, &domain.LibraryDeletedEvent{LibraryID: id})
 
 	s.logger.Info("Library deleted",
 		interfaces.String("id", id.String()),
@@ -185,12 +186,12 @@ func (s *LibraryService) ScanLibrary(ctx context.Context, id uuid.UUID) error {
 }
 
 // performScan performs the actual library scan.
-func (s *LibraryService) performScan(ctx context.Context, library *domain.Library) {
+func (s *LibraryService) performScan(ctx context.Context, library *models.Library) {
 	// Mark library as scanning
 	s.scanner.SetScanning(library.ID.String(), true)
 	defer s.scanner.SetScanning(library.ID.String(), false)
 
-	scanResult := &domain.ScanResult{
+	scanResult := &models.ScanHistory{
 		LibraryID: library.ID,
 		StartedAt: time.Now(),
 	}
@@ -206,13 +207,14 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 		interfaces.String("path", library.Path))
 
 	// Scan for media files
-	files, err := s.scanner.ScanDirectory(library.Path, library.Type)
+	files, err := s.scanner.ScanDirectory(library.Path, string(library.Type))
 	if err != nil {
 		s.logger.Error("Library scan failed",
 			interfaces.String("library_id", library.ID.String()),
 			interfaces.Error(err))
 
-		scanResult.CompletedAt = timePtr(time.Now())
+		now := time.Now()
+		scanResult.CompletedAt = &now
 		scanResult.ErrorMessage = err.Error()
 		_ = s.repo.UpdateScanHistory(ctx, scanResult)
 		return
@@ -224,10 +226,9 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 
 		if existing != nil {
 			// Update existing media if file was modified
-			if file.Modified.After(existing.Modified) {
-				existing.Size = file.Size
-				existing.Modified = file.Modified
-				existing.LastScanned = time.Now()
+			if file.Modified.After(existing.UpdatedAt) {
+				existing.FileSize = file.Size
+				existing.UpdatedAt = file.Modified
 
 				if err := s.repo.UpdateMedia(ctx, existing); err != nil {
 					s.logger.Error("Failed to update media",
@@ -240,22 +241,15 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 		} else {
 			// Create new media entry
 			media := &models.Media{
-				ID:          uuid.New(),
-				Title:       domain.ExtractTitle(file.Path),
-				Type:        models.MediaType(library.Type),
-				Path:        file.Path,
-				Size:        file.Size,
-				Added:       time.Now(),
-				Modified:    file.Modified,
-				LastScanned: time.Now(),
+				ID:             uuid.New(),
+				Title:          scanner.ExtractTitle(file.Path),
+				Type:           library.Type,
+				FilePath:       file.Path,
+				FileSize:       file.Size,
+				FileModifiedAt: &file.Modified,
+				LibraryID:      library.ID,
+				Status:         "pending",
 			}
-
-			// Add library-specific fields
-			media.LibraryID = library.ID
-			media.Status = "pending"
-			media.FilePath = file.Path
-			media.FileSize = file.Size
-			media.FileModifiedAt = &file.Modified
 
 			if err := s.repo.CreateMedia(ctx, media); err != nil {
 				s.logger.Error("Failed to create media",
@@ -265,7 +259,7 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 			}
 
 			// Publish media added event
-			s.eventBus.PublishAsync(ctx, domain.NewMediaAddedEvent(media))
+			s.eventBus.PublishAsync(ctx, &domain.MediaAddedEvent{Media: media})
 			scanResult.FilesAdded++
 		}
 
@@ -277,7 +271,7 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 	library.LastScanAt = &now
 	_ = s.repo.UpdateLibrary(ctx, library)
 	// Complete scan history
-	scanResult.CompletedAt = timePtr(time.Now())
+	scanResult.CompletedAt = &now
 	_ = s.repo.UpdateScanHistory(ctx, scanResult)
 	duration := time.Since(scanResult.StartedAt)
 	s.logger.Info("Library scan completed",
@@ -290,7 +284,7 @@ func (s *LibraryService) performScan(ctx context.Context, library *domain.Librar
 	// Publish scan completed event
 	s.eventBus.PublishAsync(
 		ctx,
-		domain.NewLibraryScanCompletedEvent(library, scanResult.FilesAdded, scanResult.FilesUpdated),
+		&domain.LibraryScanCompletedEvent{Library: library, NewFiles: scanResult.FilesAdded, UpdatedFiles: scanResult.FilesUpdated},
 	)
 }
 
@@ -354,7 +348,7 @@ func (s *LibraryService) UpdateMedia(
 		media.Description = description
 	}
 	if releaseDate, ok := updates["release_date"].(time.Time); ok {
-		media.ReleaseDate = releaseDate
+		media.ReleaseDate = &releaseDate
 	}
 	if genres, ok := updates["genres"].([]string); ok {
 		media.Genres = genres
@@ -372,7 +366,7 @@ func (s *LibraryService) UpdateMedia(
 	_ = s.cache.Delete(ctx, "media:"+id.String())
 
 	// Publish event
-	s.eventBus.PublishAsync(ctx, domain.NewMediaUpdatedEvent(media))
+	s.eventBus.PublishAsync(ctx, &domain.MediaUpdatedEvent{Media: media})
 
 	return media, nil
 }
@@ -394,7 +388,7 @@ func (s *LibraryService) DeleteMedia(ctx context.Context, id uuid.UUID) error {
 	_ = s.cache.Delete(ctx, "media:"+id.String())
 
 	// Publish event
-	s.eventBus.PublishAsync(ctx, domain.NewMediaDeletedEvent(id.String()))
+	s.eventBus.PublishAsync(ctx, &domain.MediaDeletedEvent{MediaID: id.String()})
 
 	s.logger.Info("Media deleted",
 		interfaces.String("id", id.String()),
@@ -421,7 +415,7 @@ func (s *LibraryService) ListMediaByLibrary(
 }
 
 // GetLatestScan gets the latest scan result for a library.
-func (s *LibraryService) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error) {
+func (s *LibraryService) GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*models.ScanHistory, error) {
 	return s.repo.GetLatestScan(ctx, libraryID)
 }
 

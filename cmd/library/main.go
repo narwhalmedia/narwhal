@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/narwhalmedia/narwhal/cmd/constants"
 	"github.com/narwhalmedia/narwhal/internal/library/handler"
 	"github.com/narwhalmedia/narwhal/internal/library/repository"
 	"github.com/narwhalmedia/narwhal/internal/library/service"
@@ -117,14 +116,14 @@ func main() {
 	if cfg.Pagination.CursorEncryptionKey != "" {
 		// Ensure key is 32 bytes
 		key := []byte(cfg.Pagination.CursorEncryptionKey)
-		if len(key) < constants.EncryptionKeySize {
+		if len(key) < auth.TokenKeySize {
 			// Pad with zeros if too short
-			padded := make([]byte, constants.EncryptionKeySize)
+			padded := make([]byte, auth.TokenKeySize)
 			copy(padded, key)
 			key = padded
-		} else if len(key) > constants.EncryptionKeySize {
+		} else if len(key) > auth.TokenKeySize {
 			// Truncate if too long
-			key = key[:constants.EncryptionKeySize]
+			key = key[:auth.TokenKeySize]
 		}
 
 		encoder, err := pagination.NewCursorEncoder(key)
@@ -173,7 +172,7 @@ func main() {
 	logger.Info("Shutting down...")
 
 	// Graceful shutdown with timeout
-	_, shutdownCancel := context.WithTimeout(context.Background(), constants.ShutdownTimeout)
+	_, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer shutdownCancel()
 
 	// Stop gRPC server

@@ -5,18 +5,17 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // LibraryRepository defines the interface for library data access.
 type LibraryRepository interface {
-	CreateLibrary(ctx context.Context, library *domain.Library) error
-	GetLibrary(ctx context.Context, id uuid.UUID) (*domain.Library, error)
-	GetLibraryByPath(ctx context.Context, path string) (*domain.Library, error)
-	UpdateLibrary(ctx context.Context, library *domain.Library) error
+	CreateLibrary(ctx context.Context, library *models.Library) error
+	GetLibrary(ctx context.Context, id uuid.UUID) (*models.Library, error)
+	GetLibraryByPath(ctx context.Context, path string) (*models.Library, error)
+	UpdateLibrary(ctx context.Context, library *models.Library) error
 	DeleteLibrary(ctx context.Context, id uuid.UUID) error
-	ListLibraries(ctx context.Context, enabled *bool) ([]*domain.Library, error)
+	ListLibraries(ctx context.Context, enabled *bool) ([]*models.Library, error)
 }
 
 // MediaRepository defines the interface for media data access.
@@ -55,18 +54,18 @@ type EpisodeRepository interface {
 
 // ScanRepository defines the interface for scan history data access.
 type ScanRepository interface {
-	CreateScanHistory(ctx context.Context, scan *domain.ScanResult) error
-	UpdateScanHistory(ctx context.Context, scan *domain.ScanResult) error
-	GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*domain.ScanResult, error)
+	CreateScanHistory(ctx context.Context, scan *models.ScanHistory) error
+	UpdateScanHistory(ctx context.Context, scan *models.ScanHistory) error
+	GetLatestScan(ctx context.Context, libraryID uuid.UUID) (*models.ScanHistory, error)
 }
 
 // MetadataProviderRepository defines the interface for metadata provider data access.
 type MetadataProviderRepository interface {
-	CreateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error
-	GetProvider(ctx context.Context, id uuid.UUID) (*domain.MetadataProviderConfig, error)
-	GetProviderByName(ctx context.Context, name string) (*domain.MetadataProviderConfig, error)
-	ListProviders(ctx context.Context, enabled *bool, providerType *string) ([]*domain.MetadataProviderConfig, error)
-	UpdateProvider(ctx context.Context, provider *domain.MetadataProviderConfig) error
+	CreateProvider(ctx context.Context, provider *models.MetadataProvider) error
+	GetProvider(ctx context.Context, id uuid.UUID) (*models.MetadataProvider, error)
+	GetProviderByName(ctx context.Context, name string) (*models.MetadataProvider, error)
+	ListProviders(ctx context.Context, enabled *bool, providerType *string) ([]*models.MetadataProvider, error)
+	UpdateProvider(ctx context.Context, provider *models.MetadataProvider) error
 	DeleteProvider(ctx context.Context, id uuid.UUID) error
 }
 

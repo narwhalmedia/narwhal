@@ -6,8 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/narwhalmedia/narwhal/internal/library/repository"
-	userRepo "github.com/narwhalmedia/narwhal/internal/user/repository"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 )
 
 // Migration represents a database migration.
@@ -148,23 +147,21 @@ func migration001CreateInitialSchema(tx *gorm.DB) error {
 
 	// Create library tables
 	if err := tx.AutoMigrate(
-		&repository.Library{},
-		&repository.MediaItem{},
-		&repository.Episode{},
-		&repository.MetadataProvider{},
-		&repository.ScanHistory{},
+		&models.Library{},
+		&models.Media{},
+		&models.Episode{},
+		&models.MetadataProvider{},
+		&models.ScanHistory{},
 	); err != nil {
 		return fmt.Errorf("failed to migrate library models: %w", err)
 	}
 
 	// Create user tables
 	if err := tx.AutoMigrate(
-		&userRepo.User{},
-		&userRepo.Role{},
-		&userRepo.Permission{},
-		&userRepo.Session{},
-		&userRepo.UserRole{},
-		&userRepo.RolePermission{},
+		&models.User{},
+		&models.Role{},
+		&models.Permission{},
+		&models.Session{},
 	); err != nil {
 		return fmt.Errorf("failed to migrate user models: %w", err)
 	}

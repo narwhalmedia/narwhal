@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/repository"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/test/testutil"
 )
 
@@ -29,10 +29,10 @@ func (suite *GormRepositoryTestSuite) SetupSuite() {
 
 	// Run migrations
 	err := suite.container.MigrateModels(
-		&domain.User{},
-		&domain.Role{},
-		&domain.Permission{},
-		&domain.Session{},
+		&models.User{},
+		&models.Role{},
+		&models.Permission{},
+		&models.Session{},
 	)
 	suite.Require().NoError(err)
 }
@@ -196,7 +196,7 @@ func (suite *GormRepositoryTestSuite) TestUserExists() {
 
 func (suite *GormRepositoryTestSuite) TestRoleOperations() {
 	// Create role
-	role := testutil.CreateTestRole(domain.RoleAdmin, "Administrator")
+	role := testutil.CreateTestRole(models.RoleAdmin, "Administrator")
 	err := suite.repo.CreateRole(suite.ctx, role)
 	suite.Require().NoError(err)
 
@@ -206,7 +206,7 @@ func (suite *GormRepositoryTestSuite) TestRoleOperations() {
 	suite.Equal(role.Name, retrieved.Name)
 
 	// Get role by name
-	retrieved, err = suite.repo.GetRoleByName(suite.ctx, domain.RoleAdmin)
+	retrieved, err = suite.repo.GetRoleByName(suite.ctx, models.RoleAdmin)
 	suite.Require().NoError(err)
 	suite.Equal(role.Name, retrieved.Name)
 
@@ -227,7 +227,7 @@ func (suite *GormRepositoryTestSuite) TestRoleOperations() {
 
 func (suite *GormRepositoryTestSuite) TestPermissionOperations() {
 	// Create permission
-	perm := testutil.CreateTestPermission(domain.ResourceLibrary, domain.ActionRead, "Read libraries")
+	perm := testutil.CreateTestPermission(models.ResourceLibrary, models.ActionRead, "Read libraries")
 	err := suite.repo.CreatePermission(suite.ctx, perm)
 	suite.Require().NoError(err)
 
@@ -237,7 +237,7 @@ func (suite *GormRepositoryTestSuite) TestPermissionOperations() {
 	suite.Equal(perm.Resource, retrieved.Resource)
 
 	// Get permission by resource/action
-	retrieved, err = suite.repo.GetPermissionByResourceAction(suite.ctx, domain.ResourceLibrary, domain.ActionRead)
+	retrieved, err = suite.repo.GetPermissionByResourceAction(suite.ctx, models.ResourceLibrary, models.ActionRead)
 	suite.Require().NoError(err)
 	suite.Equal(perm.Resource, retrieved.Resource)
 	suite.Equal(perm.Action, retrieved.Action)
@@ -250,9 +250,9 @@ func (suite *GormRepositoryTestSuite) TestPermissionOperations() {
 
 func (suite *GormRepositoryTestSuite) TestRolePermissionAssociation() {
 	// Create role and permissions
-	role := testutil.CreateTestRole(domain.RoleUser, "User role")
-	perm1 := testutil.CreateTestPermission(domain.ResourceLibrary, domain.ActionRead, "Read libraries")
-	perm2 := testutil.CreateTestPermission(domain.ResourceMedia, domain.ActionRead, "Read media")
+	role := testutil.CreateTestRole(models.RoleUser, "User role")
+	perm1 := testutil.CreateTestPermission(models.ResourceLibrary, models.ActionRead, "Read libraries")
+	perm2 := testutil.CreateTestPermission(models.ResourceMedia, models.ActionRead, "Read media")
 
 	suite.repo.CreateRole(suite.ctx, role)
 	suite.repo.CreatePermission(suite.ctx, perm1)

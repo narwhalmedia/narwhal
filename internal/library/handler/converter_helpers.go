@@ -6,7 +6,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/narwhalmedia/narwhal/internal/library/constants"
-	"github.com/narwhalmedia/narwhal/internal/library/domain"
 	commonpb "github.com/narwhalmedia/narwhal/pkg/common/v1"
 	librarypb "github.com/narwhalmedia/narwhal/pkg/library/v1"
 	"github.com/narwhalmedia/narwhal/pkg/models"
@@ -41,12 +40,12 @@ func convertMediaTypeToProto(t string) commonpb.MediaType {
 }
 
 // convertDomainLibraryToProto converts domain library to proto library.
-func convertLibraryToProto(lib *domain.Library) *librarypb.Library {
+func convertLibraryToProto(lib *models.Library) *librarypb.Library {
 	proto := &librarypb.Library{
 		Id:                  lib.ID.String(),
 		Name:                lib.Name,
 		Path:                lib.Path,
-		Type:                convertMediaTypeToProto(lib.Type),
+		Type:                convertMediaTypeToProto(string(lib.Type)),
 		AutoScan:            lib.Enabled,
 		ScanIntervalMinutes: int32(lib.ScanInterval / constants.SecondsToMinutes), // Convert from seconds to minutes
 		Created:             timestamppb.New(lib.CreatedAt),
@@ -66,19 +65,15 @@ func convertMediaToProto(media *models.Media, includeMetadata, includeEpisodes b
 		Id:              media.ID.String(),
 		Title:           media.Title,
 		Type:            convertMediaTypeToProtoFromMediaType(media.Type),
-		Path:            media.Path,
-		SizeBytes:       media.Size,
-		DurationSeconds: int32(media.Duration),
+		Path:            media.FilePath,
+		SizeBytes:       media.FileSize,
+		DurationSeconds: int32(media.Runtime * 60),
 		Resolution:      media.Resolution,
-		Codec:           media.Codec,
+		Codec:           media.VideoCodec,
 		Bitrate:         int32(media.Bitrate),
-		Added:           timestamppb.New(media.Added),
-		Modified:        timestamppb.New(media.Modified),
-		LastScanned:     timestamppb.New(media.LastScanned),
-	}
-
-	if includeMetadata && media.Metadata != nil {
-		protoMedia.Metadata = convertMetadataToProto(media.Metadata)
+		Added:           timestamppb.New(media.CreatedAt),
+		Modified:        timestamppb.New(media.UpdatedAt),
+		LastScanned:     timestamppb.New(media.UpdatedAt),
 	}
 
 	if includeEpisodes && len(media.Episodes) > 0 {
@@ -145,13 +140,13 @@ func convertEpisodeToProto(episode *models.Episode) *librarypb.Episode {
 		SeasonNumber:    int32(episode.SeasonNumber),
 		EpisodeNumber:   int32(episode.EpisodeNumber),
 		Title:           episode.Title,
-		Path:            episode.Path,
-		DurationSeconds: int32(episode.Duration),
-		Added:           timestamppb.New(episode.Added),
+		Path:            episode.FilePath,
+		DurationSeconds: int32(episode.Runtime * 60),
+		Added:           timestamppb.New(episode.CreatedAt),
 	}
 
-	if !episode.AirDate.IsZero() {
-		proto.AirDate = timestamppb.New(episode.AirDate)
+	if episode.AirDate != nil && !episode.AirDate.IsZero() {
+		proto.AirDate = timestamppb.New(*episode.AirDate)
 	}
 
 	return proto

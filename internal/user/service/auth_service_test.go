@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/narwhalmedia/narwhal/internal/user/domain"
 	"github.com/narwhalmedia/narwhal/internal/user/service"
 	"github.com/narwhalmedia/narwhal/pkg/auth"
+	"github.com/narwhalmedia/narwhal/pkg/models"
 	"github.com/narwhalmedia/narwhal/pkg/errors"
 	"github.com/narwhalmedia/narwhal/pkg/events"
 	"github.com/narwhalmedia/narwhal/pkg/logger"
@@ -61,8 +61,8 @@ func (suite *AuthServiceTestSuite) TestLogin_Success() {
 	user.SetPassword("password123")
 
 	suite.mockRepo.On("GetUserByUsername", suite.ctx, "testuser").Return(user, nil)
-	suite.mockRepo.On("CreateSession", suite.ctx, mock.AnythingOfType("*domain.Session")).Return(nil)
-	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*domain.User")).Return(nil)
+	suite.mockRepo.On("CreateSession", suite.ctx, mock.AnythingOfType("*models.Session")).Return(nil)
+	suite.mockRepo.On("UpdateUser", suite.ctx, mock.AnythingOfType("*models.User")).Return(nil)
 
 	// Act
 	tokens, err := suite.authService.Login(suite.ctx, "testuser", "password123", "Test Device", "127.0.0.1", "Test/1.0")
@@ -144,7 +144,7 @@ func (suite *AuthServiceTestSuite) TestRefreshToken_Success() {
 
 	suite.mockRepo.On("GetSessionByRefreshToken", suite.ctx, session.RefreshToken).Return(session, nil)
 	suite.mockRepo.On("GetUser", suite.ctx, user.ID).Return(user, nil)
-	suite.mockRepo.On("UpdateSession", suite.ctx, mock.AnythingOfType("*domain.Session")).Return(nil)
+	suite.mockRepo.On("UpdateSession", suite.ctx, mock.AnythingOfType("*models.Session")).Return(nil)
 
 	// Act
 	tokens, err := suite.authService.RefreshToken(suite.ctx, session.RefreshToken)
@@ -178,7 +178,7 @@ func (suite *AuthServiceTestSuite) TestLogout_Success() {
 	// Arrange
 	userID := uuid.New()
 	sessionID := uuid.New()
-	session := &domain.Session{
+	session := &models.Session{
 		ID:     sessionID,
 		UserID: userID,
 	}
@@ -198,7 +198,7 @@ func (suite *AuthServiceTestSuite) TestLogout_SessionNotBelongToUser() {
 	userID := uuid.New()
 	otherUserID := uuid.New()
 	sessionID := uuid.New()
-	session := &domain.Session{
+	session := &models.Session{
 		ID:     sessionID,
 		UserID: otherUserID, // Different user
 	}
@@ -234,7 +234,7 @@ func (suite *AuthServiceTestSuite) TestValidateToken_Success() {
 	// Generate a valid token
 	tokens, _ := suite.jwtManager.GenerateTokenPair(user, sessionID)
 
-	suite.mockRepo.On("GetSession", suite.ctx, sessionID).Return(&domain.Session{ID: sessionID}, nil)
+	suite.mockRepo.On("GetSession", suite.ctx, sessionID).Return(&models.Session{ID: sessionID}, nil)
 
 	// Act
 	claims, err := suite.authService.ValidateToken(suite.ctx, tokens.AccessToken)
@@ -259,7 +259,7 @@ func (suite *AuthServiceTestSuite) TestValidateToken_InvalidToken() {
 func (suite *AuthServiceTestSuite) TestGetUserSessions_Success() {
 	// Arrange
 	userID := uuid.New()
-	sessions := []*domain.Session{
+	sessions := []*models.Session{
 		testutil.CreateTestSession(userID),
 		testutil.CreateTestSession(userID),
 	}
