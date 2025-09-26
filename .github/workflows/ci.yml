@@ -217,7 +217,7 @@ jobs:
       contents: read
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: narwhal
           POSTGRES_PASSWORD: narwhal_dev
