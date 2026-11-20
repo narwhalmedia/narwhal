@@ -73,7 +73,7 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
-          version: 1.50.0
+          version: 1.75.0
 
       - name: Lint proto files
         run: buf lint
@@ -144,7 +144,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
-          version: 1.50.0
+          version: 1.75.0
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
